@@ -1,7 +1,7 @@
 import { AxiosRequestConfig } from 'axios';
+import { RPCRequest } from '../../provider/spec/jsonrpc';
 
 export interface RequestParams {
-  url: string;
-  data?: any;
+  request: RPCRequest;
   config?: AxiosRequestConfig;
 }

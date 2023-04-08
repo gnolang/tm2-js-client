@@ -1,18 +1,18 @@
 import axios from 'axios';
 import { RequestParams } from './restService.types';
+import { RPCResponse } from '../../provider/spec/jsonrpc';
 
 export class RestService {
-  static async post<T>(baseURL: string, params: RequestParams) {
+  static async post<TResult, TError>(
+    baseURL: string,
+    params: RequestParams
+  ): Promise<RPCResponse<TResult, TError>> {
     return axios
-      .post<T>(`${baseURL}/${params.url}`, params.data, params.config)
-      .then((response) => response.data);
-  }
-
-  static async get<T>(baseURL: string, params: Omit<RequestParams, 'data'>) {
-    return axios
-      .get<T>(`${baseURL}/${params.url}`, {
-        params: params.config,
-      })
+      .post<RPCResponse<TResult, TError>>(
+        baseURL,
+        params.request,
+        params.config
+      )
       .then((response) => response.data);
   }
 }

@@ -5,8 +5,6 @@ import { ConsensusParams, Network, Status } from '../types';
  * Provider based on JSON-RPC HTTP requests
  */
 export class JSONRPCProvider implements Provider {
-  // TODO
-
   estimateGas(tx: any): Promise<number> {
     return Promise.reject('implement me');
   }
