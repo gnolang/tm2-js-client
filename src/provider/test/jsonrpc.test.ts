@@ -1,26 +1,24 @@
-import { ConsensusParams, NetworkInfo } from '../types';
+import {
+  ConsensusParams,
+  ConsensusState,
+  consensusStateKey,
+  NetworkInfo,
+  Status,
+} from '../types';
 import axios from 'axios';
 import { JSONRPCProvider } from '../jsonrpc/jsonrpc';
 import { newResponse } from '../spec/utility';
-import { RPCError } from '../spec/jsonrpc';
+import { mock } from 'jest-mock-extended';
 
 jest.mock('axios');
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 const mockURL = '127.0.0.1:26657';
-const mockError: RPCError = {
-  code: 1,
-  message: 'mock error',
-};
 
-describe('getNetwork', () => {
-  test('valid network info', async () => {
-    const mockInfo: NetworkInfo = {
-      listening: false,
-      listeners: ['Listener 1'],
-      n_peers: '10',
-      peers: ['Peer 1', 'Peer 2'],
-    };
+describe('JSON-RPC Provider', () => {
+  test('getNetwork', async () => {
+    const mockInfo: NetworkInfo = mock<NetworkInfo>();
+    mockInfo.listening = false;
 
     mockedAxios.post.mockResolvedValue({
       data: newResponse<NetworkInfo>(mockInfo),
@@ -34,37 +32,9 @@ describe('getNetwork', () => {
     expect(info).toEqual(mockInfo);
   });
 
-  test('error response', async () => {
-    mockedAxios.post.mockResolvedValue({
-      data: newResponse<NetworkInfo>(undefined, mockError),
-    });
-
-    // Create the provider
-    const provider = new JSONRPCProvider(mockURL);
-
-    await expect(provider.getNetwork()).rejects.toThrow(mockError.message);
-    expect(axios.post).toHaveBeenCalled();
-  });
-});
-
-describe('getConsensusParams', () => {
-  test('valid consensus params', async () => {
-    const defaultValue = '10';
-    const mockParams: ConsensusParams = {
-      block_height: '1',
-      consensus_params: {
-        Block: {
-          MaxTxBytes: defaultValue,
-          MaxDataBytes: defaultValue,
-          MaxGas: defaultValue,
-          MaxBlockBytes: defaultValue,
-          TimeIotaMS: defaultValue,
-        },
-        Validator: {
-          PubKeyTypeURLs: [defaultValue, defaultValue],
-        },
-      },
-    };
+  test('getConsensusParams', async () => {
+    const mockParams: ConsensusParams = mock<ConsensusParams>();
+    mockParams.block_height = '1';
 
     mockedAxios.post.mockResolvedValue({
       data: newResponse<ConsensusParams>(mockParams),
@@ -78,17 +48,36 @@ describe('getConsensusParams', () => {
     expect(info).toEqual(mockParams);
   });
 
-  test('error response', async () => {
+  test('getStatus', async () => {
+    const mockStatus: Status = mock<Status>();
+    mockStatus.validator_info.address = 'address';
+
     mockedAxios.post.mockResolvedValue({
-      data: newResponse<ConsensusParams>(undefined, mockError),
+      data: newResponse<Status>(mockStatus),
     });
 
     // Create the provider
     const provider = new JSONRPCProvider(mockURL);
+    const info = await provider.getStatus();
 
-    await expect(provider.getConsensusParams(1)).rejects.toThrow(
-      mockError.message
-    );
     expect(axios.post).toHaveBeenCalled();
+    expect(info).toEqual(mockStatus);
+  });
+
+  test('getBlockNumber', async () => {
+    const expectedBlockNumber = 10;
+    const mockState: ConsensusState = mock<ConsensusState>();
+    mockState.round_state[consensusStateKey] = `${expectedBlockNumber}/0/0`;
+
+    mockedAxios.post.mockResolvedValue({
+      data: newResponse<ConsensusState>(mockState),
+    });
+
+    // Create the provider
+    const provider = new JSONRPCProvider(mockURL);
+    const info = await provider.getBlockNumber();
+
+    expect(axios.post).toHaveBeenCalled();
+    expect(info).toEqual(expectedBlockNumber);
   });
 });

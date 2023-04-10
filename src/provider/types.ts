@@ -102,3 +102,17 @@ export interface ConsensusParams {
     };
   };
 }
+
+export interface ConsensusState {
+  round_state: {
+    // Required because of '/' in response fields
+    [key: string]: string | null | object;
+    start_time: string;
+    proposal_block_hash: string | null;
+    locked_block_hash: string | null;
+    valid_block_hash: string | null;
+    height_vote_set: object;
+  };
+}
+
+export const consensusStateKey = 'height/round/step';

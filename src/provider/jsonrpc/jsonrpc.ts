@@ -1,8 +1,14 @@
 import { Provider } from '../provider';
-import { ConsensusParams, NetworkInfo, Status } from '../types';
+import {
+  ConsensusParams,
+  ConsensusState,
+  consensusStateKey,
+  NetworkInfo,
+  Status,
+} from '../types';
 import { RestService } from '../../services/rest/restService';
 import { newRequest } from '../spec/utility';
-import { ConsensusEndpoint } from '../endpoints';
+import { CommonEndpoint, ConsensusEndpoint } from '../endpoints';
 
 /**
  * Provider based on JSON-RPC HTTP requests
@@ -30,8 +36,16 @@ export class JSONRPCProvider implements Provider {
     return Promise.reject('implement me');
   }
 
-  getBlockNumber(): Promise<number> {
-    return Promise.reject('implement me');
+  async getBlockNumber(): Promise<number> {
+    // Fetch the state
+    const state = await RestService.post<ConsensusState>(this.baseURL, {
+      request: newRequest(ConsensusEndpoint.CONSENSUS_STATE),
+    });
+
+    // Get the height / round / step info
+    const stateStr: string = state.round_state[consensusStateKey] as string;
+
+    return parseInt(stateStr.split('/')[0]);
   }
 
   getBlockWithTransactions(height: number): Promise<any> {
@@ -60,8 +74,10 @@ export class JSONRPCProvider implements Provider {
     return Promise.reject('implement me');
   }
 
-  getStatus(): Promise<Status> {
-    return Promise.reject('implement me');
+  async getStatus(): Promise<Status> {
+    return await RestService.post<Status>(this.baseURL, {
+      request: newRequest(CommonEndpoint.STATUS),
+    });
   }
 
   getTransaction(hash: any): Promise<any> {
