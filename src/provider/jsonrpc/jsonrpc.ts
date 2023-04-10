@@ -8,7 +8,8 @@ import {
 } from '../types';
 import { RestService } from '../../services/rest/restService';
 import { newRequest } from '../spec/utility';
-import { CommonEndpoint, ConsensusEndpoint } from '../endpoints';
+import { ABCIEndpoint, CommonEndpoint, ConsensusEndpoint } from '../endpoints';
+import { ABCIResponse } from '../spec/abci';
 
 /**
  * Provider based on JSON-RPC HTTP requests
@@ -24,12 +25,44 @@ export class JSONRPCProvider implements Provider {
     return Promise.reject('implement me');
   }
 
-  getBalance(
+  async getBalance(
     address: string,
     denomination?: string,
     height?: number
   ): Promise<number> {
-    return Promise.reject('implement me');
+    const abciResponse: ABCIResponse = await RestService.post<ABCIResponse>(
+      this.baseURL,
+      {
+        request: newRequest(ABCIEndpoint.ABCI_QUERY, [
+          `bank/balances/${address}`,
+          '',
+          '0', // Height; not supported > 0 for now
+        ]),
+      }
+    );
+
+    // Extract the balances
+    const balancesRaw = Buffer.from(
+      abciResponse.response.ResponseBase.Data,
+      'base64'
+    ).toString();
+
+    // Find the correct balance denomination
+    const balances: string[] = balancesRaw.split(',');
+    if (balances.length < 1) {
+      return 0;
+    }
+
+    // Find the correct denomination
+    const pattern = new RegExp(`^(\\d+)${denomination}$`);
+    for (const balance of balances) {
+      const match = balance.match(pattern);
+      if (match) {
+        return parseInt(match[1]);
+      }
+    }
+
+    return 0;
   }
 
   getBlock(height: number): Promise<any> {

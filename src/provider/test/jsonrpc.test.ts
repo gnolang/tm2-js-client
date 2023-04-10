@@ -9,6 +9,7 @@ import axios from 'axios';
 import { JSONRPCProvider } from '../jsonrpc/jsonrpc';
 import { newResponse } from '../spec/utility';
 import { mock } from 'jest-mock-extended';
+import { ABCIResponse } from '../spec/abci';
 
 jest.mock('axios');
 
@@ -80,4 +81,44 @@ describe('JSON-RPC Provider', () => {
     expect(axios.post).toHaveBeenCalled();
     expect(info).toEqual(expectedBlockNumber);
   });
+
+  describe('getBalance', () => {
+    const denomination = 'atom';
+    test.each([
+      ['5gnot,100atom', 100], // balance found
+      ['5universe', 0], // balance not found
+      ['""', 0], // account doesn't exist
+    ])('case %#', async (existing, expected) => {
+      const mockABCIResponse: ABCIResponse = mock<ABCIResponse>();
+      mockABCIResponse.response.ResponseBase = {
+        Log: '',
+        Info: '',
+        Data: stringToBase64(existing),
+        Error: null,
+        Events: null,
+      };
+
+      mockedAxios.post.mockResolvedValue({
+        data: newResponse<ABCIResponse>(mockABCIResponse),
+      });
+
+      // Create the provider
+      const provider = new JSONRPCProvider(mockURL);
+      const balance = await provider.getBalance('address', denomination);
+
+      expect(axios.post).toHaveBeenCalled();
+      expect(balance).toBe(expected);
+    });
+  });
 });
+
+/**
+ * Converts a string into base64 representation
+ * @param {string} str the raw string
+ * @returns {string} the base64 representation of the string
+ */
+const stringToBase64 = (str: string): string => {
+  const buffer = Buffer.from(str, 'utf-8');
+
+  return buffer.toString('base64');
+};

@@ -6,7 +6,7 @@ export interface RPCRequest {
   id: string | number;
   method: string;
 
-  params?: string[];
+  params?: any[];
 }
 
 /**

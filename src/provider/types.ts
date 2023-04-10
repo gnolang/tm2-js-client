@@ -104,13 +104,19 @@ export interface ConsensusParams {
 }
 
 export interface ConsensusState {
+  // the current round state
   round_state: {
-    // Required because of '/' in response fields
+    // Required because of '/' in response fields (height/round/step)
     [key: string]: string | null | object;
+    // the start time of the block
     start_time: string;
+    // hash of the proposed block
     proposal_block_hash: string | null;
+    // hash of the locked block
     locked_block_hash: string | null;
+    // hash of the valid block
     valid_block_hash: string | null;
+    // the vote set for the current height
     height_vote_set: object;
   };
 }

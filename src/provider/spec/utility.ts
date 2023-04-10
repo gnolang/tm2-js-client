@@ -9,7 +9,7 @@ const standardVersion = '2.0';
  * @param {string[]} [params] the requested params, if any
  * @returns {RPCRequest} the created request object
  */
-export function newRequest(method: string, params?: string[]): RPCRequest {
+export function newRequest(method: string, params?: any[]): RPCRequest {
   return {
     // the ID of the request is not that relevant for this helper method;
     // for finer ID control, instantiate the request object directly
@@ -36,4 +36,20 @@ export function newResponse<Result>(
     result: result,
     error: error,
   };
+}
+
+/**
+ * Parses the base64 encoded ABCI JSON into a concrete type
+ * @param {string} data the base64-encoded JSON
+ * @returns {Result} the extracted response
+ */
+export function parseABCI<Result>(data: string): Result {
+  const jsonData: string = Buffer.from(data, 'base64').toString();
+  const parsedData: Result | null = JSON.parse(jsonData);
+
+  if (!parsedData) {
+    throw new Error('unable to parse JSON response');
+  }
+
+  return parsedData;
 }
