@@ -1,4 +1,4 @@
-import { ConsensusParams, Network, Status } from './types';
+import { ConsensusParams, NetworkInfo, Status } from './types';
 
 /**
  * Read-only abstraction for accessing blockchain data
@@ -49,7 +49,7 @@ export interface Provider {
   /**
    * Fetches the network information
    */
-  getNetwork(): Promise<Network>;
+  getNetwork(): Promise<NetworkInfo>;
 
   /**
    * Fetches the consensus params for the specific block height

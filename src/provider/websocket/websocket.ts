@@ -1,5 +1,5 @@
 import { Provider } from '../provider';
-import { ConsensusParams, Network, Status } from '../types';
+import { ConsensusParams, NetworkInfo, Status } from '../types';
 
 /**
  * Provider based on WS JSON-RPC HTTP requests
@@ -39,7 +39,7 @@ export class WSProvider implements Provider {
     return Promise.reject('implement me');
   }
 
-  getNetwork(): Promise<Network> {
+  getNetwork(): Promise<NetworkInfo> {
     return Promise.reject('implement me');
   }
 

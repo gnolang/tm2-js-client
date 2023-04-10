@@ -2,7 +2,7 @@
  * The base JSON-RPC 2.0 request
  */
 export interface RPCRequest {
-  jsonrpc: '2.0';
+  jsonrpc: string;
   id: string | number;
   method: string;
 
@@ -12,20 +12,20 @@ export interface RPCRequest {
 /**
  * The base JSON-RPC 2.0 response
  */
-export interface RPCResponse<Result, Error> {
-  jsonrpc: '2.0';
+export interface RPCResponse<Result> {
+  jsonrpc: string;
   id: string | number;
 
   result?: Result;
-  error?: RPCError<Error>;
+  error?: RPCError;
 }
 
 /**
  * The base JSON-RPC 2.0 typed response error
  */
-export interface RPCError<Data> {
+export interface RPCError {
   code: number;
   message: string;
 
-  data?: Data;
+  data?: any;
 }

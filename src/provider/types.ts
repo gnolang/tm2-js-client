@@ -1,4 +1,4 @@
-interface NetworkInfo {
+export interface NetworkInfo {
   // flag indicating if networking is up
   listening: boolean;
   // IDs of the listening peers
@@ -7,11 +7,6 @@ interface NetworkInfo {
   n_peers: string;
   // the IDs of connected peers
   peers: string[];
-}
-
-export interface Network extends NetworkInfo {
-  // the chain ID of the network
-  chainID: string;
 }
 
 export interface Status {

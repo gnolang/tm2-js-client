@@ -1,10 +1,19 @@
 import { Provider } from '../provider';
-import { ConsensusParams, Network, Status } from '../types';
+import { ConsensusParams, NetworkInfo, Status } from '../types';
+import { RestService } from '../../services/rest/restService';
+import { newRequest } from '../spec/utility';
+import { ConsensusEndpoint } from '../endpoints';
 
 /**
  * Provider based on JSON-RPC HTTP requests
  */
 export class JSONRPCProvider implements Provider {
+  private readonly baseURL: string;
+
+  constructor(baseURL: string) {
+    this.baseURL = baseURL;
+  }
+
   estimateGas(tx: any): Promise<number> {
     return Promise.reject('implement me');
   }
@@ -29,16 +38,22 @@ export class JSONRPCProvider implements Provider {
     return Promise.reject('implement me');
   }
 
-  getConsensusParams(height: number): Promise<ConsensusParams> {
-    return Promise.reject('implement me');
+  async getConsensusParams(height: number): Promise<ConsensusParams> {
+    return await RestService.post<ConsensusParams>(this.baseURL, {
+      request: newRequest(ConsensusEndpoint.CONSENSUS_PARAMS, [
+        height.toString(),
+      ]),
+    });
   }
 
   getGasPrice(): Promise<number> {
     return Promise.reject('implement me');
   }
 
-  getNetwork(): Promise<Network> {
-    return Promise.reject('implement me');
+  async getNetwork(): Promise<NetworkInfo> {
+    return await RestService.post<NetworkInfo>(this.baseURL, {
+      request: newRequest(ConsensusEndpoint.NET_INFO),
+    });
   }
 
   getSequence(address: string, height?: number): Promise<number> {
