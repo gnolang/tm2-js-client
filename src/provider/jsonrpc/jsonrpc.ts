@@ -7,9 +7,10 @@ import {
   Status,
 } from '../types';
 import { RestService } from '../../services/rest/restService';
-import { newRequest } from '../spec/utility';
+import { newRequest, parseABCI } from '../spec/utility';
 import { ABCIEndpoint, CommonEndpoint, ConsensusEndpoint } from '../endpoints';
 import { ABCIResponse } from '../spec/abci';
+import { ABCIAccount } from '../abciTypes';
 
 /**
  * Provider based on JSON-RPC HTTP requests
@@ -58,7 +59,7 @@ export class JSONRPCProvider implements Provider {
     for (const balance of balances) {
       const match = balance.match(pattern);
       if (match) {
-        return parseInt(match[1]);
+        return parseInt(match[1], 10);
       }
     }
 
@@ -103,8 +104,31 @@ export class JSONRPCProvider implements Provider {
     });
   }
 
-  getSequence(address: string, height?: number): Promise<number> {
-    return Promise.reject('implement me');
+  async getSequence(address: string, height?: number): Promise<number> {
+    const abciResponse: ABCIResponse = await RestService.post<ABCIResponse>(
+      this.baseURL,
+      {
+        request: newRequest(ABCIEndpoint.ABCI_QUERY, [
+          `auth/accounts/${address}`,
+          '',
+          '0', // Height; not supported > 0 for now
+        ]),
+      }
+    );
+
+    try {
+      // Parse the account
+      const account: ABCIAccount = parseABCI<ABCIAccount>(
+        abciResponse.response.ResponseBase.Data
+      );
+
+      return parseInt(account.BaseAccount.sequence, 10);
+    } catch (e) {
+      // Account not initialized,
+      // return default value - 0
+    }
+
+    return 0;
   }
 
   async getStatus(): Promise<Status> {

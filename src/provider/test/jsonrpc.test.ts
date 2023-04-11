@@ -10,6 +10,7 @@ import { JSONRPCProvider } from '../jsonrpc/jsonrpc';
 import { newResponse } from '../spec/utility';
 import { mock } from 'jest-mock-extended';
 import { ABCIResponse } from '../spec/abci';
+import { ABCIAccount } from '../abciTypes';
 
 jest.mock('axios');
 
@@ -105,6 +106,46 @@ describe('JSON-RPC Provider', () => {
       // Create the provider
       const provider = new JSONRPCProvider(mockURL);
       const balance = await provider.getBalance('address', denomination);
+
+      expect(axios.post).toHaveBeenCalled();
+      expect(balance).toBe(expected);
+    });
+  });
+
+  describe('getSequence', () => {
+    const validAccount: ABCIAccount = {
+      BaseAccount: {
+        address: 'random address',
+        coins: '',
+        public_key: null,
+        account_number: '0',
+        sequence: '10',
+      },
+    };
+
+    test.each([
+      [
+        JSON.stringify(validAccount),
+        parseInt(validAccount.BaseAccount.sequence, 10),
+      ], // account exists
+      ['null', 0], // account doesn't exist
+    ])('case %#', async (response, expected) => {
+      const mockABCIResponse: ABCIResponse = mock<ABCIResponse>();
+      mockABCIResponse.response.ResponseBase = {
+        Log: '',
+        Info: '',
+        Data: stringToBase64(response),
+        Error: null,
+        Events: null,
+      };
+
+      mockedAxios.post.mockResolvedValue({
+        data: newResponse<ABCIResponse>(mockABCIResponse),
+      });
+
+      // Create the provider
+      const provider = new JSONRPCProvider(mockURL);
+      const balance = await provider.getSequence('address');
 
       expect(axios.post).toHaveBeenCalled();
       expect(balance).toBe(expected);
