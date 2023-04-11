@@ -145,10 +145,10 @@ describe('JSON-RPC Provider', () => {
 
       // Create the provider
       const provider = new JSONRPCProvider(mockURL);
-      const balance = await provider.getSequence('address');
+      const sequence = await provider.getSequence('address');
 
       expect(axios.post).toHaveBeenCalled();
-      expect(balance).toBe(expected);
+      expect(sequence).toBe(expected);
     });
   });
 });
