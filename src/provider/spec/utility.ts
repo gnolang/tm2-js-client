@@ -53,3 +53,14 @@ export function parseABCI<Result>(data: string): Result {
 
   return parsedData;
 }
+
+/**
+ * Converts a string into base64 representation
+ * @param {string} str the raw string
+ * @returns {string} the base64 representation of the string
+ */
+export function stringToBase64(str: string): string {
+  const buffer = Buffer.from(str, 'utf-8');
+
+  return buffer.toString('base64');
+}

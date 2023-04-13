@@ -1,9 +1,17 @@
 import { Provider } from '../provider';
-import { ConsensusParams, NetworkInfo, Status } from '../types';
+import {
+  ConsensusParams,
+  ConsensusState,
+  consensusStateKey,
+  NetworkInfo,
+  Status,
+} from '../types';
 import { RPCRequest, RPCResponse } from '../spec/jsonrpc';
-import { newRequest } from '../spec/utility';
-import { ConsensusEndpoint } from '../endpoints';
+import { newRequest, parseABCI } from '../spec/utility';
+import { ABCIEndpoint, CommonEndpoint, ConsensusEndpoint } from '../endpoints';
 import { WebSocket } from 'ws';
+import { ABCIResponse } from '../spec/abci';
+import { ABCIAccount } from '../abciTypes';
 
 /**
  * Provider based on WS JSON-RPC HTTP requests
@@ -129,28 +137,74 @@ export class WSProvider implements Provider {
     return Promise.reject('implement me');
   }
 
-  getBalance(
+  async getBalance(
     address: string,
     denomination?: string,
     height?: number
   ): Promise<number> {
-    return Promise.reject('implement me');
+    const response = await this.sendRequest<ABCIResponse>(
+      newRequest(ABCIEndpoint.ABCI_QUERY, [
+        `auth/accounts/${address}`,
+        '',
+        '0', // Height; not supported > 0 for now
+      ])
+    );
+
+    // Parse the response
+    const abciResponse = this.parseResponse<ABCIResponse>(response);
+
+    // Extract the balances
+    const balancesRaw = Buffer.from(
+      abciResponse.response.ResponseBase.Data,
+      'base64'
+    ).toString();
+
+    // Find the correct balance denomination
+    const balances: string[] = balancesRaw.split(',');
+    if (balances.length < 1) {
+      return 0;
+    }
+
+    // Find the correct denomination
+    const pattern = new RegExp(`^(\\d+)${denomination}$`);
+    for (const balance of balances) {
+      const match = balance.match(pattern);
+      if (match) {
+        return parseInt(match[1], 10);
+      }
+    }
+
+    return 0;
   }
 
   getBlock(height: number): Promise<any> {
     return Promise.reject('implement me');
   }
 
-  getBlockNumber(): Promise<number> {
-    return Promise.reject('implement me');
+  async getBlockNumber(): Promise<number> {
+    const response = await this.sendRequest<ConsensusState>(
+      newRequest(ConsensusEndpoint.CONSENSUS_STATE)
+    );
+
+    // Parse the response into state
+    const state = this.parseResponse<ConsensusState>(response);
+
+    // Get the height / round / step info
+    const stateStr: string = state.round_state[consensusStateKey] as string;
+
+    return parseInt(stateStr.split('/')[0]);
   }
 
   getBlockWithTransactions(height: number): Promise<any> {
     return Promise.reject('implement me');
   }
 
-  getConsensusParams(height: number): Promise<ConsensusParams> {
-    return Promise.reject('implement me');
+  async getConsensusParams(height: number): Promise<ConsensusParams> {
+    const response = await this.sendRequest<ConsensusParams>(
+      newRequest(ConsensusEndpoint.CONSENSUS_PARAMS, [height.toString()])
+    );
+
+    return this.parseResponse<ConsensusParams>(response);
   }
 
   getGasPrice(): Promise<number> {
@@ -165,12 +219,39 @@ export class WSProvider implements Provider {
     return this.parseResponse<NetworkInfo>(response);
   }
 
-  getSequence(address: string, height?: number): Promise<number> {
-    return Promise.reject('implement me');
+  async getSequence(address: string, height?: number): Promise<number> {
+    const response = await this.sendRequest<ABCIResponse>(
+      newRequest(ABCIEndpoint.ABCI_QUERY, [
+        `auth/accounts/${address}`,
+        '',
+        '0', // Height; not supported > 0 for now
+      ])
+    );
+
+    // Parse the response
+    const abciResponse = this.parseResponse<ABCIResponse>(response);
+
+    try {
+      // Parse the account
+      const account: ABCIAccount = parseABCI<ABCIAccount>(
+        abciResponse.response.ResponseBase.Data
+      );
+
+      return parseInt(account.BaseAccount.sequence, 10);
+    } catch (e) {
+      // Account not initialized,
+      // return default value - 0
+    }
+
+    return 0;
   }
 
-  getStatus(): Promise<Status> {
-    return Promise.reject('implement me');
+  async getStatus(): Promise<Status> {
+    const response = await this.sendRequest<Status>(
+      newRequest(CommonEndpoint.STATUS)
+    );
+
+    return this.parseResponse<Status>(response);
   }
 
   getTransaction(hash: any): Promise<any> {

@@ -7,7 +7,7 @@ import {
 } from '../types';
 import axios from 'axios';
 import { JSONRPCProvider } from '../jsonrpc/jsonrpc';
-import { newResponse } from '../spec/utility';
+import { newResponse, stringToBase64 } from '../spec/utility';
 import { mock } from 'jest-mock-extended';
 import { ABCIResponse } from '../spec/abci';
 import { ABCIAccount } from '../abciTypes';
@@ -44,10 +44,10 @@ describe('JSON-RPC Provider', () => {
 
     // Create the provider
     const provider = new JSONRPCProvider(mockURL);
-    const info = await provider.getConsensusParams(1);
+    const params = await provider.getConsensusParams(1);
 
     expect(axios.post).toHaveBeenCalled();
-    expect(info).toEqual(mockParams);
+    expect(params).toEqual(mockParams);
   });
 
   test('getStatus', async () => {
@@ -60,10 +60,10 @@ describe('JSON-RPC Provider', () => {
 
     // Create the provider
     const provider = new JSONRPCProvider(mockURL);
-    const info = await provider.getStatus();
+    const status = await provider.getStatus();
 
     expect(axios.post).toHaveBeenCalled();
-    expect(info).toEqual(mockStatus);
+    expect(status).toEqual(mockStatus);
   });
 
   test('getBlockNumber', async () => {
@@ -77,10 +77,10 @@ describe('JSON-RPC Provider', () => {
 
     // Create the provider
     const provider = new JSONRPCProvider(mockURL);
-    const info = await provider.getBlockNumber();
+    const blockNumber = await provider.getBlockNumber();
 
     expect(axios.post).toHaveBeenCalled();
-    expect(info).toEqual(expectedBlockNumber);
+    expect(blockNumber).toEqual(expectedBlockNumber);
   });
 
   describe('getBalance', () => {
@@ -152,14 +152,3 @@ describe('JSON-RPC Provider', () => {
     });
   });
 });
-
-/**
- * Converts a string into base64 representation
- * @param {string} str the raw string
- * @returns {string} the base64 representation of the string
- */
-const stringToBase64 = (str: string): string => {
-  const buffer = Buffer.from(str, 'utf-8');
-
-  return buffer.toString('base64');
-};
