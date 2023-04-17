@@ -1,20 +1,22 @@
 export interface ABCIResponse {
   response: {
-    ResponseBase: {
-      Error: {
-        // ABCIErrorKey
-        [key: string]: string;
-      } | null;
-      Data: string;
-      Events: null;
-      Log: string;
-      Info: string;
-    };
+    ResponseBase: ABCIResponseBase;
     Key: string | null;
     Value: string | null;
     Proof: MerkleProof | null;
     Height: string;
   };
+}
+
+export interface ABCIResponseBase {
+  Error: {
+    // ABCIErrorKey
+    [key: string]: string;
+  } | null;
+  Data: string | null;
+  Events: string | null;
+  Log: string;
+  Info: string;
 }
 
 interface MerkleProof {

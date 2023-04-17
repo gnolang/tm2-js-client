@@ -1,3 +1,5 @@
+import { ABCIResponseBase } from './spec/abci';
+
 export interface NetworkInfo {
   // flag indicating if networking is up
   listening: boolean;
@@ -123,7 +125,7 @@ export interface ConsensusState {
 
 export const consensusStateKey = 'height/round/step';
 
-export interface BlockResult {
+export interface BlockInfo {
   // block metadata information
   block_meta: BlockMeta;
   // combined block info
@@ -142,14 +144,15 @@ export interface Block {
   header: BlockHeader;
   // data contained in the block (txs)
   data: {
-    txs: object | null; // TODO define specific type
+    // base64 encoded transactions
+    txs: string[] | null;
   };
   // commit information
   last_commit: {
     // the block parts
     block_id: BlockID;
     // validator precommit information
-    precommits: string[] | null;
+    precommits: PrecommitInfo[] | null;
   };
 }
 
@@ -196,4 +199,62 @@ export interface BlockID {
     // the hash of the part
     hash: string | null;
   };
+}
+
+export interface PrecommitInfo {
+  // type of precommit
+  type: number;
+  // the block height for the precommit
+  height: string;
+  // the round for the precommit
+  round: string;
+  // the block ID info
+  block_id: BlockID;
+  // precommit creation time
+  timestamp: string;
+  // the address of the validator who signed
+  validator_address: string;
+  // the index of the signer (validator)
+  validator_index: string;
+  // the base64 encoded signature of the signer (validator)
+  signature: string;
+}
+
+export interface BlockResult {
+  // the block height
+  height: string;
+  // block result info
+  result: {
+    // transactions contained in the block
+    deliver_tx: DeliverTx[] | null;
+    // end-block info
+    end_block: EndBlock;
+    // begin-block info
+    begin_block: BeginBlock;
+  };
+}
+
+export interface DeliverTx {
+  // the transaction ABCI response
+  ResponseBase: ABCIResponseBase;
+  // transaction gas limit (decimal)
+  GasWanted: string;
+  // transaction actual gas used (decimal)
+  GasUsed: string;
+}
+
+export interface EndBlock {
+  // the block ABCI response
+  ResponseBase: ABCIResponseBase;
+  // validator update info
+  ValidatorUpdates: string | null;
+  // consensus params
+  ConsensusParams: string | null;
+  // block events
+  Events: string | null;
+}
+
+export interface BeginBlock {
+  // the block ABCI response
+  ResponseBase: ABCIResponseBase;
 }

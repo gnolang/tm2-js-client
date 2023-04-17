@@ -1,4 +1,10 @@
-import { BlockResult, ConsensusParams, NetworkInfo, Status } from './types';
+import {
+  BlockInfo,
+  BlockResult,
+  ConsensusParams,
+  NetworkInfo,
+  Status,
+} from './types';
 
 /**
  * Read-only abstraction for accessing blockchain data
@@ -31,7 +37,13 @@ export interface Provider {
    * Fetches the block at the specific height, if any
    * @param {number} height The height for querying
    */
-  getBlock(height: number): Promise<BlockResult>;
+  getBlock(height: number): Promise<BlockInfo>;
+
+  /**
+   * Fetches the block at the specific height, if any
+   * @param {number} height The height for querying
+   */
+  getBlockResult(height: number): Promise<BlockResult>;
 
   /**
    * Fetches the latest block number from the chain
@@ -72,9 +84,9 @@ export interface Provider {
   /**
    * Sends the transaction to the node for committing.
    * The transaction needs to be signed beforehand.
-   * @param {any} tx The signed transaction
+   * @param {any} tx The base64-encoded signed transaction
    */
-  sendTransaction(tx: any): Promise<any>; // TODO define type
+  sendTransaction(tx: string): Promise<any>; // TODO define type
 
   /**
    * Fetches the transaction using the transaction hash.
@@ -82,13 +94,6 @@ export interface Provider {
    * @param {any} hash The hash of the transaction
    */
   getTransaction(hash: any): Promise<any>; // TODO define type
-
-  /**
-   * Fetches transaction commit information, if any.
-   * Returns null if the transaction has not been committed yet
-   * @param {any} hash The hash of the transaction
-   */
-  getTransactionCommit(hash: any): Promise<any>; // TODO define type
 
   /**
    * Waits for the transaction to be committed on the chain

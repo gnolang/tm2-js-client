@@ -1,5 +1,6 @@
 import { Provider } from '../provider';
 import {
+  BlockInfo,
   BlockResult,
   ConsensusParams,
   ConsensusState,
@@ -159,6 +160,11 @@ export class WSProvider implements Provider {
     // Parse the response
     const abciResponse = this.parseResponse<ABCIResponse>(response);
 
+    // Make sure the response is initialized
+    if (!abciResponse.response.ResponseBase.Data) {
+      return 0;
+    }
+
     // Extract the balances
     const balancesRaw = Buffer.from(
       abciResponse.response.ResponseBase.Data,
@@ -183,9 +189,17 @@ export class WSProvider implements Provider {
     return 0;
   }
 
-  async getBlock(height: number): Promise<BlockResult> {
-    const response = await this.sendRequest<BlockResult>(
+  async getBlock(height: number): Promise<BlockInfo> {
+    const response = await this.sendRequest<BlockInfo>(
       newRequest(BlockEndpoint.BLOCK, [height.toString()])
+    );
+
+    return this.parseResponse<BlockInfo>(response);
+  }
+
+  async getBlockResult(height: number): Promise<BlockResult> {
+    const response = await this.sendRequest<BlockResult>(
+      newRequest(BlockEndpoint.BLOCK_RESULTS, [height.toString()])
     );
 
     return this.parseResponse<BlockResult>(response);
@@ -237,6 +251,11 @@ export class WSProvider implements Provider {
     // Parse the response
     const abciResponse = this.parseResponse<ABCIResponse>(response);
 
+    // Make sure the response is initialized
+    if (!abciResponse.response.ResponseBase.Data) {
+      return 0;
+    }
+
     try {
       // Parse the account
       const account: ABCIAccount = parseABCI<ABCIAccount>(
@@ -261,10 +280,6 @@ export class WSProvider implements Provider {
   }
 
   getTransaction(hash: any): Promise<any> {
-    return Promise.reject('implement me');
-  }
-
-  getTransactionCommit(hash: any): Promise<any> {
     return Promise.reject('implement me');
   }
 

@@ -1,5 +1,6 @@
 import { Provider } from '../provider';
 import {
+  BlockInfo,
   BlockResult,
   ConsensusParams,
   ConsensusState,
@@ -48,6 +49,11 @@ export class JSONRPCProvider implements Provider {
       }
     );
 
+    // Make sure the response is initialized
+    if (!abciResponse.response.ResponseBase.Data) {
+      return 0;
+    }
+
     // Extract the balances
     const balancesRaw = Buffer.from(
       abciResponse.response.ResponseBase.Data,
@@ -72,9 +78,15 @@ export class JSONRPCProvider implements Provider {
     return 0;
   }
 
-  async getBlock(height: number): Promise<BlockResult> {
-    return await RestService.post<BlockResult>(this.baseURL, {
+  async getBlock(height: number): Promise<BlockInfo> {
+    return await RestService.post<BlockInfo>(this.baseURL, {
       request: newRequest(BlockEndpoint.BLOCK, [height.toString()]),
+    });
+  }
+
+  async getBlockResult(height: number): Promise<BlockResult> {
+    return await RestService.post<BlockResult>(this.baseURL, {
+      request: newRequest(BlockEndpoint.BLOCK_RESULTS, [height.toString()]),
     });
   }
 
@@ -120,6 +132,11 @@ export class JSONRPCProvider implements Provider {
       }
     );
 
+    // Make sure the response is initialized
+    if (!abciResponse.response.ResponseBase.Data) {
+      return 0;
+    }
+
     try {
       // Parse the account
       const account: ABCIAccount = parseABCI<ABCIAccount>(
@@ -145,11 +162,7 @@ export class JSONRPCProvider implements Provider {
     return Promise.reject('implement me');
   }
 
-  getTransactionCommit(hash: any): Promise<any> {
-    return Promise.reject('implement me');
-  }
-
-  sendTransaction(tx: any): Promise<any> {
+  sendTransaction(tx: string): Promise<any> {
     return Promise.reject('implement me');
   }
 
