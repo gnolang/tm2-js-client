@@ -122,3 +122,78 @@ export interface ConsensusState {
 }
 
 export const consensusStateKey = 'height/round/step';
+
+export interface BlockResult {
+  // block metadata information
+  block_meta: BlockMeta;
+  // combined block info
+  block: Block;
+}
+
+export interface BlockMeta {
+  // the block parts
+  block_id: BlockID;
+  // the block header
+  header: BlockHeader;
+}
+
+export interface Block {
+  // the block header
+  header: BlockHeader;
+  // data contained in the block (txs)
+  data: {
+    txs: object | null; // TODO define specific type
+  };
+  // commit information
+  last_commit: {
+    // the block parts
+    block_id: BlockID;
+    // validator precommit information
+    precommits: string[] | null;
+  };
+}
+
+export interface BlockHeader {
+  // version of the node
+  version: string;
+  // the chain ID
+  chain_id: string;
+  // current height (decimal)
+  height: string;
+  // block creation time in string format (YY-MM-DDTHH-mm-ss.Z)
+  time: string;
+  // number of transactions (decimal)
+  num_txs: string;
+  // total number of transactions in the block (decimal)
+  total_txs: string;
+  // the current app version
+  app_version: string;
+  // parent block parts
+  last_block_id: BlockID;
+  // parent block commit hash
+  last_commit_hash: string | null;
+  // data hash (txs)
+  data_hash: string | null;
+  // validator set hash
+  validators_hash: string;
+  // consensus info hash
+  consensus_hash: string;
+  // app info hash
+  app_hash: string;
+  // last results hash
+  last_results_hash: string | null;
+  // address of the proposer
+  proposer_address: string;
+}
+
+export interface BlockID {
+  // the hash of the ID (block)
+  hash: string | null;
+  // part information
+  parts: {
+    // total number of parts (decimal)
+    total: string;
+    // the hash of the part
+    hash: string | null;
+  };
+}

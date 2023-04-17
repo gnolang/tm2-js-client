@@ -1,4 +1,4 @@
-import { ConsensusParams, NetworkInfo, Status } from './types';
+import { BlockResult, ConsensusParams, NetworkInfo, Status } from './types';
 
 /**
  * Read-only abstraction for accessing blockchain data
@@ -31,18 +31,12 @@ export interface Provider {
    * Fetches the block at the specific height, if any
    * @param {number} height The height for querying
    */
-  getBlock(height: number): Promise<any>; // TODO define type
+  getBlock(height: number): Promise<BlockResult>;
 
   /**
    * Fetches the latest block number from the chain
    */
   getBlockNumber(): Promise<number>; // TODO define type
-
-  /**
-   * Fetches the block at the specific height, with transactions
-   * @param {number} height The height for querying
-   */
-  getBlockWithTransactions(height: number): Promise<any>; // TODO define type
 
   // Network-specific methods //
 

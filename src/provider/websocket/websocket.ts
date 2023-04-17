@@ -1,5 +1,6 @@
 import { Provider } from '../provider';
 import {
+  BlockResult,
   ConsensusParams,
   ConsensusState,
   consensusStateKey,
@@ -8,7 +9,12 @@ import {
 } from '../types';
 import { RPCRequest, RPCResponse } from '../spec/jsonrpc';
 import { newRequest, parseABCI } from '../spec/utility';
-import { ABCIEndpoint, CommonEndpoint, ConsensusEndpoint } from '../endpoints';
+import {
+  ABCIEndpoint,
+  BlockEndpoint,
+  CommonEndpoint,
+  ConsensusEndpoint,
+} from '../endpoints';
 import { WebSocket } from 'ws';
 import { ABCIResponse } from '../spec/abci';
 import { ABCIAccount } from '../abciTypes';
@@ -177,8 +183,12 @@ export class WSProvider implements Provider {
     return 0;
   }
 
-  getBlock(height: number): Promise<any> {
-    return Promise.reject('implement me');
+  async getBlock(height: number): Promise<BlockResult> {
+    const response = await this.sendRequest<BlockResult>(
+      newRequest(BlockEndpoint.BLOCK, [height.toString()])
+    );
+
+    return this.parseResponse<BlockResult>(response);
   }
 
   async getBlockNumber(): Promise<number> {
@@ -193,10 +203,6 @@ export class WSProvider implements Provider {
     const stateStr: string = state.round_state[consensusStateKey] as string;
 
     return parseInt(stateStr.split('/')[0]);
-  }
-
-  getBlockWithTransactions(height: number): Promise<any> {
-    return Promise.reject('implement me');
   }
 
   async getConsensusParams(height: number): Promise<ConsensusParams> {

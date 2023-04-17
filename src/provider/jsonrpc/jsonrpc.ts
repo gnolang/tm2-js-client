@@ -1,5 +1,6 @@
 import { Provider } from '../provider';
 import {
+  BlockResult,
   ConsensusParams,
   ConsensusState,
   consensusStateKey,
@@ -8,7 +9,12 @@ import {
 } from '../types';
 import { RestService } from '../../services/rest/restService';
 import { newRequest, parseABCI } from '../spec/utility';
-import { ABCIEndpoint, CommonEndpoint, ConsensusEndpoint } from '../endpoints';
+import {
+  ABCIEndpoint,
+  BlockEndpoint,
+  CommonEndpoint,
+  ConsensusEndpoint,
+} from '../endpoints';
 import { ABCIResponse } from '../spec/abci';
 import { ABCIAccount } from '../abciTypes';
 
@@ -66,8 +72,10 @@ export class JSONRPCProvider implements Provider {
     return 0;
   }
 
-  getBlock(height: number): Promise<any> {
-    return Promise.reject('implement me');
+  async getBlock(height: number): Promise<BlockResult> {
+    return await RestService.post<BlockResult>(this.baseURL, {
+      request: newRequest(BlockEndpoint.BLOCK, [height.toString()]),
+    });
   }
 
   async getBlockNumber(): Promise<number> {
@@ -80,10 +88,6 @@ export class JSONRPCProvider implements Provider {
     const stateStr: string = state.round_state[consensusStateKey] as string;
 
     return parseInt(stateStr.split('/')[0]);
-  }
-
-  getBlockWithTransactions(height: number): Promise<any> {
-    return Promise.reject('implement me');
   }
 
   async getConsensusParams(height: number): Promise<ConsensusParams> {
