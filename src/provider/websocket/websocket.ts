@@ -2,11 +2,13 @@ import { Provider } from '../provider';
 import {
   BlockInfo,
   BlockResult,
+  BroadcastTxResult,
   ConsensusParams,
   ConsensusState,
   consensusStateKey,
   NetworkInfo,
   Status,
+  Tx,
 } from '../types';
 import { RPCRequest, RPCResponse } from '../spec/jsonrpc';
 import { newRequest, parseABCI } from '../spec/utility';
@@ -15,6 +17,7 @@ import {
   BlockEndpoint,
   CommonEndpoint,
   ConsensusEndpoint,
+  TransactionEndpoint,
 } from '../endpoints';
 import { WebSocket } from 'ws';
 import { ABCIResponse } from '../spec/abci';
@@ -279,15 +282,19 @@ export class WSProvider implements Provider {
     return this.parseResponse<Status>(response);
   }
 
-  getTransaction(hash: any): Promise<any> {
+  getTransaction(hash: string, height: number): Promise<Tx> {
     return Promise.reject('implement me');
   }
 
-  sendTransaction(tx: any): Promise<any> {
-    return Promise.reject('implement me');
+  async sendTransaction(tx: string): Promise<string> {
+    const response = await this.sendRequest<BroadcastTxResult>(
+      newRequest(TransactionEndpoint.BROADCAST_TX_SYNC, [tx])
+    );
+
+    return this.parseResponse<BroadcastTxResult>(response).hash;
   }
 
-  waitForTransaction(hash: any, timeout?: number): Promise<any> {
+  waitForTransaction(hash: string, timeout?: number): Promise<Tx> {
     return Promise.reject('implement me');
   }
 }

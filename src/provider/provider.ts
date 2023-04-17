@@ -4,6 +4,7 @@ import {
   ConsensusParams,
   NetworkInfo,
   Status,
+  Tx,
 } from './types';
 
 /**
@@ -84,21 +85,23 @@ export interface Provider {
   /**
    * Sends the transaction to the node for committing.
    * The transaction needs to be signed beforehand.
-   * @param {any} tx The base64-encoded signed transaction
+   * @param {string} tx The base64-encoded signed transaction
    */
-  sendTransaction(tx: string): Promise<any>; // TODO define type
+  sendTransaction(tx: string): Promise<string>;
 
   /**
    * Fetches the transaction using the transaction hash.
    * Returns null if transaction has not been committed.
-   * @param {any} hash The hash of the transaction
+   * @param {string} hash The hash of the transaction
+   * @param {number} height The block where the transaction is contained.
+   * This param is temporary, before smarter Tx indexing is added to TM2
    */
-  getTransaction(hash: any): Promise<any>; // TODO define type
+  getTransaction(hash: string, height: number): Promise<Tx>;
 
   /**
    * Waits for the transaction to be committed on the chain
-   * @param {any} hash The transaction hash
+   * @param {string} hash The transaction hash
    * @param {number} [timeout=15000] Optional wait timeout in MS
    */
-  waitForTransaction(hash: any, timeout?: number): Promise<any>; // TODO define type
+  waitForTransaction(hash: string, timeout?: number): Promise<Tx>;
 }

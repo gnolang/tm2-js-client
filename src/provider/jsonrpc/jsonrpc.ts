@@ -2,11 +2,13 @@ import { Provider } from '../provider';
 import {
   BlockInfo,
   BlockResult,
+  BroadcastTxResult,
   ConsensusParams,
   ConsensusState,
   consensusStateKey,
   NetworkInfo,
   Status,
+  Tx,
 } from '../types';
 import { RestService } from '../../services/rest/restService';
 import { newRequest, parseABCI } from '../spec/utility';
@@ -15,6 +17,7 @@ import {
   BlockEndpoint,
   CommonEndpoint,
   ConsensusEndpoint,
+  TransactionEndpoint,
 } from '../endpoints';
 import { ABCIResponse } from '../spec/abci';
 import { ABCIAccount } from '../abciTypes';
@@ -158,15 +161,20 @@ export class JSONRPCProvider implements Provider {
     });
   }
 
-  getTransaction(hash: any): Promise<any> {
+  getTransaction(hash: string, height: number): Promise<Tx> {
     return Promise.reject('implement me');
   }
 
-  sendTransaction(tx: string): Promise<any> {
-    return Promise.reject('implement me');
+  async sendTransaction(tx: string): Promise<string> {
+    const response: BroadcastTxResult =
+      await RestService.post<BroadcastTxResult>(this.baseURL, {
+        request: newRequest(TransactionEndpoint.BROADCAST_TX_SYNC, [tx]),
+      });
+
+    return response.hash;
   }
 
-  waitForTransaction(hash: any, timeout?: number): Promise<any> {
+  waitForTransaction(hash: string, timeout?: number): Promise<Tx> {
     return Promise.reject('implement me');
   }
 }

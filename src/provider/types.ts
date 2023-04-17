@@ -258,3 +258,42 @@ export interface BeginBlock {
   // the block ABCI response
   ResponseBase: ABCIResponseBase;
 }
+
+export interface Tx {
+  // specific message type
+  msg: any[];
+  // transaction costs (fee)
+  fee: TxFee;
+  // the signatures for the transaction
+  signatures: TxSignature[];
+  // memo attached to the transaction
+  memo: string;
+}
+
+export interface TxFee {
+  // gas limit
+  gas_wanted: number;
+  // gas fee details
+  gas_fee: {
+    denom: string;
+    amount: number;
+  };
+}
+
+export interface TxSignature {
+  // public key associated with the signature
+  pub_key: PublicKey;
+  // signature of the tx itself
+  signature: string;
+}
+
+export interface BroadcastTxResult {
+  error: {
+    // ABCIErrorKey
+    [key: string]: string;
+  } | null;
+  data: string | null;
+  Log: string;
+
+  hash: string;
+}
