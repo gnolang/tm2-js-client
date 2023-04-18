@@ -11,7 +11,12 @@ import {
   Tx,
 } from '../types';
 import { RestService } from '../../services/rest/restService';
-import { newRequest, parseABCI } from '../spec/utility';
+import {
+  base64ToUint8Array,
+  newRequest,
+  parseABCI,
+  uint8ArrayToBase64,
+} from '../spec/utility';
 import {
   ABCIEndpoint,
   BlockEndpoint,
@@ -21,6 +26,7 @@ import {
 } from '../endpoints';
 import { ABCIResponse } from '../spec/abci';
 import { ABCIAccount } from '../abciTypes';
+import { sha256 } from '@cosmjs/crypto';
 
 /**
  * Provider based on JSON-RPC HTTP requests
@@ -161,8 +167,30 @@ export class JSONRPCProvider implements Provider {
     });
   }
 
-  getTransaction(hash: string, height: number): Promise<Tx> {
-    return Promise.reject('implement me');
+  async getTransaction(hash: string, height: number): Promise<Tx | null> {
+    const block: BlockInfo = await this.getBlock(height);
+
+    // Check if there are any transactions at all in the block
+    if (!block.block.data.txs || block.block.data.txs.length == 0) {
+      return null;
+    }
+
+    for (let tx of block.block.data.txs) {
+      // Decode the base-64 transaction
+      const txRaw = base64ToUint8Array(tx);
+
+      // Calculate the transaction hash
+      const txHash = sha256(txRaw);
+
+      // TODO change the type of hash to be a byte slice, instead of base64 string
+      if (uint8ArrayToBase64(txHash) == hash) {
+        // Unmarshal it from amino
+        // TODO
+        return null;
+      }
+    }
+
+    return null;
   }
 
   async sendTransaction(tx: string): Promise<string> {

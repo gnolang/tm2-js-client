@@ -282,7 +282,7 @@ export class WSProvider implements Provider {
     return this.parseResponse<Status>(response);
   }
 
-  getTransaction(hash: string, height: number): Promise<Tx> {
+  getTransaction(hash: string, height: number): Promise<Tx | null> {
     return Promise.reject('implement me');
   }
 

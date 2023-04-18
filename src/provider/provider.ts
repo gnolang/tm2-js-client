@@ -96,12 +96,17 @@ export interface Provider {
    * @param {number} height The block where the transaction is contained.
    * This param is temporary, before smarter Tx indexing is added to TM2
    */
-  getTransaction(hash: string, height: number): Promise<Tx>;
+  getTransaction(hash: string, height: number): Promise<Tx | null>;
 
   /**
    * Waits for the transaction to be committed on the chain
    * @param {string} hash The transaction hash
+   * @param {number} [fromHeight=latest] The block height used to begin the search
    * @param {number} [timeout=15000] Optional wait timeout in MS
    */
-  waitForTransaction(hash: string, timeout?: number): Promise<Tx>;
+  waitForTransaction(
+    hash: string,
+    fromHeight?: number,
+    timeout?: number
+  ): Promise<Tx>;
 }
