@@ -8,7 +8,6 @@ import {
   consensusStateKey,
   NetworkInfo,
   Status,
-  Tx,
 } from '../types';
 import { RestService } from '../../services/rest/restService';
 import {
@@ -27,6 +26,7 @@ import {
 import { ABCIResponse } from '../spec/abci';
 import { ABCIAccount } from '../abciTypes';
 import { sha256 } from '@cosmjs/crypto';
+import { Tx } from '../../proto/tm2/tx';
 
 /**
  * Provider based on JSON-RPC HTTP requests
@@ -167,32 +167,6 @@ export class JSONRPCProvider implements Provider {
     });
   }
 
-  async getTransaction(hash: string, height: number): Promise<Tx | null> {
-    const block: BlockInfo = await this.getBlock(height);
-
-    // Check if there are any transactions at all in the block
-    if (!block.block.data.txs || block.block.data.txs.length == 0) {
-      return null;
-    }
-
-    for (let tx of block.block.data.txs) {
-      // Decode the base-64 transaction
-      const txRaw = base64ToUint8Array(tx);
-
-      // Calculate the transaction hash
-      const txHash = sha256(txRaw);
-
-      // TODO change the type of hash to be a byte slice, instead of base64 string
-      if (uint8ArrayToBase64(txHash) == hash) {
-        // Unmarshal it from amino
-        // TODO
-        return null;
-      }
-    }
-
-    return null;
-  }
-
   async sendTransaction(tx: string): Promise<string> {
     const response: BroadcastTxResult =
       await RestService.post<BroadcastTxResult>(this.baseURL, {
@@ -202,7 +176,64 @@ export class JSONRPCProvider implements Provider {
     return response.hash;
   }
 
-  waitForTransaction(hash: string, timeout?: number): Promise<Tx> {
-    return Promise.reject('implement me');
+  async waitForTransaction(
+    hash: string,
+    fromHeight?: number,
+    timeout?: number
+  ): Promise<Tx> {
+    return new Promise(async (resolve, reject) => {
+      // Fetch the starting point
+      let currentHeight = fromHeight ? fromHeight : await this.getBlockNumber();
+
+      const fetchInterval = setInterval(async () => {
+        // Fetch the latest block height
+        const latestHeight = await this.getBlockNumber();
+
+        if (latestHeight < currentHeight) {
+          // No need to parse older blocks
+          return;
+        }
+
+        for (
+          let blockNum = currentHeight;
+          blockNum <= latestHeight;
+          blockNum++
+        ) {
+          // Fetch the block from the chain
+          const block: BlockInfo = await this.getBlock(blockNum);
+
+          // Check if there are any transactions at all in the block
+          if (!block.block.data.txs || block.block.data.txs.length == 0) {
+            throw new Error('no transactions in block');
+          }
+
+          // Find the transaction among the block transactions
+          for (const tx of block.block.data.txs) {
+            // Decode the base-64 transaction
+            const txRaw = base64ToUint8Array(tx);
+
+            // Calculate the transaction hash
+            const txHash = sha256(txRaw);
+
+            // TODO change the type of hash to be a byte slice, instead of base64 string
+            if (uint8ArrayToBase64(txHash) == hash) {
+              // Decode the transaction from amino
+              resolve(Tx.decode(txRaw));
+            }
+          }
+        }
+
+        currentHeight = latestHeight + 1;
+      }, 1000);
+
+      if (!timeout) {
+        setTimeout(() => {
+          // Clear the fetch interval
+          clearInterval(fetchInterval);
+
+          reject('transaction fetch timeout');
+        }, timeout);
+      }
+    });
   }
 }

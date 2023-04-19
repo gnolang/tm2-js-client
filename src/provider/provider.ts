@@ -4,8 +4,8 @@ import {
   ConsensusParams,
   NetworkInfo,
   Status,
-  Tx,
 } from './types';
+import { Tx } from '../proto/tm2/tx';
 
 /**
  * Read-only abstraction for accessing blockchain data
@@ -88,15 +88,6 @@ export interface Provider {
    * @param {string} tx The base64-encoded signed transaction
    */
   sendTransaction(tx: string): Promise<string>;
-
-  /**
-   * Fetches the transaction using the transaction hash.
-   * Returns null if transaction has not been committed.
-   * @param {string} hash The hash of the transaction
-   * @param {number} height The block where the transaction is contained.
-   * This param is temporary, before smarter Tx indexing is added to TM2
-   */
-  getTransaction(hash: string, height: number): Promise<Tx | null>;
 
   /**
    * Waits for the transaction to be committed on the chain

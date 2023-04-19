@@ -8,7 +8,6 @@ import {
   consensusStateKey,
   NetworkInfo,
   Status,
-  Tx,
 } from '../types';
 import { RPCRequest, RPCResponse } from '../spec/jsonrpc';
 import { newRequest, parseABCI } from '../spec/utility';
@@ -22,6 +21,7 @@ import {
 import { WebSocket } from 'ws';
 import { ABCIResponse } from '../spec/abci';
 import { ABCIAccount } from '../abciTypes';
+import { Tx } from '../../proto/tm2/tx';
 
 /**
  * Provider based on WS JSON-RPC HTTP requests
@@ -280,10 +280,6 @@ export class WSProvider implements Provider {
     );
 
     return this.parseResponse<Status>(response);
-  }
-
-  getTransaction(hash: string, height: number): Promise<Tx | null> {
-    return Promise.reject('implement me');
   }
 
   async sendTransaction(tx: string): Promise<string> {
