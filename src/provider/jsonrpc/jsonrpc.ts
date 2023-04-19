@@ -217,6 +217,9 @@ export class JSONRPCProvider implements Provider {
 
             // TODO change the type of hash to be a byte slice, instead of base64 string
             if (uint8ArrayToBase64(txHash) == hash) {
+              // Clear the interval
+              clearInterval(fetchInterval);
+
               // Decode the transaction from amino
               resolve(Tx.decode(txRaw));
             }
