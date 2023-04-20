@@ -1,17 +1,26 @@
 import {
+  BeginBlock,
+  BlockInfo,
+  BlockResult,
+  BroadcastTxResult,
   ConsensusParams,
-  ConsensusState,
-  consensusStateKey,
+  EndBlock,
   NetworkInfo,
   Status,
 } from '../types';
 import { WebSocketServer } from 'ws';
 import { WSProvider } from '../websocket/websocket';
-import { newResponse, stringToBase64 } from '../spec/utility';
+import {
+  newResponse,
+  stringToBase64,
+  uint8ArrayToBase64,
+} from '../spec/utility';
 import { ABCIAccount } from '../abciTypes';
-import { ABCIResponse } from '../spec/abci';
+import { ABCIResponse, ABCIResponseBase } from '../spec/abci';
+import { Tx } from '../../proto/tm2/tx';
+import { sha256 } from '@cosmjs/crypto';
+import { CommonEndpoint } from '../endpoints';
 
-// TODO Resolve wss contention
 describe.skip('WS Provider', () => {
   const wsPort = 8545;
   const wsHost = 'localhost';
@@ -85,8 +94,8 @@ describe.skip('WS Provider', () => {
     expect(info).toEqual(mockInfo);
   });
 
-  test('getStatus', async () => {
-    const mockStatus: Status = {
+  const getEmptyStatus = (): Status => {
+    return {
       node_info: {
         version_set: [],
         net_address: '',
@@ -116,7 +125,10 @@ describe.skip('WS Provider', () => {
         voting_power: '',
       },
     };
+  };
 
+  test('getStatus', async () => {
+    const mockStatus: Status = getEmptyStatus();
     mockStatus.validator_info.address = 'address';
 
     // Set the response
@@ -148,26 +160,6 @@ describe.skip('WS Provider', () => {
 
     const params: ConsensusParams = await wsProvider.getConsensusParams(1);
     expect(params).toEqual(mockParams);
-  });
-
-  test('getBlockNumber', async () => {
-    const expectedBlockNumber = 10;
-    const mockState: ConsensusState = {
-      round_state: {
-        start_time: '',
-        proposal_block_hash: '',
-        locked_block_hash: '',
-        valid_block_hash: '',
-        height_vote_set: {},
-      },
-    };
-    mockState.round_state[consensusStateKey] = `${expectedBlockNumber}/0/0`;
-
-    // Set the response
-    setHandler<ConsensusState>(mockState);
-
-    const blockNumber: number = await wsProvider.getBlockNumber();
-    expect(blockNumber).toBe(expectedBlockNumber);
   });
 
   describe('getSequence', () => {
@@ -216,5 +208,200 @@ describe.skip('WS Provider', () => {
       );
       expect(balance).toBe(expected);
     });
+  });
+
+  test('getBlockNumber', async () => {
+    const expectedBlockNumber = 10;
+    const mockStatus: Status = getEmptyStatus();
+    mockStatus.sync_info.latest_block_height = `${expectedBlockNumber}`;
+
+    // Set the response
+    setHandler<Status>(mockStatus);
+
+    const blockNumber: number = await wsProvider.getBlockNumber();
+    expect(blockNumber).toBe(expectedBlockNumber);
+  });
+
+  test('sendTransaction', async () => {
+    const mockResult: BroadcastTxResult = {
+      error: null,
+      data: null,
+      Log: '',
+      hash: 'hash123',
+    };
+
+    // Set the response
+    setHandler<BroadcastTxResult>(mockResult);
+
+    const hash: string = await wsProvider.sendTransaction('encoded tx');
+    expect(hash).toBe(mockResult.hash);
+  });
+
+  const getEmptyBlockInfo = (): BlockInfo => {
+    const emptyHeader = {
+      version: '',
+      chain_id: '',
+      height: '',
+      time: '',
+      num_txs: '',
+      total_txs: '',
+      app_version: '',
+      last_block_id: {
+        hash: null,
+        parts: {
+          total: '',
+          hash: null,
+        },
+      },
+      last_commit_hash: '',
+      data_hash: '',
+      validators_hash: '',
+      consensus_hash: '',
+      app_hash: '',
+      last_results_hash: '',
+      proposer_address: '',
+    };
+
+    const emptyBlockID = {
+      hash: null,
+      parts: {
+        total: '',
+        hash: null,
+      },
+    };
+
+    return {
+      block_meta: {
+        block_id: emptyBlockID,
+        header: emptyHeader,
+      },
+      block: {
+        header: emptyHeader,
+        data: {
+          txs: null,
+        },
+        last_commit: {
+          block_id: emptyBlockID,
+          precommits: null,
+        },
+      },
+    };
+  };
+
+  test('getBlock', async () => {
+    const mockInfo: BlockInfo = getEmptyBlockInfo();
+
+    // Set the response
+    setHandler<BlockInfo>(mockInfo);
+
+    const result: BlockInfo = await wsProvider.getBlock(0);
+    expect(result).toEqual(mockInfo);
+  });
+
+  const getEmptyBlockResult = (): BlockResult => {
+    const emptyResponseBase: ABCIResponseBase = {
+      Error: null,
+      Data: null,
+      Events: null,
+      Log: '',
+      Info: '',
+    };
+
+    const emptyEndBlock: EndBlock = {
+      ResponseBase: emptyResponseBase,
+      ValidatorUpdates: null,
+      ConsensusParams: null,
+      Events: null,
+    };
+
+    const emptyStartBlock: BeginBlock = {
+      ResponseBase: emptyResponseBase,
+    };
+
+    return {
+      height: '',
+      result: {
+        deliver_tx: null,
+        end_block: emptyEndBlock,
+        begin_block: emptyStartBlock,
+      },
+    };
+  };
+
+  test('getBlockResult', async () => {
+    const mockResult: BlockResult = getEmptyBlockResult();
+
+    // Set the response
+    setHandler<BlockResult>(mockResult);
+
+    const result: BlockResult = await wsProvider.getBlockResult(0);
+    expect(result).toEqual(mockResult);
+  });
+
+  test('waitForTransaction', async () => {
+    const emptyBlock: BlockInfo = getEmptyBlockInfo();
+    emptyBlock.block.data = {
+      txs: [],
+    };
+
+    const tx: Tx = {
+      messages: [],
+      signatures: [],
+      memo: 'tx memo',
+    };
+
+    const encodedTx = Tx.encode(tx).finish();
+    const txHash = sha256(encodedTx);
+
+    const filledBlock: BlockInfo = getEmptyBlockInfo();
+    filledBlock.block.data = {
+      txs: [uint8ArrayToBase64(encodedTx)],
+    };
+
+    const latestBlock = 5;
+    const startBlock = latestBlock - 2;
+
+    const mockStatus: Status = getEmptyStatus();
+    mockStatus.sync_info.latest_block_height = `${latestBlock}`;
+
+    const responseMap: Map<number, BlockInfo> = new Map<number, BlockInfo>([
+      [latestBlock, filledBlock],
+      [latestBlock - 1, emptyBlock],
+      [startBlock, emptyBlock],
+    ]);
+
+    // Set the response
+    server.on('connection', (socket) => {
+      socket.on('message', (data) => {
+        const request = JSON.parse(data.toString());
+
+        if (request.method == CommonEndpoint.STATUS) {
+          const response = newResponse<Status>(mockStatus);
+          response.id = request.id;
+
+          socket.send(JSON.stringify(response));
+
+          return;
+        }
+
+        if (!request.params) {
+          return;
+        }
+
+        const blockNum: number = +(request.params[0] as string[]);
+        const info = responseMap.get(blockNum);
+
+        const response = newResponse<BlockInfo>(info);
+        response.id = request.id;
+
+        socket.send(JSON.stringify(response));
+      });
+    });
+
+    const receivedTx: Tx = await wsProvider.waitForTransaction(
+      uint8ArrayToBase64(txHash),
+      startBlock
+    );
+    expect(receivedTx).toEqual(tx);
   });
 });
