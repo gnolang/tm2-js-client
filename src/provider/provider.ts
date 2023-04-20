@@ -16,7 +16,7 @@ export interface Provider {
   /**
    * Fetches the denomination balance of the account
    * @param {string} address The bech32 address of the account
-   * @param {string} [denomination="ugnot"] The balance denomination
+   * @param {string} [denomination=ugnot] The balance denomination
    * @param {number} [height=0] The height for querying.
    * If omitted, the latest height is used
    */

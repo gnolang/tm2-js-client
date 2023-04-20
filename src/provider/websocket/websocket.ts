@@ -4,13 +4,11 @@ import {
   BlockResult,
   BroadcastTxResult,
   ConsensusParams,
-  ConsensusState,
-  consensusStateKey,
   NetworkInfo,
   Status,
 } from '../types';
 import { RPCRequest, RPCResponse } from '../spec/jsonrpc';
-import { newRequest, parseABCI } from '../spec/utility';
+import { newRequest } from '../spec/utility';
 import {
   ABCIEndpoint,
   BlockEndpoint,
@@ -20,8 +18,12 @@ import {
 } from '../endpoints';
 import { WebSocket } from 'ws';
 import { ABCIResponse } from '../spec/abci';
-import { ABCIAccount } from '../abciTypes';
 import { Tx } from '../../proto/tm2/tx';
+import {
+  extractBalanceFromResponse,
+  extractSequenceFromResponse,
+  waitForTransaction,
+} from '../common';
 
 /**
  * Provider based on WS JSON-RPC HTTP requests
@@ -163,33 +165,10 @@ export class WSProvider implements Provider {
     // Parse the response
     const abciResponse = this.parseResponse<ABCIResponse>(response);
 
-    // Make sure the response is initialized
-    if (!abciResponse.response.ResponseBase.Data) {
-      return 0;
-    }
-
-    // Extract the balances
-    const balancesRaw = Buffer.from(
+    return extractBalanceFromResponse(
       abciResponse.response.ResponseBase.Data,
-      'base64'
-    ).toString();
-
-    // Find the correct balance denomination
-    const balances: string[] = balancesRaw.split(',');
-    if (balances.length < 1) {
-      return 0;
-    }
-
-    // Find the correct denomination
-    const pattern = new RegExp(`^(\\d+)${denomination}$`);
-    for (const balance of balances) {
-      const match = balance.match(pattern);
-      if (match) {
-        return parseInt(match[1], 10);
-      }
-    }
-
-    return 0;
+      denomination ? denomination : 'ugnot'
+    );
   }
 
   async getBlock(height: number): Promise<BlockInfo> {
@@ -209,17 +188,10 @@ export class WSProvider implements Provider {
   }
 
   async getBlockNumber(): Promise<number> {
-    const response = await this.sendRequest<ConsensusState>(
-      newRequest(ConsensusEndpoint.CONSENSUS_STATE)
-    );
+    // Fetch the status for the latest info
+    const status = await this.getStatus();
 
-    // Parse the response into state
-    const state = this.parseResponse<ConsensusState>(response);
-
-    // Get the height / round / step info
-    const stateStr: string = state.round_state[consensusStateKey] as string;
-
-    return parseInt(stateStr.split('/')[0]);
+    return parseInt(status.sync_info.latest_block_height);
   }
 
   async getConsensusParams(height: number): Promise<ConsensusParams> {
@@ -254,24 +226,7 @@ export class WSProvider implements Provider {
     // Parse the response
     const abciResponse = this.parseResponse<ABCIResponse>(response);
 
-    // Make sure the response is initialized
-    if (!abciResponse.response.ResponseBase.Data) {
-      return 0;
-    }
-
-    try {
-      // Parse the account
-      const account: ABCIAccount = parseABCI<ABCIAccount>(
-        abciResponse.response.ResponseBase.Data
-      );
-
-      return parseInt(account.BaseAccount.sequence, 10);
-    } catch (e) {
-      // Account not initialized,
-      // return default value - 0
-    }
-
-    return 0;
+    return extractSequenceFromResponse(abciResponse.response.ResponseBase.Data);
   }
 
   async getStatus(): Promise<Status> {
@@ -290,7 +245,11 @@ export class WSProvider implements Provider {
     return this.parseResponse<BroadcastTxResult>(response).hash;
   }
 
-  waitForTransaction(hash: string, timeout?: number): Promise<Tx> {
-    return Promise.reject('implement me');
+  waitForTransaction(
+    hash: string,
+    fromHeight?: number,
+    timeout?: number
+  ): Promise<Tx> {
+    return waitForTransaction(this, hash, fromHeight, timeout);
   }
 }

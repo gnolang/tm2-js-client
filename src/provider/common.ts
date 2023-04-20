@@ -1,0 +1,143 @@
+import { ABCIAccount } from './abciTypes';
+import {
+  base64ToUint8Array,
+  parseABCI,
+  uint8ArrayToBase64,
+} from './spec/utility';
+import { Provider } from './provider';
+import { Tx } from '../proto/tm2/tx';
+import { BlockInfo } from './types';
+import { sha256 } from '@cosmjs/crypto';
+
+/**
+ * Extracts the specific balance denomination from the ABCI response
+ * @param {string | null} abciData the base64-encoded ABCI data
+ * @param {string} denomination the required denomination
+ * @returns {number} the balance for the denomination, if any (0 if none)
+ */
+export const extractBalanceFromResponse = (
+  abciData: string | null,
+  denomination: string
+): number => {
+  // Make sure the response is initialized
+  if (!abciData) {
+    return 0;
+  }
+
+  // Extract the balances
+  const balancesRaw = Buffer.from(abciData, 'base64').toString();
+
+  // Find the correct balance denomination
+  const balances: string[] = balancesRaw.split(',');
+  if (balances.length < 1) {
+    return 0;
+  }
+
+  // Find the correct denomination
+  const pattern = new RegExp(`^(\\d+)${denomination}$`);
+  for (const balance of balances) {
+    const match = balance.match(pattern);
+    if (match) {
+      return parseInt(match[1], 10);
+    }
+  }
+
+  return 0;
+};
+
+/**
+ * Extracts the account sequence from the ABCI response
+ * @param {string | null} abciData the base64-encoded ABCI data
+ * @returns {number}
+ */
+export const extractSequenceFromResponse = (
+  abciData: string | null
+): number => {
+  // Make sure the response is initialized
+  if (!abciData) {
+    return 0;
+  }
+
+  try {
+    // Parse the account
+    const account: ABCIAccount = parseABCI<ABCIAccount>(abciData);
+
+    return parseInt(account.BaseAccount.sequence, 10);
+  } catch (e) {}
+
+  // Account not initialized,
+  // return default value (0)
+  return 0;
+};
+
+/**
+ * Waits for the transaction to be committed to a block in the chain
+ * of the specified provider. This helper does a search for incoming blocks
+ * and checks if a transaction
+ * @param {Provider} provider the provider instance
+ * @param {string} hash the base64-encoded hash of the transaction
+ * @param {number} [fromHeight=latest] the starting height for the search. If omitted, it is the latest block in the chain
+ * @param {number} [timeout=15000] the timeout in MS for the search
+ * @returns {Promise<Tx>}
+ */
+export const waitForTransaction = async (
+  provider: Provider,
+  hash: string,
+  fromHeight?: number,
+  timeout?: number
+): Promise<Tx> => {
+  return new Promise(async (resolve, reject) => {
+    // Fetch the starting point
+    let currentHeight = fromHeight
+      ? fromHeight
+      : await provider.getBlockNumber();
+
+    const exitTimeout = timeout ? timeout : 15000;
+
+    const fetchInterval = setInterval(async () => {
+      // Fetch the latest block height
+      const latestHeight = await provider.getBlockNumber();
+
+      if (latestHeight < currentHeight) {
+        // No need to parse older blocks
+        return;
+      }
+
+      for (let blockNum = currentHeight; blockNum <= latestHeight; blockNum++) {
+        // Fetch the block from the chain
+        const block: BlockInfo = await provider.getBlock(blockNum);
+
+        // Check if there are any transactions at all in the block
+        if (!block.block.data.txs || block.block.data.txs.length == 0) {
+          continue;
+        }
+
+        // Find the transaction among the block transactions
+        for (const tx of block.block.data.txs) {
+          // Decode the base-64 transaction
+          const txRaw = base64ToUint8Array(tx);
+
+          // Calculate the transaction hash
+          const txHash = sha256(txRaw);
+
+          if (uint8ArrayToBase64(txHash) == hash) {
+            // Clear the interval
+            clearInterval(fetchInterval);
+
+            // Decode the transaction from amino
+            resolve(Tx.decode(txRaw));
+          }
+        }
+      }
+
+      currentHeight = latestHeight + 1;
+    }, 1000);
+
+    setTimeout(() => {
+      // Clear the fetch interval
+      clearInterval(fetchInterval);
+
+      reject('transaction fetch timeout');
+    }, exitTimeout);
+  });
+};

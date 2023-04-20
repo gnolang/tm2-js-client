@@ -8,12 +8,7 @@ import {
   Status,
 } from '../types';
 import { RestService } from '../../services/rest/restService';
-import {
-  base64ToUint8Array,
-  newRequest,
-  parseABCI,
-  uint8ArrayToBase64,
-} from '../spec/utility';
+import { newRequest } from '../spec/utility';
 import {
   ABCIEndpoint,
   BlockEndpoint,
@@ -22,9 +17,12 @@ import {
   TransactionEndpoint,
 } from '../endpoints';
 import { ABCIResponse } from '../spec/abci';
-import { ABCIAccount } from '../abciTypes';
-import { sha256 } from '@cosmjs/crypto';
 import { Tx } from '../../proto/tm2/tx';
+import {
+  extractBalanceFromResponse,
+  extractSequenceFromResponse,
+  waitForTransaction,
+} from '../common';
 
 /**
  * Provider based on JSON-RPC HTTP requests
@@ -56,33 +54,10 @@ export class JSONRPCProvider implements Provider {
       }
     );
 
-    // Make sure the response is initialized
-    if (!abciResponse.response.ResponseBase.Data) {
-      return 0;
-    }
-
-    // Extract the balances
-    const balancesRaw = Buffer.from(
+    return extractBalanceFromResponse(
       abciResponse.response.ResponseBase.Data,
-      'base64'
-    ).toString();
-
-    // Find the correct balance denomination
-    const balances: string[] = balancesRaw.split(',');
-    if (balances.length < 1) {
-      return 0;
-    }
-
-    // Find the correct denomination
-    const pattern = new RegExp(`^(\\d+)${denomination}$`);
-    for (const balance of balances) {
-      const match = balance.match(pattern);
-      if (match) {
-        return parseInt(match[1], 10);
-      }
-    }
-
-    return 0;
+      denomination ? denomination : 'ugnot'
+    );
   }
 
   async getBlock(height: number): Promise<BlockInfo> {
@@ -134,24 +109,7 @@ export class JSONRPCProvider implements Provider {
       }
     );
 
-    // Make sure the response is initialized
-    if (!abciResponse.response.ResponseBase.Data) {
-      return 0;
-    }
-
-    try {
-      // Parse the account
-      const account: ABCIAccount = parseABCI<ABCIAccount>(
-        abciResponse.response.ResponseBase.Data
-      );
-
-      return parseInt(account.BaseAccount.sequence, 10);
-    } catch (e) {
-      // Account not initialized,
-      // return default value - 0
-    }
-
-    return 0;
+    return extractSequenceFromResponse(abciResponse.response.ResponseBase.Data);
   }
 
   async getStatus(): Promise<Status> {
@@ -174,61 +132,6 @@ export class JSONRPCProvider implements Provider {
     fromHeight?: number,
     timeout?: number
   ): Promise<Tx> {
-    return new Promise(async (resolve, reject) => {
-      // Fetch the starting point
-      let currentHeight = fromHeight ? fromHeight : await this.getBlockNumber();
-
-      const fetchInterval = setInterval(async () => {
-        // Fetch the latest block height
-        const latestHeight = await this.getBlockNumber();
-
-        if (latestHeight < currentHeight) {
-          // No need to parse older blocks
-          return;
-        }
-
-        for (
-          let blockNum = currentHeight;
-          blockNum <= latestHeight;
-          blockNum++
-        ) {
-          // Fetch the block from the chain
-          const block: BlockInfo = await this.getBlock(blockNum);
-
-          // Check if there are any transactions at all in the block
-          if (!block.block.data.txs || block.block.data.txs.length == 0) {
-            continue;
-          }
-
-          // Find the transaction among the block transactions
-          for (const tx of block.block.data.txs) {
-            // Decode the base-64 transaction
-            const txRaw = base64ToUint8Array(tx);
-
-            // Calculate the transaction hash
-            const txHash = sha256(txRaw);
-
-            if (uint8ArrayToBase64(txHash) == hash) {
-              // Clear the interval
-              clearInterval(fetchInterval);
-
-              // Decode the transaction from amino
-              resolve(Tx.decode(txRaw));
-            }
-          }
-        }
-
-        currentHeight = latestHeight + 1;
-      }, 1000);
-
-      if (timeout) {
-        setTimeout(() => {
-          // Clear the fetch interval
-          clearInterval(fetchInterval);
-
-          reject('transaction fetch timeout');
-        }, timeout);
-      }
-    });
+    return waitForTransaction(this, hash, fromHeight, timeout);
   }
 }

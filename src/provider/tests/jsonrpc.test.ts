@@ -1,16 +1,25 @@
 import {
+  BlockInfo,
+  BlockResult,
+  BroadcastTxResult,
   ConsensusParams,
-  ConsensusState,
-  consensusStateKey,
   NetworkInfo,
   Status,
 } from '../types';
 import axios from 'axios';
 import { JSONRPCProvider } from '../jsonrpc/jsonrpc';
-import { newResponse, stringToBase64 } from '../spec/utility';
+import {
+  newResponse,
+  stringToBase64,
+  uint8ArrayToBase64,
+} from '../spec/utility';
 import { mock } from 'jest-mock-extended';
 import { ABCIResponse } from '../spec/abci';
 import { ABCIAccount } from '../abciTypes';
+import { RPCRequest } from '../spec/jsonrpc';
+import { Tx } from '../../proto/tm2/tx';
+import { sha256 } from '@cosmjs/crypto';
+import { CommonEndpoint } from '../endpoints';
 
 jest.mock('axios');
 
@@ -32,6 +41,116 @@ describe('JSON-RPC Provider', () => {
 
     expect(axios.post).toHaveBeenCalled();
     expect(info).toEqual(mockInfo);
+  });
+
+  test('getBlock', async () => {
+    const mockInfo: BlockInfo = mock<BlockInfo>();
+
+    mockedAxios.post.mockResolvedValue({
+      data: newResponse<BlockInfo>(mockInfo),
+    });
+
+    // Create the provider
+    const provider = new JSONRPCProvider(mockURL);
+    const info = await provider.getBlock(0);
+
+    expect(axios.post).toHaveBeenCalled();
+    expect(info).toEqual(mockInfo);
+  });
+
+  test('getBlockResult', async () => {
+    const mockResult: BlockResult = mock<BlockResult>();
+
+    mockedAxios.post.mockResolvedValue({
+      data: newResponse<BlockResult>(mockResult),
+    });
+
+    // Create the provider
+    const provider = new JSONRPCProvider(mockURL);
+    const result = await provider.getBlockResult(0);
+
+    expect(axios.post).toHaveBeenCalled();
+    expect(result).toEqual(mockResult);
+  });
+
+  test('sendTransaction', async () => {
+    const mockResult: BroadcastTxResult = mock<BroadcastTxResult>();
+    mockResult.hash = 'hash123';
+
+    mockedAxios.post.mockResolvedValue({
+      data: newResponse<BroadcastTxResult>(mockResult),
+    });
+
+    // Create the provider
+    const provider = new JSONRPCProvider(mockURL);
+    const hash = await provider.sendTransaction('encoded tx');
+
+    expect(axios.post).toHaveBeenCalled();
+    expect(hash).toEqual(mockResult.hash);
+  });
+
+  test('waitForTransaction', async () => {
+    const emptyBlock: BlockInfo = mock<BlockInfo>();
+    emptyBlock.block.data = {
+      txs: [],
+    };
+
+    const tx: Tx = {
+      messages: [],
+      signatures: [],
+      memo: 'tx memo',
+    };
+
+    const encodedTx = Tx.encode(tx).finish();
+    const txHash = sha256(encodedTx);
+
+    const filledBlock: BlockInfo = mock<BlockInfo>();
+    filledBlock.block.data = {
+      txs: [uint8ArrayToBase64(encodedTx)],
+    };
+
+    const latestBlock = 5;
+    const startBlock = latestBlock - 2;
+
+    const mockStatus: Status = mock<Status>();
+    mockStatus.sync_info.latest_block_height = `${latestBlock}`;
+
+    const responseMap: Map<number, BlockInfo> = new Map<number, BlockInfo>([
+      [latestBlock, filledBlock],
+      [latestBlock - 1, emptyBlock],
+      [startBlock, emptyBlock],
+    ]);
+
+    mockedAxios.post.mockImplementation((url, params, config): Promise<any> => {
+      const request = params as RPCRequest;
+
+      if (request.method == CommonEndpoint.STATUS) {
+        return Promise.resolve({
+          data: newResponse<Status>(mockStatus),
+        });
+      }
+
+      if (!request.params) {
+        return Promise.reject('invalid params');
+      }
+
+      const blockNum: number = +(request.params[0] as string[]);
+      const info = responseMap.get(blockNum);
+
+      return Promise.resolve({
+        data: newResponse<BlockInfo>(info),
+      });
+    });
+
+    // Create the provider
+    const provider = new JSONRPCProvider(mockURL);
+    const receivedTx = await provider.waitForTransaction(
+      uint8ArrayToBase64(txHash),
+      startBlock
+    );
+
+    expect(axios.post).toHaveBeenCalled();
+    expect(receivedTx).toEqual(tx);
   });
 
   test('getConsensusParams', async () => {
@@ -68,11 +187,11 @@ describe('JSON-RPC Provider', () => {
 
   test('getBlockNumber', async () => {
     const expectedBlockNumber = 10;
-    const mockState: ConsensusState = mock<ConsensusState>();
-    mockState.round_state[consensusStateKey] = `${expectedBlockNumber}/0/0`;
+    const mockStatus: Status = mock<Status>();
+    mockStatus.sync_info.latest_block_height = `${expectedBlockNumber}`;
 
     mockedAxios.post.mockResolvedValue({
-      data: newResponse<ConsensusState>(mockState),
+      data: newResponse<Status>(mockStatus),
     });
 
     // Create the provider
