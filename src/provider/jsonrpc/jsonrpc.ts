@@ -6,9 +6,9 @@ import {
   ConsensusParams,
   NetworkInfo,
   Status,
-} from '../types';
+} from '../types/common';
 import { RestService } from '../../services/rest/restService';
-import { newRequest } from '../spec/utility';
+import { newRequest } from '../utility/requests.utility';
 import {
   ABCIEndpoint,
   BlockEndpoint,
@@ -16,13 +16,13 @@ import {
   ConsensusEndpoint,
   TransactionEndpoint,
 } from '../endpoints';
-import { ABCIResponse } from '../spec/abci';
+import { ABCIResponse } from '../types/abci';
 import { Tx } from '../../proto/tm2/tx';
 import {
   extractBalanceFromResponse,
   extractSequenceFromResponse,
   waitForTransaction,
-} from '../common';
+} from '../utility/provider.utility';
 
 /**
  * Provider based on JSON-RPC HTTP requests

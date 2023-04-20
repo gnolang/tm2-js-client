@@ -1,4 +1,4 @@
-import { ABCIResponseBase } from './spec/abci';
+import { ABCIResponseBase } from './abci';
 
 export interface NetworkInfo {
   // flag indicating if networking is up

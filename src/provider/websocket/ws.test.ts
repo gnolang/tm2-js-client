@@ -7,16 +7,15 @@ import {
   EndBlock,
   NetworkInfo,
   Status,
-} from '../types';
+} from '../types/common';
 import { WebSocketServer } from 'ws';
-import { WSProvider } from '../websocket/websocket';
+import { WSProvider } from './ws';
 import {
   newResponse,
   stringToBase64,
   uint8ArrayToBase64,
-} from '../spec/utility';
-import { ABCIAccount } from '../abciTypes';
-import { ABCIResponse, ABCIResponseBase } from '../spec/abci';
+} from '../utility/requests.utility';
+import { ABCIAccount, ABCIResponse, ABCIResponseBase } from '../types/abci';
 import { Tx } from '../../proto/tm2/tx';
 import { sha256 } from '@cosmjs/crypto';
 import { CommonEndpoint } from '../endpoints';

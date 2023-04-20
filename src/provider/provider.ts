@@ -4,7 +4,7 @@ import {
   ConsensusParams,
   NetworkInfo,
   Status,
-} from './types';
+} from './types/common';
 import { Tx } from '../proto/tm2/tx';
 
 /**

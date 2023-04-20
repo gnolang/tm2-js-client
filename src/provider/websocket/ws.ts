@@ -6,9 +6,9 @@ import {
   ConsensusParams,
   NetworkInfo,
   Status,
-} from '../types';
-import { RPCRequest, RPCResponse } from '../spec/jsonrpc';
-import { newRequest } from '../spec/utility';
+} from '../types/common';
+import { RPCRequest, RPCResponse } from '../types/jsonrpc';
+import { newRequest } from '../utility/requests.utility';
 import {
   ABCIEndpoint,
   BlockEndpoint,
@@ -17,13 +17,13 @@ import {
   TransactionEndpoint,
 } from '../endpoints';
 import { WebSocket } from 'ws';
-import { ABCIResponse } from '../spec/abci';
+import { ABCIResponse } from '../types/abci';
 import { Tx } from '../../proto/tm2/tx';
 import {
   extractBalanceFromResponse,
   extractSequenceFromResponse,
   waitForTransaction,
-} from '../common';
+} from '../utility/provider.utility';
 
 /**
  * Provider based on WS JSON-RPC HTTP requests

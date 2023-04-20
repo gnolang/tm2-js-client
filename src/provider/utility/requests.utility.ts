@@ -1,4 +1,4 @@
-import { RPCError, RPCRequest, RPCResponse } from './jsonrpc';
+import { RPCError, RPCRequest, RPCResponse } from '../types/jsonrpc';
 
 // The version of the supported JSON-RPC protocol
 const standardVersion = '2.0';

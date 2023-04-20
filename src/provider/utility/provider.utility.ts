@@ -1,12 +1,12 @@
-import { ABCIAccount } from './abciTypes';
+import { ABCIAccount } from '../types/abci';
 import {
   base64ToUint8Array,
   parseABCI,
   uint8ArrayToBase64,
-} from './spec/utility';
-import { Provider } from './provider';
-import { Tx } from '../proto/tm2/tx';
-import { BlockInfo } from './types';
+} from './requests.utility';
+import { Provider } from '../provider';
+import { Tx } from '../../proto/tm2/tx';
+import { BlockInfo } from '../types/common';
 import { sha256 } from '@cosmjs/crypto';
 
 /**

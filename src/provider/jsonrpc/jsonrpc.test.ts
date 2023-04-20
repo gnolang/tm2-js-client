@@ -5,18 +5,17 @@ import {
   ConsensusParams,
   NetworkInfo,
   Status,
-} from '../types';
+} from '../types/common';
 import axios from 'axios';
-import { JSONRPCProvider } from '../jsonrpc/jsonrpc';
+import { JSONRPCProvider } from './jsonrpc';
 import {
   newResponse,
   stringToBase64,
   uint8ArrayToBase64,
-} from '../spec/utility';
+} from '../utility/requests.utility';
 import { mock } from 'jest-mock-extended';
-import { ABCIResponse } from '../spec/abci';
-import { ABCIAccount } from '../abciTypes';
-import { RPCRequest } from '../spec/jsonrpc';
+import { ABCIAccount, ABCIResponse } from '../types/abci';
+import { RPCRequest } from '../types/jsonrpc';
 import { Tx } from '../../proto/tm2/tx';
 import { sha256 } from '@cosmjs/crypto';
 import { CommonEndpoint } from '../endpoints';
