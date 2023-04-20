@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "target": "es2016",
-    "module": "commonjs",
-    "resolveJsonModule": true,
+    "target": "ES5",
+    "module": "ES6",
+    "moduleResolution": "node",
     "outDir": "./bin",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -10,10 +10,6 @@
     "skipLibCheck": true,
     "declaration": true
   },
-  "include": [
-    "src"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["src"],
+  "exclude": ["node_modules"]
 }

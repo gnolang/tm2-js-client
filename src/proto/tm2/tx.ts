@@ -1,8 +1,8 @@
 /* eslint-disable */
-import Long from "long";
-import _m0 from "protobufjs/minimal";
+import Long from 'long';
+import _m0 from 'protobufjs/minimal';
 
-export const protobufPackage = "tm2.tx";
+export const protobufPackage = 'tm2.tx';
 
 export interface Tx {
   /** specific message types */
@@ -44,7 +44,7 @@ export interface TxMessage {
 }
 
 function createBaseTx(): Tx {
-  return { messages: [], fee: undefined, signatures: [], memo: "" };
+  return { messages: [], fee: undefined, signatures: [], memo: '' };
 }
 
 export const Tx = {
@@ -58,14 +58,15 @@ export const Tx = {
     for (const v of message.signatures) {
       TxSignature.encode(v!, writer.uint32(26).fork()).ldelim();
     }
-    if (message.memo !== "") {
+    if (message.memo !== '') {
       writer.uint32(34).string(message.memo);
     }
     return writer;
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): Tx {
-    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    const reader =
+      input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseTx();
     while (reader.pos < end) {
@@ -110,23 +111,32 @@ export const Tx = {
 
   fromJSON(object: any): Tx {
     return {
-      messages: Array.isArray(object?.messages) ? object.messages.map((e: any) => TxMessage.fromJSON(e)) : [],
+      messages: Array.isArray(object?.messages)
+        ? object.messages.map((e: any) => TxMessage.fromJSON(e))
+        : [],
       fee: isSet(object.fee) ? TxFee.fromJSON(object.fee) : undefined,
-      signatures: Array.isArray(object?.signatures) ? object.signatures.map((e: any) => TxSignature.fromJSON(e)) : [],
-      memo: isSet(object.memo) ? String(object.memo) : "",
+      signatures: Array.isArray(object?.signatures)
+        ? object.signatures.map((e: any) => TxSignature.fromJSON(e))
+        : [],
+      memo: isSet(object.memo) ? String(object.memo) : '',
     };
   },
 
   toJSON(message: Tx): unknown {
     const obj: any = {};
     if (message.messages) {
-      obj.messages = message.messages.map((e) => e ? TxMessage.toJSON(e) : undefined);
+      obj.messages = message.messages.map((e) =>
+        e ? TxMessage.toJSON(e) : undefined
+      );
     } else {
       obj.messages = [];
     }
-    message.fee !== undefined && (obj.fee = message.fee ? TxFee.toJSON(message.fee) : undefined);
+    message.fee !== undefined &&
+      (obj.fee = message.fee ? TxFee.toJSON(message.fee) : undefined);
     if (message.signatures) {
-      obj.signatures = message.signatures.map((e) => e ? TxSignature.toJSON(e) : undefined);
+      obj.signatures = message.signatures.map((e) =>
+        e ? TxSignature.toJSON(e) : undefined
+      );
     } else {
       obj.signatures = [];
     }
@@ -140,16 +150,21 @@ export const Tx = {
 
   fromPartial<I extends Exact<DeepPartial<Tx>, I>>(object: I): Tx {
     const message = createBaseTx();
-    message.messages = object.messages?.map((e) => TxMessage.fromPartial(e)) || [];
-    message.fee = (object.fee !== undefined && object.fee !== null) ? TxFee.fromPartial(object.fee) : undefined;
-    message.signatures = object.signatures?.map((e) => TxSignature.fromPartial(e)) || [];
-    message.memo = object.memo ?? "";
+    message.messages =
+      object.messages?.map((e) => TxMessage.fromPartial(e)) || [];
+    message.fee =
+      object.fee !== undefined && object.fee !== null
+        ? TxFee.fromPartial(object.fee)
+        : undefined;
+    message.signatures =
+      object.signatures?.map((e) => TxSignature.fromPartial(e)) || [];
+    message.memo = object.memo ?? '';
     return message;
   },
 };
 
 function createBaseTxFee(): TxFee {
-  return { gasWanted: Long.ZERO, gasFee: "" };
+  return { gasWanted: Long.ZERO, gasFee: '' };
 }
 
 export const TxFee = {
@@ -157,14 +172,15 @@ export const TxFee = {
     if (!message.gasWanted.isZero()) {
       writer.uint32(8).sint64(message.gasWanted);
     }
-    if (message.gasFee !== "") {
+    if (message.gasFee !== '') {
       writer.uint32(18).string(message.gasFee);
     }
     return writer;
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): TxFee {
-    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    const reader =
+      input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseTxFee();
     while (reader.pos < end) {
@@ -195,14 +211,17 @@ export const TxFee = {
 
   fromJSON(object: any): TxFee {
     return {
-      gasWanted: isSet(object.gasWanted) ? Long.fromValue(object.gasWanted) : Long.ZERO,
-      gasFee: isSet(object.gasFee) ? String(object.gasFee) : "",
+      gasWanted: isSet(object.gasWanted)
+        ? Long.fromValue(object.gasWanted)
+        : Long.ZERO,
+      gasFee: isSet(object.gasFee) ? String(object.gasFee) : '',
     };
   },
 
   toJSON(message: TxFee): unknown {
     const obj: any = {};
-    message.gasWanted !== undefined && (obj.gasWanted = (message.gasWanted || Long.ZERO).toString());
+    message.gasWanted !== undefined &&
+      (obj.gasWanted = (message.gasWanted || Long.ZERO).toString());
     message.gasFee !== undefined && (obj.gasFee = message.gasFee);
     return obj;
   },
@@ -213,10 +232,11 @@ export const TxFee = {
 
   fromPartial<I extends Exact<DeepPartial<TxFee>, I>>(object: I): TxFee {
     const message = createBaseTxFee();
-    message.gasWanted = (object.gasWanted !== undefined && object.gasWanted !== null)
-      ? Long.fromValue(object.gasWanted)
-      : Long.ZERO;
-    message.gasFee = object.gasFee ?? "";
+    message.gasWanted =
+      object.gasWanted !== undefined && object.gasWanted !== null
+        ? Long.fromValue(object.gasWanted)
+        : Long.ZERO;
+    message.gasFee = object.gasFee ?? '';
     return message;
   },
 };
@@ -226,7 +246,10 @@ function createBaseTxSignature(): TxSignature {
 }
 
 export const TxSignature = {
-  encode(message: TxSignature, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+  encode(
+    message: TxSignature,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
     if (message.pubKey !== undefined) {
       PublicKey.encode(message.pubKey, writer.uint32(10).fork()).ldelim();
     }
@@ -237,7 +260,8 @@ export const TxSignature = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): TxSignature {
-    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    const reader =
+      input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseTxSignature();
     while (reader.pos < end) {
@@ -268,16 +292,25 @@ export const TxSignature = {
 
   fromJSON(object: any): TxSignature {
     return {
-      pubKey: isSet(object.pubKey) ? PublicKey.fromJSON(object.pubKey) : undefined,
-      signature: isSet(object.signature) ? bytesFromBase64(object.signature) : new Uint8Array(),
+      pubKey: isSet(object.pubKey)
+        ? PublicKey.fromJSON(object.pubKey)
+        : undefined,
+      signature: isSet(object.signature)
+        ? bytesFromBase64(object.signature)
+        : new Uint8Array(),
     };
   },
 
   toJSON(message: TxSignature): unknown {
     const obj: any = {};
-    message.pubKey !== undefined && (obj.pubKey = message.pubKey ? PublicKey.toJSON(message.pubKey) : undefined);
+    message.pubKey !== undefined &&
+      (obj.pubKey = message.pubKey
+        ? PublicKey.toJSON(message.pubKey)
+        : undefined);
     message.signature !== undefined &&
-      (obj.signature = base64FromBytes(message.signature !== undefined ? message.signature : new Uint8Array()));
+      (obj.signature = base64FromBytes(
+        message.signature !== undefined ? message.signature : new Uint8Array()
+      ));
     return obj;
   },
 
@@ -285,33 +318,40 @@ export const TxSignature = {
     return TxSignature.fromPartial(base ?? {});
   },
 
-  fromPartial<I extends Exact<DeepPartial<TxSignature>, I>>(object: I): TxSignature {
+  fromPartial<I extends Exact<DeepPartial<TxSignature>, I>>(
+    object: I
+  ): TxSignature {
     const message = createBaseTxSignature();
-    message.pubKey = (object.pubKey !== undefined && object.pubKey !== null)
-      ? PublicKey.fromPartial(object.pubKey)
-      : undefined;
+    message.pubKey =
+      object.pubKey !== undefined && object.pubKey !== null
+        ? PublicKey.fromPartial(object.pubKey)
+        : undefined;
     message.signature = object.signature ?? new Uint8Array();
     return message;
   },
 };
 
 function createBasePublicKey(): PublicKey {
-  return { type: "", value: "" };
+  return { type: '', value: '' };
 }
 
 export const PublicKey = {
-  encode(message: PublicKey, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.type !== "") {
+  encode(
+    message: PublicKey,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    if (message.type !== '') {
       writer.uint32(10).string(message.type);
     }
-    if (message.value !== "") {
+    if (message.value !== '') {
       writer.uint32(18).string(message.value);
     }
     return writer;
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): PublicKey {
-    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    const reader =
+      input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBasePublicKey();
     while (reader.pos < end) {
@@ -342,8 +382,8 @@ export const PublicKey = {
 
   fromJSON(object: any): PublicKey {
     return {
-      type: isSet(object.type) ? String(object.type) : "",
-      value: isSet(object.value) ? String(object.value) : "",
+      type: isSet(object.type) ? String(object.type) : '',
+      value: isSet(object.value) ? String(object.value) : '',
     };
   },
 
@@ -358,31 +398,37 @@ export const PublicKey = {
     return PublicKey.fromPartial(base ?? {});
   },
 
-  fromPartial<I extends Exact<DeepPartial<PublicKey>, I>>(object: I): PublicKey {
+  fromPartial<I extends Exact<DeepPartial<PublicKey>, I>>(
+    object: I
+  ): PublicKey {
     const message = createBasePublicKey();
-    message.type = object.type ?? "";
-    message.value = object.value ?? "";
+    message.type = object.type ?? '';
+    message.value = object.value ?? '';
     return message;
   },
 };
 
 function createBaseTxMessage(): TxMessage {
-  return { typeUrl: "", value: "" };
+  return { typeUrl: '', value: '' };
 }
 
 export const TxMessage = {
-  encode(message: TxMessage, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.typeUrl !== "") {
+  encode(
+    message: TxMessage,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    if (message.typeUrl !== '') {
       writer.uint32(10).string(message.typeUrl);
     }
-    if (message.value !== "") {
+    if (message.value !== '') {
       writer.uint32(18).string(message.value);
     }
     return writer;
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): TxMessage {
-    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    const reader =
+      input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseTxMessage();
     while (reader.pos < end) {
@@ -413,8 +459,8 @@ export const TxMessage = {
 
   fromJSON(object: any): TxMessage {
     return {
-      typeUrl: isSet(object.typeUrl) ? String(object.typeUrl) : "",
-      value: isSet(object.value) ? String(object.value) : "",
+      typeUrl: isSet(object.typeUrl) ? String(object.typeUrl) : '',
+      value: isSet(object.value) ? String(object.value) : '',
     };
   },
 
@@ -429,10 +475,12 @@ export const TxMessage = {
     return TxMessage.fromPartial(base ?? {});
   },
 
-  fromPartial<I extends Exact<DeepPartial<TxMessage>, I>>(object: I): TxMessage {
+  fromPartial<I extends Exact<DeepPartial<TxMessage>, I>>(
+    object: I
+  ): TxMessage {
     const message = createBaseTxMessage();
-    message.typeUrl = object.typeUrl ?? "";
-    message.value = object.value ?? "";
+    message.typeUrl = object.typeUrl ?? '';
+    message.value = object.value ?? '';
     return message;
   },
 };
@@ -441,24 +489,24 @@ declare var self: any | undefined;
 declare var window: any | undefined;
 declare var global: any | undefined;
 var tsProtoGlobalThis: any = (() => {
-  if (typeof globalThis !== "undefined") {
+  if (typeof globalThis !== 'undefined') {
     return globalThis;
   }
-  if (typeof self !== "undefined") {
+  if (typeof self !== 'undefined') {
     return self;
   }
-  if (typeof window !== "undefined") {
+  if (typeof window !== 'undefined') {
     return window;
   }
-  if (typeof global !== "undefined") {
+  if (typeof global !== 'undefined') {
     return global;
   }
-  throw "Unable to locate global object";
+  throw 'Unable to locate global object';
 })();
 
 function bytesFromBase64(b64: string): Uint8Array {
   if (tsProtoGlobalThis.Buffer) {
-    return Uint8Array.from(tsProtoGlobalThis.Buffer.from(b64, "base64"));
+    return Uint8Array.from(tsProtoGlobalThis.Buffer.from(b64, 'base64'));
   } else {
     const bin = tsProtoGlobalThis.atob(b64);
     const arr = new Uint8Array(bin.length);
@@ -471,27 +519,43 @@ function bytesFromBase64(b64: string): Uint8Array {
 
 function base64FromBytes(arr: Uint8Array): string {
   if (tsProtoGlobalThis.Buffer) {
-    return tsProtoGlobalThis.Buffer.from(arr).toString("base64");
+    return tsProtoGlobalThis.Buffer.from(arr).toString('base64');
   } else {
     const bin: string[] = [];
     arr.forEach((byte) => {
       bin.push(String.fromCharCode(byte));
     });
-    return tsProtoGlobalThis.btoa(bin.join(""));
+    return tsProtoGlobalThis.btoa(bin.join(''));
   }
 }
 
-type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
+type Builtin =
+  | Date
+  | Function
+  | Uint8Array
+  | string
+  | number
+  | boolean
+  | undefined;
 
-export type DeepPartial<T> = T extends Builtin ? T
-  : T extends Long ? string | number | Long : T extends Array<infer U> ? Array<DeepPartial<U>>
-  : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
-  : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
+export type DeepPartial<T> = T extends Builtin
+  ? T
+  : T extends Long
+  ? string | number | Long
+  : T extends Array<infer U>
+  ? Array<DeepPartial<U>>
+  : T extends ReadonlyArray<infer U>
+  ? ReadonlyArray<DeepPartial<U>>
+  : T extends {}
+  ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
 
 type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
+export type Exact<P, I extends P> = P extends Builtin
+  ? P
+  : P & { [K in keyof P]: Exact<P[K], I[K]> } & {
+      [K in Exclude<keyof I, KeysOfUnion<P>>]: never;
+    };
 
 if (_m0.util.Long !== Long) {
   _m0.util.Long = Long as any;

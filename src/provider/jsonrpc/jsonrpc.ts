@@ -4,8 +4,6 @@ import {
   BlockResult,
   BroadcastTxResult,
   ConsensusParams,
-  ConsensusState,
-  consensusStateKey,
   NetworkInfo,
   Status,
 } from '../types';
@@ -100,15 +98,10 @@ export class JSONRPCProvider implements Provider {
   }
 
   async getBlockNumber(): Promise<number> {
-    // Fetch the state
-    const state = await RestService.post<ConsensusState>(this.baseURL, {
-      request: newRequest(ConsensusEndpoint.CONSENSUS_STATE),
-    });
+    // Fetch the status for the latest info
+    const status = await this.getStatus();
 
-    // Get the height / round / step info
-    const stateStr: string = state.round_state[consensusStateKey] as string;
-
-    return parseInt(stateStr.split('/')[0]);
+    return parseInt(status.sync_info.latest_block_height);
   }
 
   async getConsensusParams(height: number): Promise<ConsensusParams> {
@@ -204,7 +197,7 @@ export class JSONRPCProvider implements Provider {
 
           // Check if there are any transactions at all in the block
           if (!block.block.data.txs || block.block.data.txs.length == 0) {
-            throw new Error('no transactions in block');
+            continue;
           }
 
           // Find the transaction among the block transactions
@@ -215,7 +208,6 @@ export class JSONRPCProvider implements Provider {
             // Calculate the transaction hash
             const txHash = sha256(txRaw);
 
-            // TODO change the type of hash to be a byte slice, instead of base64 string
             if (uint8ArrayToBase64(txHash) == hash) {
               // Clear the interval
               clearInterval(fetchInterval);
@@ -229,7 +221,7 @@ export class JSONRPCProvider implements Provider {
         currentHeight = latestHeight + 1;
       }, 1000);
 
-      if (!timeout) {
+      if (timeout) {
         setTimeout(() => {
           // Clear the fetch interval
           clearInterval(fetchInterval);

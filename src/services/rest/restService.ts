@@ -18,7 +18,7 @@ export class RestService {
     // Check for errors
     if (error) {
       // Error encountered during the POST request
-      throw new Error(error.message);
+      throw new Error(`${error.message}: ${error.data}`);
     }
 
     // Check for the correct result format

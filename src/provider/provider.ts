@@ -90,7 +90,13 @@ export interface Provider {
   sendTransaction(tx: string): Promise<string>;
 
   /**
-   * Waits for the transaction to be committed on the chain
+   * Waits for the transaction to be committed on the chain.
+   * NOTE: This method will not take in the fromHeight parameter once
+   * proper transaction indexing is added - the implementation should
+   * simply try to fetch the transaction first to see if it's included in a block
+   * before starting to wait for it; Until then, this method should be used
+   * in the sequence:
+   * get latest block -> send transaction -> waitForTransaction(block before send)
    * @param {string} hash The transaction hash
    * @param {number} [fromHeight=latest] The block height used to begin the search
    * @param {number} [timeout=15000] Optional wait timeout in MS
