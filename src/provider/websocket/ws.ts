@@ -30,7 +30,7 @@ import {
  */
 export class WSProvider implements Provider {
   private ws: WebSocket; // the persistent WS connection
-  private requestMap: Map<
+  private readonly requestMap: Map<
     number | string,
     {
       resolve: (response: RPCResponse<any>) => void;
