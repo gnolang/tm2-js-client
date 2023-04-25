@@ -35,7 +35,10 @@ export class Wallet {
 
     // Initialize the wallet
     const wallet: Wallet = new Wallet();
-    wallet.signer = new KeySigner(privateKey, publicKey);
+    wallet.signer = new KeySigner(
+      privateKey,
+      Secp256k1.compressPubkey(publicKey)
+    );
 
     return wallet;
   };
@@ -57,7 +60,10 @@ export class Wallet {
 
     // Initialize the wallet
     const wallet: Wallet = new Wallet();
-    wallet.signer = new KeySigner(privateKey, publicKey);
+    wallet.signer = new KeySigner(
+      privateKey,
+      Secp256k1.compressPubkey(publicKey)
+    );
 
     return wallet;
   };
@@ -75,7 +81,10 @@ export class Wallet {
 
     // Initialize the wallet
     const wallet: Wallet = new Wallet();
-    wallet.signer = new KeySigner(privateKey, publicKey);
+    wallet.signer = new KeySigner(
+      privateKey,
+      Secp256k1.compressPubkey(publicKey)
+    );
 
     return wallet;
   };

@@ -66,3 +66,5 @@ export const generateKeyPair = async (
     privateKey: privateKey,
   };
 };
+
+export const addressPrefix = 'g';

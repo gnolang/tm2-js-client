@@ -9,7 +9,7 @@ export interface Signer {
    * Returns the address associated with the signer's public key
    * @returns {string} the public key address
    */
-  getAddress(): string;
+  getAddress(): Promise<string>;
 
   /**
    * Returns the signer's public key
