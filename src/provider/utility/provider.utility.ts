@@ -47,8 +47,8 @@ export const extractBalanceFromResponse = (
 
 /**
  * Extracts the account sequence from the ABCI response
- * @param {string | null} abciData the base64-encoded ABCI data
- * @returns {number}
+ * @param {string | null} abciData The base64-encoded ABCI data
+ * @returns {number} The account sequence
  */
 export const extractSequenceFromResponse = (
   abciData: string | null

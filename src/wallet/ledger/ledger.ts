@@ -1,7 +1,7 @@
 import { Signer } from '../signer';
 import { LedgerConnector } from '@cosmjs/ledger-amino';
 import { addressPrefix, generateHDPath } from '../utility/utility';
-import { HdPath } from '@cosmjs/crypto';
+import { HdPath, Secp256k1, Secp256k1Signature, sha256 } from '@cosmjs/crypto';
 import { encodeSecp256k1Pubkey, pubkeyToAddress } from '@cosmjs/amino';
 
 /**
@@ -17,6 +17,10 @@ export class LedgerSigner implements Signer {
   }
 
   getAddress = async (): Promise<string> => {
+    if (!this.connector) {
+      throw new Error('Ledger not connected');
+    }
+
     const compressedPubKey: Uint8Array = await this.connector.getPubkey(
       this.hdPath
     );
@@ -27,13 +31,37 @@ export class LedgerSigner implements Signer {
     );
   };
 
-  getPublicKey(): any {
-    // TODO
-  }
+  getPublicKey = async (): Promise<Uint8Array> => {
+    if (!this.connector) {
+      throw new Error('Ledger not connected');
+    }
 
-  signData(data: any): any {
-    // TODO
-  }
+    return this.connector.getPubkey(this.hdPath);
+  };
+
+  signData = async (data: Uint8Array): Promise<Uint8Array> => {
+    if (!this.connector) {
+      throw new Error('Ledger not connected');
+    }
+
+    return this.connector.sign(
+      sha256(data), // TODO verify this is the case
+      this.hdPath
+    );
+  };
+
+  verifySignature = async (
+    data: Uint8Array,
+    signature: Uint8Array
+  ): Promise<boolean> => {
+    const publicKey = await this.getPublicKey();
+
+    return Secp256k1.verifySignature(
+      Secp256k1Signature.fromFixedLength(signature),
+      sha256(data),
+      publicKey
+    );
+  };
 
   signTransaction(tx: any): any {
     // TODO

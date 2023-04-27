@@ -1,6 +1,6 @@
 import { Signer } from '../signer';
 import { encodeSecp256k1Pubkey, pubkeyToAddress } from '@cosmjs/amino';
-import { Secp256k1 } from '@cosmjs/crypto';
+import { Secp256k1, Secp256k1Signature, sha256 } from '@cosmjs/crypto';
 import { addressPrefix } from '../utility/utility';
 
 /**
@@ -22,13 +22,32 @@ export class KeySigner implements Signer {
     );
   };
 
-  getPublicKey(): any {
-    // TODO
-  }
+  getPublicKey = async (): Promise<Uint8Array> => {
+    return this.publicKey;
+  };
 
-  signData(data: any): any {
-    // TODO
-  }
+  signData = async (data: Uint8Array): Promise<Uint8Array> => {
+    const signature = await Secp256k1.createSignature(
+      sha256(data),
+      this.privateKey
+    );
+
+    return new Uint8Array([
+      ...(signature.r(32) as any),
+      ...(signature.s(32) as any),
+    ]);
+  };
+
+  verifySignature = async (
+    data: Uint8Array,
+    signature: Uint8Array
+  ): Promise<boolean> => {
+    return Secp256k1.verifySignature(
+      Secp256k1Signature.fromFixedLength(signature),
+      sha256(data),
+      this.publicKey
+    );
+  };
 
   signTransaction(tx: any): any {
     // TODO

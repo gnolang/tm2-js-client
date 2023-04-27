@@ -20,4 +20,12 @@ describe('Private Key Signer', () => {
 
     expect(address.length).toBe(40);
   });
+
+  test('getPublicKey', async () => {
+    const signer: KeySigner = await generateRandomKeySigner();
+    const publicKey: Uint8Array = await signer.getPublicKey();
+
+    expect(publicKey).not.toBeNull();
+    expect(publicKey).toHaveLength(65);
+  });
 });
