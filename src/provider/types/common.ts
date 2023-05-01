@@ -57,7 +57,7 @@ interface SyncInfo {
   latest_app_hash: string;
   // latest block height (decimal)
   latest_block_height: string;
-  // latest block time in string format (YY-MM-DDTHH-mm-ss.Z)
+  // latest block time in string format (ISO format)
   latest_block_time: string;
   // flag indicating if the node is syncing
   catching_up: boolean;
@@ -163,7 +163,7 @@ export interface BlockHeader {
   chain_id: string;
   // current height (decimal)
   height: string;
-  // block creation time in string format (YY-MM-DDTHH-mm-ss.Z)
+  // block creation time in string format (ISO format)
   time: string;
   // number of transactions (decimal)
   num_txs: string;
@@ -210,7 +210,7 @@ export interface PrecommitInfo {
   round: string;
   // the block ID info
   block_id: BlockID;
-  // precommit creation time
+  // precommit creation time (ISO format)
   timestamp: string;
   // the address of the validator who signed
   validator_address: string;

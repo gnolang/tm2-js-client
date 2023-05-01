@@ -71,6 +71,29 @@ export const extractSequenceFromResponse = (
 };
 
 /**
+ * Extracts the account number from the ABCI response
+ * @param {string | null} abciData The base64-encoded ABCI data
+ * @returns {number} The account number
+ */
+export const extractAccountNumberFromResponse = (
+  abciData: string | null
+): number => {
+  // Make sure the response is initialized
+  if (!abciData) {
+    return 0;
+  }
+
+  try {
+    // Parse the account
+    const account: ABCIAccount = parseABCI<ABCIAccount>(abciData);
+
+    return parseInt(account.BaseAccount.account_number, 10);
+  } catch (e) {
+    throw new Error('account is not initialized');
+  }
+};
+
+/**
  * Waits for the transaction to be committed to a block in the chain
  * of the specified provider. This helper does a search for incoming blocks
  * and checks if a transaction

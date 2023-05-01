@@ -35,6 +35,15 @@ export interface Provider {
   getSequence(address: string, height?: number): Promise<number>;
 
   /**
+   * Fetches the account number. Errors out if the account
+   * is not initialized
+   * @param {string} address The bech32 address of the account
+   * @param {number} [height=0] The height for querying.
+   * If omitted, the latest height is used
+   */
+  getAccountNumber(address: string, height?: number): Promise<number>;
+
+  /**
    * Fetches the block at the specific height, if any
    * @param {number} height The height for querying
    */

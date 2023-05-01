@@ -33,14 +33,14 @@ export interface PublicKey {
   /** type of public key */
   type: string;
   /** public key value */
-  value: string;
+  value: Uint8Array;
 }
 
 export interface TxMessage {
   /** URL of the message */
   typeUrl: string;
   /** data value of the message */
-  value: string;
+  value: Uint8Array;
 }
 
 function createBaseTx(): Tx {
@@ -332,7 +332,7 @@ export const TxSignature = {
 };
 
 function createBasePublicKey(): PublicKey {
-  return { type: '', value: '' };
+  return { type: '', value: new Uint8Array() };
 }
 
 export const PublicKey = {
@@ -343,8 +343,8 @@ export const PublicKey = {
     if (message.type !== '') {
       writer.uint32(10).string(message.type);
     }
-    if (message.value !== '') {
-      writer.uint32(18).string(message.value);
+    if (message.value.length !== 0) {
+      writer.uint32(18).bytes(message.value);
     }
     return writer;
   },
@@ -369,7 +369,7 @@ export const PublicKey = {
             break;
           }
 
-          message.value = reader.string();
+          message.value = reader.bytes();
           continue;
       }
       if ((tag & 7) == 4 || tag == 0) {
@@ -383,14 +383,19 @@ export const PublicKey = {
   fromJSON(object: any): PublicKey {
     return {
       type: isSet(object.type) ? String(object.type) : '',
-      value: isSet(object.value) ? String(object.value) : '',
+      value: isSet(object.value)
+        ? bytesFromBase64(object.value)
+        : new Uint8Array(),
     };
   },
 
   toJSON(message: PublicKey): unknown {
     const obj: any = {};
     message.type !== undefined && (obj.type = message.type);
-    message.value !== undefined && (obj.value = message.value);
+    message.value !== undefined &&
+      (obj.value = base64FromBytes(
+        message.value !== undefined ? message.value : new Uint8Array()
+      ));
     return obj;
   },
 
@@ -403,13 +408,13 @@ export const PublicKey = {
   ): PublicKey {
     const message = createBasePublicKey();
     message.type = object.type ?? '';
-    message.value = object.value ?? '';
+    message.value = object.value ?? new Uint8Array();
     return message;
   },
 };
 
 function createBaseTxMessage(): TxMessage {
-  return { typeUrl: '', value: '' };
+  return { typeUrl: '', value: new Uint8Array() };
 }
 
 export const TxMessage = {
@@ -420,8 +425,8 @@ export const TxMessage = {
     if (message.typeUrl !== '') {
       writer.uint32(10).string(message.typeUrl);
     }
-    if (message.value !== '') {
-      writer.uint32(18).string(message.value);
+    if (message.value.length !== 0) {
+      writer.uint32(18).bytes(message.value);
     }
     return writer;
   },
@@ -446,7 +451,7 @@ export const TxMessage = {
             break;
           }
 
-          message.value = reader.string();
+          message.value = reader.bytes();
           continue;
       }
       if ((tag & 7) == 4 || tag == 0) {
@@ -460,14 +465,19 @@ export const TxMessage = {
   fromJSON(object: any): TxMessage {
     return {
       typeUrl: isSet(object.typeUrl) ? String(object.typeUrl) : '',
-      value: isSet(object.value) ? String(object.value) : '',
+      value: isSet(object.value)
+        ? bytesFromBase64(object.value)
+        : new Uint8Array(),
     };
   },
 
   toJSON(message: TxMessage): unknown {
     const obj: any = {};
     message.typeUrl !== undefined && (obj.typeUrl = message.typeUrl);
-    message.value !== undefined && (obj.value = message.value);
+    message.value !== undefined &&
+      (obj.value = base64FromBytes(
+        message.value !== undefined ? message.value : new Uint8Array()
+      ));
     return obj;
   },
 
@@ -480,7 +490,7 @@ export const TxMessage = {
   ): TxMessage {
     const message = createBaseTxMessage();
     message.typeUrl = object.typeUrl ?? '';
-    message.value = object.value ?? '';
+    message.value = object.value ?? new Uint8Array();
     return message;
   },
 };

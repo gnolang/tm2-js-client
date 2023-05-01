@@ -48,8 +48,4 @@ export class KeySigner implements Signer {
       this.publicKey
     );
   };
-
-  signTransaction(tx: any): any {
-    // TODO
-  }
 }

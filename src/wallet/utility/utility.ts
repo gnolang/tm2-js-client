@@ -44,6 +44,12 @@ interface keyPair {
   publicKey: Uint8Array;
 }
 
+/**
+ * Generates a new Secp256k1 key-pair using
+ * the provided English mnemonic and account index
+ * @param {string} mnemonic the English mnemonic
+ * @param {number} [accountIndex=0] the account index
+ */
 export const generateKeyPair = async (
   mnemonic: string,
   accountIndex?: number
@@ -67,4 +73,13 @@ export const generateKeyPair = async (
   };
 };
 
+// Address prefix for TM2 networks
 export const addressPrefix = 'g';
+
+/**
+ * Encodes a string into a Uint8Array
+ * @param {string} str the string to be encoded
+ */
+export const stringToUTF8 = (str: string): Uint8Array => {
+  return new TextEncoder().encode(str);
+};

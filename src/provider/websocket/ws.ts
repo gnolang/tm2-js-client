@@ -20,6 +20,7 @@ import { WebSocket } from 'ws';
 import { ABCIResponse } from '../types/abci';
 import { Tx } from '../../proto/tm2/tx';
 import {
+  extractAccountNumberFromResponse,
   extractBalanceFromResponse,
   extractSequenceFromResponse,
   waitForTransaction,
@@ -227,6 +228,23 @@ export class WSProvider implements Provider {
     const abciResponse = this.parseResponse<ABCIResponse>(response);
 
     return extractSequenceFromResponse(abciResponse.response.ResponseBase.Data);
+  }
+
+  async getAccountNumber(address: string, height?: number): Promise<number> {
+    const response = await this.sendRequest<ABCIResponse>(
+      newRequest(ABCIEndpoint.ABCI_QUERY, [
+        `auth/accounts/${address}`,
+        '',
+        '0', // Height; not supported > 0 for now
+      ])
+    );
+
+    // Parse the response
+    const abciResponse = this.parseResponse<ABCIResponse>(response);
+
+    return extractAccountNumberFromResponse(
+      abciResponse.response.ResponseBase.Data
+    );
   }
 
   async getStatus(): Promise<Status> {

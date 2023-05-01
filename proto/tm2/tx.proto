@@ -31,12 +31,12 @@ message PublicKey {
   // type of public key
   string type = 1;
   // public key value
-  string value = 2;
+  bytes value = 2;
 }
 
 message TxMessage {
   // URL of the message
   string typeUrl = 1;
   // data value of the message
-  string value = 2;
+  bytes value = 2;
 }

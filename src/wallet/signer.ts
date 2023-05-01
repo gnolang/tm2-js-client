@@ -1,5 +1,3 @@
-import { Tx } from '../proto/tm2/tx';
-
 /**
  * Signer is the base signer API.
  * The signer manages data signing
@@ -16,13 +14,6 @@ export interface Signer {
    * @returns {Uint8Array}
    */
   getPublicKey(): Promise<Uint8Array>;
-
-  /**
-   * Generates a transaction signature, and appends it to the transaction
-   * @param {Tx} tx the transaction to be signed
-   * @returns {Tx} the signed transaction
-   */
-  signTransaction(tx: any): any; // TODO define type
 
   /**
    * Generates a data signature for arbitrary input

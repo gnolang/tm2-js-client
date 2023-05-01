@@ -3,9 +3,17 @@ import { Signer } from './signer';
 import { LedgerSigner } from './ledger/ledger';
 import { KeySigner } from './key/key';
 import { Secp256k1 } from '@cosmjs/crypto';
-import { generateEntropy, generateKeyPair } from './utility/utility';
+import {
+  generateEntropy,
+  generateKeyPair,
+  stringToUTF8,
+} from './utility/utility';
 import { LedgerConnector } from '@cosmjs/ledger-amino';
 import { entropyToMnemonic } from '@cosmjs/crypto/build/bip39';
+import { Tx, TxMessage, TxSignature } from '../proto/tm2/tx';
+import { Secp256k1PubKeyType, TxSignPayload } from './types/sign';
+import { sortedJsonStringify } from '@cosmjs/amino/build/signdoc';
+import { Status } from '../provider/types/common';
 
 /**
  * Wallet is a single account abstraction
@@ -159,5 +167,70 @@ export class Wallet {
    */
   getProvider = (): Provider => {
     return this.provider;
+  };
+
+  /**
+   * Generates a transaction signature, and appends it to the transaction
+   * @param {Tx} tx the transaction to be signed
+   * @returns {Tx} the signed transaction
+   */
+  signTransaction = async (tx: Tx): Promise<Tx> => {
+    if (!this.provider) {
+      throw new Error('provider not connected');
+    }
+
+    // Make sure the tx fee is initialized
+    if (!tx.fee) {
+      throw new Error('invalid transaction fee provided');
+    }
+
+    // Extract the relevant chain data
+    const status: Status = await this.provider.getStatus();
+    const chainID: string = status.node_info.network;
+
+    // Extract the relevant account data
+    const address: string = await this.getAddress();
+    const accountNumber: number = await this.provider.getAccountNumber(address);
+    const accountSequence: number = await this.provider.getSequence(address);
+    const publicKey: Uint8Array = await this.signer.getPublicKey();
+
+    // Create the signature payload
+    const signPayload: TxSignPayload = {
+      chain_id: chainID,
+      account_number: accountNumber.toString(10),
+      sequence: accountSequence.toString(10),
+      fee: {
+        gas_fee: tx.fee.gasFee,
+        gas_wanted: tx.fee.gasWanted.toString(10),
+      },
+      msgs: tx.messages.map((m: TxMessage) => ({
+        '@type': m.typeUrl,
+        ...m.value,
+      })),
+      memo: tx.memo,
+      time: new Date().toISOString(),
+    };
+
+    // The TM2 node does signature verification using
+    // a sorted JSON object, so the payload needs to be sorted
+    // before signing
+    const signBytes: Uint8Array = stringToUTF8(
+      sortedJsonStringify(signPayload)
+    );
+
+    // Generate the signature
+    const txSignature: TxSignature = {
+      pubKey: {
+        type: Secp256k1PubKeyType,
+        value: publicKey,
+      },
+      signature: await this.signer.signData(signBytes),
+    };
+
+    // Append the signature
+    return {
+      ...tx,
+      signatures: [...tx.signatures, txSignature],
+    };
   };
 }
