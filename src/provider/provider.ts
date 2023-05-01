@@ -85,9 +85,9 @@ export interface Provider {
 
   /**
    * Estimates the gas limit for the transaction
-   * @param {any} tx The transaction that needs estimating
+   * @param {Tx} tx The transaction that needs estimating
    */
-  estimateGas(tx: any): Promise<number>; // TODO define type
+  estimateGas(tx: Tx): Promise<number>;
 
   // Transaction specific methods //
 

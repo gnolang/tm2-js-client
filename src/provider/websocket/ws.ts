@@ -146,7 +146,7 @@ export class WSProvider implements Provider {
     });
   };
 
-  estimateGas(tx: any): Promise<number> {
+  estimateGas(tx: Tx): Promise<number> {
     return Promise.reject('implement me');
   }
 

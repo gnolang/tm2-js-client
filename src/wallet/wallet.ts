@@ -14,6 +14,7 @@ import { Tx, TxMessage, TxSignature } from '../proto/tm2/tx';
 import { Secp256k1PubKeyType, TxSignPayload } from './types/sign';
 import { sortedJsonStringify } from '@cosmjs/amino/build/signdoc';
 import { Status } from '../provider/types/common';
+import { uint8ArrayToBase64 } from '../provider/utility/requests.utility';
 
 /**
  * Wallet is a single account abstraction
@@ -144,6 +145,23 @@ export class Wallet {
   };
 
   /**
+   * Fetches the account number for the wallet. Errors out if the
+   * account is not initialized
+   * @param {number} [height=latest] the block height
+   * @returns {number} the account sequence
+   */
+  getAccountNumber = async (height?: number): Promise<number> => {
+    if (!this.provider) {
+      throw new Error('provider not connected');
+    }
+
+    // Get the address
+    const address: string = await this.getAddress();
+
+    return this.provider.getAccountNumber(address, height);
+  };
+
+  /**
    * Fetches the account balance for the specific denomination
    * @param {string} [denomination=ugnot] the fund denomination
    * @returns {number} the account balance, if any
@@ -157,6 +175,29 @@ export class Wallet {
     const address: string = await this.getAddress();
 
     return this.provider.getBalance(address, denomination);
+  };
+
+  /**
+   * Fetches the current (recommended) average gas price
+   */
+  getGasPrice = async (): Promise<number> => {
+    if (!this.provider) {
+      throw new Error('provider not connected');
+    }
+
+    return this.provider.getGasPrice();
+  };
+
+  /**
+   * Estimates the gas limit for the transaction
+   * @param {Tx} tx the transaction that needs estimating
+   */
+  estimateTx = async (tx: Tx): Promise<number> => {
+    if (!this.provider) {
+      throw new Error('provider not connected');
+    }
+
+    return this.provider.estimateGas(tx);
   };
 
   // Provider //
@@ -232,5 +273,24 @@ export class Wallet {
       ...tx,
       signatures: [...tx.signatures, txSignature],
     };
+  };
+
+  /**
+   * Signs and sends the transaction. Returns the transaction hash (base-64)
+   * @param {Tx} tx the unsigned transaction
+   */
+  sendTransaction = async (tx: Tx): Promise<string> => {
+    if (!this.provider) {
+      throw new Error('provider not connected');
+    }
+
+    // Sign the transaction
+    const signedTx: Tx = await this.signTransaction(tx);
+
+    // Encode the transaction to base-64
+    const encodedTx: string = uint8ArrayToBase64(Tx.encode(signedTx).finish());
+
+    // Send the encoded transaction
+    return this.provider.sendTransaction(encodedTx);
   };
 }
