@@ -77,7 +77,6 @@ export class WSProvider implements Provider {
    * Sends a request to the WS connection, and resolves
    * upon receiving the response
    * @param {RPCRequest} request the RPC request
-   * @returns {Promise<RPCResponse<any>>} the RPC response
    */
   async sendRequest<Result>(request: RPCRequest): Promise<RPCResponse<Result>> {
     // Make sure the connection is open
@@ -104,7 +103,6 @@ export class WSProvider implements Provider {
   /**
    * Parses the result from the response
    * @param {RPCResponse<Result>} response the response to be parsed
-   * @returns {Result} the result of the response
    */
   parseResponse<Result>(response: RPCResponse<Result>): Result {
     if (!response) {
@@ -124,7 +122,6 @@ export class WSProvider implements Provider {
 
   /**
    * Waits for the WS connection to be established
-   * @returns {Promise<null>} resolve / reject indicating success
    */
   waitForOpenConnection = () => {
     return new Promise((resolve, reject) => {

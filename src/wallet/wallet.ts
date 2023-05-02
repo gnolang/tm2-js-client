@@ -20,7 +20,7 @@ export class Wallet {
 
   /**
    * Connects the wallet to the specified {@link Provider}
-   * @param {Provider} provider the active provider
+   * @param {Provider} provider the active {@link Provider}, if any
    */
   connect = (provider: Provider) => {
     this.provider = provider;
@@ -30,7 +30,6 @@ export class Wallet {
 
   /**
    * Generates a private key-based wallet, using a random seed
-   * @returns {Wallet} the initialized {@link Wallet}
    */
   static createRandom = async (): Promise<Wallet> => {
     const { publicKey, privateKey } = await generateKeyPair(
@@ -52,7 +51,6 @@ export class Wallet {
    * Generates a bip39 mnemonic-based wallet
    * @param {string} mnemonic the bip39 mnemonic
    * @param {number} [accountIndex=0] the account index
-   * @returns {Wallet} the initialized {@link Wallet}
    */
   static fromMnemonic = async (
     mnemonic: string,
@@ -76,7 +74,6 @@ export class Wallet {
   /**
    * Generates a private key-based wallet
    * @param {string} privateKey the private key
-   * @returns {Wallet} the initialized {@link Wallet}
    */
   static fromPrivateKey = async (privateKey: Uint8Array): Promise<Wallet> => {
     // Derive the public key
@@ -96,7 +93,6 @@ export class Wallet {
    * Creates a Ledger-based wallet
    * @param {LedgerConnector} connector the Ledger device connector
    * @param {number} [accountIndex=0] the account index
-   * @returns {Wallet} the initialized {@link Wallet}
    */
   static fromLedger = (
     connector: LedgerConnector,
@@ -116,7 +112,6 @@ export class Wallet {
 
   /**
    * Fetches the address associated with the wallet
-   * @returns {string} the account address
    */
   getAddress = (): Promise<string> => {
     return this.signer.getAddress();
@@ -125,7 +120,6 @@ export class Wallet {
   /**
    * Fetches the account sequence for the wallet
    * @param {number} [height=latest] the block height
-   * @returns {number} the account sequence
    */
   getSequence = async (height?: number): Promise<number> => {
     if (!this.provider) {
@@ -142,7 +136,6 @@ export class Wallet {
    * Fetches the account number for the wallet. Errors out if the
    * account is not initialized
    * @param {number} [height=latest] the block height
-   * @returns {number} the account sequence
    */
   getAccountNumber = async (height?: number): Promise<number> => {
     if (!this.provider) {
@@ -158,7 +151,6 @@ export class Wallet {
   /**
    * Fetches the account balance for the specific denomination
    * @param {string} [denomination=ugnot] the fund denomination
-   * @returns {number} the account balance, if any
    */
   getBalance = async (denomination?: string): Promise<number> => {
     if (!this.provider) {
@@ -199,7 +191,6 @@ export class Wallet {
 
   /**
    * Returns the connected provider, if any
-   * @returns {Provider} The connected provider, if any
    */
   getProvider = (): Provider => {
     return this.provider;
@@ -208,7 +199,6 @@ export class Wallet {
   /**
    * Generates a transaction signature, and appends it to the transaction
    * @param {Tx} tx the transaction to be signed
-   * @returns {Tx} the signed transaction
    */
   signTransaction = async (tx: Tx): Promise<Tx> => {
     if (!this.provider) {

@@ -15,9 +15,9 @@ export interface Provider {
 
   /**
    * Fetches the denomination balance of the account
-   * @param {string} address The bech32 address of the account
-   * @param {string} [denomination=ugnot] The balance denomination
-   * @param {number} [height=0] The height for querying.
+   * @param {string} address the bech32 address of the account
+   * @param {string} [denomination=ugnot] the balance denomination
+   * @param {number} [height=0] the height for querying.
    * If omitted, the latest height is used
    */
   getBalance(
@@ -28,8 +28,8 @@ export interface Provider {
 
   /**
    * Fetches the account sequence
-   * @param {string} address The bech32 address of the account
-   * @param {number} [height=0] The height for querying.
+   * @param {string} address the bech32 address of the account
+   * @param {number} [height=0] the height for querying.
    * If omitted, the latest height is used.
    */
   getSequence(address: string, height?: number): Promise<number>;
@@ -37,21 +37,21 @@ export interface Provider {
   /**
    * Fetches the account number. Errors out if the account
    * is not initialized
-   * @param {string} address The bech32 address of the account
-   * @param {number} [height=0] The height for querying.
+   * @param {string} address the bech32 address of the account
+   * @param {number} [height=0] the height for querying.
    * If omitted, the latest height is used
    */
   getAccountNumber(address: string, height?: number): Promise<number>;
 
   /**
    * Fetches the block at the specific height, if any
-   * @param {number} height The height for querying
+   * @param {number} height the height for querying
    */
   getBlock(height: number): Promise<BlockInfo>;
 
   /**
    * Fetches the block at the specific height, if any
-   * @param {number} height The height for querying
+   * @param {number} height the height for querying
    */
   getBlockResult(height: number): Promise<BlockResult>;
 
@@ -69,7 +69,7 @@ export interface Provider {
 
   /**
    * Fetches the consensus params for the specific block height
-   * @param {number} height The height for querying
+   * @param {number} height the height for querying
    */
   getConsensusParams(height: number): Promise<ConsensusParams>;
 
@@ -85,7 +85,7 @@ export interface Provider {
 
   /**
    * Estimates the gas limit for the transaction
-   * @param {Tx} tx The transaction that needs estimating
+   * @param {Tx} tx the transaction that needs estimating
    */
   estimateGas(tx: Tx): Promise<number>;
 
@@ -94,7 +94,7 @@ export interface Provider {
   /**
    * Sends the transaction to the node for committing.
    * The transaction needs to be signed beforehand.
-   * @param {string} tx The base64-encoded signed transaction
+   * @param {string} tx the base64-encoded signed transaction
    */
   sendTransaction(tx: string): Promise<string>;
 

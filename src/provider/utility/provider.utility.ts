@@ -12,7 +12,6 @@ import { sha256 } from '@cosmjs/crypto';
  * Extracts the specific balance denomination from the ABCI response
  * @param {string | null} abciData the base64-encoded ABCI data
  * @param {string} denomination the required denomination
- * @returns {number} the balance for the denomination, if any (0 if none)
  */
 export const extractBalanceFromResponse = (
   abciData: string | null,
@@ -46,8 +45,7 @@ export const extractBalanceFromResponse = (
 
 /**
  * Extracts the account sequence from the ABCI response
- * @param {string | null} abciData The base64-encoded ABCI data
- * @returns {number} The account sequence
+ * @param {string | null} abciData the base64-encoded ABCI data
  */
 export const extractSequenceFromResponse = (
   abciData: string | null
@@ -71,8 +69,7 @@ export const extractSequenceFromResponse = (
 
 /**
  * Extracts the account number from the ABCI response
- * @param {string | null} abciData The base64-encoded ABCI data
- * @returns {number} The account number
+ * @param {string | null} abciData the base64-encoded ABCI data
  */
 export const extractAccountNumberFromResponse = (
   abciData: string | null
@@ -100,7 +97,6 @@ export const extractAccountNumberFromResponse = (
  * @param {string} hash the base64-encoded hash of the transaction
  * @param {number} [fromHeight=latest] the starting height for the search. If omitted, it is the latest block in the chain
  * @param {number} [timeout=15000] the timeout in MS for the search
- * @returns {Promise<Tx>}
  */
 export const waitForTransaction = async (
   provider: Provider,

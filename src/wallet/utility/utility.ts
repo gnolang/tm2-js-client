@@ -13,7 +13,6 @@ import crypto from 'crypto';
  * Generates the HD path, for the specified index, in the form 'm/44'/118'/0'/0/i',
  * where 'i' is the account index
  * @param {number} [index=0] the account index
- * @returns {HdPath} the HD path
  */
 export const generateHDPath = (index?: number): HdPath => {
   return [
@@ -28,7 +27,6 @@ export const generateHDPath = (index?: number): HdPath => {
 /**
  * Generates random entropy of the specified size (in B)
  * @param {number} [size=32] the entropy size in bytes
- * @returns {Uint8Array} the random generated entropy
  */
 export const generateEntropy = (size?: number): Uint8Array => {
   const array = new Uint8Array(size ? size : 32);
