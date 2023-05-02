@@ -58,7 +58,7 @@ export interface Provider {
   /**
    * Fetches the latest block number from the chain
    */
-  getBlockNumber(): Promise<number>; // TODO define type
+  getBlockNumber(): Promise<number>;
 
   // Network-specific methods //
 
