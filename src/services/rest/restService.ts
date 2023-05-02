@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { RequestParams } from './restService.types';
-import { RPCResponse } from '../../provider/types/jsonrpc';
+import { RPCResponse } from '../../provider';
 
 export class RestService {
   static async post<TResult>(

@@ -6,9 +6,9 @@ import {
   ConsensusParams,
   NetworkInfo,
   Status,
-} from '../types/common';
+} from '../types';
 import { RestService } from '../../services/rest/restService';
-import { newRequest } from '../utility/requests.utility';
+import { newRequest } from '../utility';
 import {
   ABCIEndpoint,
   BlockEndpoint,
@@ -16,14 +16,14 @@ import {
   ConsensusEndpoint,
   TransactionEndpoint,
 } from '../endpoints';
-import { ABCIResponse } from '../types/abci';
-import { Tx } from '../../proto/tm2/tx';
+import { ABCIResponse } from '../types';
+import { Tx } from '../../proto';
 import {
   extractAccountNumberFromResponse,
   extractBalanceFromResponse,
   extractSequenceFromResponse,
   waitForTransaction,
-} from '../utility/provider.utility';
+} from '../utility';
 
 /**
  * Provider based on JSON-RPC HTTP requests
@@ -36,7 +36,7 @@ export class JSONRPCProvider implements Provider {
   }
 
   estimateGas(tx: Tx): Promise<number> {
-    return Promise.reject('implement me');
+    return Promise.reject('not supported');
   }
 
   async getBalance(
@@ -89,7 +89,7 @@ export class JSONRPCProvider implements Provider {
   }
 
   getGasPrice(): Promise<number> {
-    return Promise.reject('implement me');
+    return Promise.reject('not supported');
   }
 
   async getNetwork(): Promise<NetworkInfo> {

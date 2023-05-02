@@ -4,8 +4,8 @@ import {
   ConsensusParams,
   NetworkInfo,
   Status,
-} from './types/common';
-import { Tx } from '../proto/tm2/tx';
+} from './types';
+import { Tx } from '../proto';
 
 /**
  * Read-only abstraction for accessing blockchain data

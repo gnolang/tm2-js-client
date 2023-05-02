@@ -1,14 +1,22 @@
 import { Provider } from '../provider';
 import {
+  ABCIResponse,
   BlockInfo,
   BlockResult,
   BroadcastTxResult,
   ConsensusParams,
   NetworkInfo,
+  RPCRequest,
+  RPCResponse,
   Status,
-} from '../types/common';
-import { RPCRequest, RPCResponse } from '../types/jsonrpc';
-import { newRequest } from '../utility/requests.utility';
+} from '../types';
+import {
+  extractAccountNumberFromResponse,
+  extractBalanceFromResponse,
+  extractSequenceFromResponse,
+  newRequest,
+  waitForTransaction,
+} from '../utility';
 import {
   ABCIEndpoint,
   BlockEndpoint,
@@ -17,14 +25,7 @@ import {
   TransactionEndpoint,
 } from '../endpoints';
 import { WebSocket } from 'ws';
-import { ABCIResponse } from '../types/abci';
-import { Tx } from '../../proto/tm2/tx';
-import {
-  extractAccountNumberFromResponse,
-  extractBalanceFromResponse,
-  extractSequenceFromResponse,
-  waitForTransaction,
-} from '../utility/provider.utility';
+import { Tx } from '../../proto';
 
 /**
  * Provider based on WS JSON-RPC HTTP requests

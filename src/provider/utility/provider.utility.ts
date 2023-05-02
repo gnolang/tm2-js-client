@@ -1,12 +1,11 @@
-import { ABCIAccount } from '../types/abci';
+import { ABCIAccount, BlockInfo } from '../types';
 import {
   base64ToUint8Array,
   parseABCI,
   uint8ArrayToBase64,
 } from './requests.utility';
 import { Provider } from '../provider';
-import { Tx } from '../../proto/tm2/tx';
-import { BlockInfo } from '../types/common';
+import { Tx } from '../../proto';
 import { sha256 } from '@cosmjs/crypto';
 
 /**
@@ -80,7 +79,7 @@ export const extractAccountNumberFromResponse = (
 ): number => {
   // Make sure the response is initialized
   if (!abciData) {
-    return 0;
+    throw new Error('account is not initialized');
   }
 
   try {
