@@ -1,6 +1,6 @@
 import { Signer } from '../signer';
 import { LedgerConnector } from '@cosmjs/ledger-amino';
-import { addressPrefix, generateHDPath } from '../utility/utility';
+import { addressPrefix, generateHDPath } from '../utility';
 import { HdPath, Secp256k1, Secp256k1Signature, sha256 } from '@cosmjs/crypto';
 import { encodeSecp256k1Pubkey, pubkeyToAddress } from '@cosmjs/amino';
 
@@ -62,8 +62,4 @@ export class LedgerSigner implements Signer {
       publicKey
     );
   };
-
-  signTransaction(tx: any): any {
-    // TODO
-  }
 }

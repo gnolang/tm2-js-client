@@ -1,20 +1,14 @@
-import { Provider } from '../provider/provider';
+import { Provider, Status, uint8ArrayToBase64 } from '../provider';
 import { Signer } from './signer';
-import { LedgerSigner } from './ledger/ledger';
-import { KeySigner } from './key/key';
+import { LedgerSigner } from './ledger';
+import { KeySigner } from './key';
 import { Secp256k1 } from '@cosmjs/crypto';
-import {
-  generateEntropy,
-  generateKeyPair,
-  stringToUTF8,
-} from './utility/utility';
+import { generateEntropy, generateKeyPair, stringToUTF8 } from './utility';
 import { LedgerConnector } from '@cosmjs/ledger-amino';
 import { entropyToMnemonic } from '@cosmjs/crypto/build/bip39';
-import { Tx, TxMessage, TxSignature } from '../proto/tm2/tx';
-import { Secp256k1PubKeyType, TxSignPayload } from './types/sign';
+import { Tx, TxMessage, TxSignature } from '../proto';
+import { Secp256k1PubKeyType, TxSignPayload } from './types';
 import { sortedJsonStringify } from '@cosmjs/amino/build/signdoc';
-import { Status } from '../provider/types/common';
-import { uint8ArrayToBase64 } from '../provider/utility/requests.utility';
 
 /**
  * Wallet is a single account abstraction
@@ -62,7 +56,7 @@ export class Wallet {
    */
   static fromMnemonic = async (
     mnemonic: string,
-    accountIndex?: number // TODO add configurable path, using stringToPath?
+    accountIndex?: number
   ): Promise<Wallet> => {
     const { publicKey, privateKey } = await generateKeyPair(
       mnemonic,
@@ -106,7 +100,7 @@ export class Wallet {
    */
   static fromLedger = (
     connector: LedgerConnector,
-    accountIndex?: number // TODO add configurable path, using stringToPath?
+    accountIndex?: number
   ): Wallet => {
     const wallet: Wallet = new Wallet();
 
@@ -118,7 +112,7 @@ export class Wallet {
     return wallet;
   };
 
-  // Account info //
+  // Account manipulation //
 
   /**
    * Fetches the address associated with the wallet
@@ -174,7 +168,10 @@ export class Wallet {
     // Get the address
     const address: string = await this.getAddress();
 
-    return this.provider.getBalance(address, denomination);
+    return this.provider.getBalance(
+      address,
+      denomination ? denomination : 'ugnot'
+    );
   };
 
   /**
@@ -192,15 +189,13 @@ export class Wallet {
    * Estimates the gas limit for the transaction
    * @param {Tx} tx the transaction that needs estimating
    */
-  estimateTx = async (tx: Tx): Promise<number> => {
+  estimateGas = async (tx: Tx): Promise<number> => {
     if (!this.provider) {
       throw new Error('provider not connected');
     }
 
     return this.provider.estimateGas(tx);
   };
-
-  // Provider //
 
   /**
    * Returns the connected provider, if any
@@ -292,5 +287,12 @@ export class Wallet {
 
     // Send the encoded transaction
     return this.provider.sendTransaction(encodedTx);
+  };
+
+  /**
+   * Returns the associated signer
+   */
+  getSigner = (): Signer => {
+    return this.signer;
   };
 }
