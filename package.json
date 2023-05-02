@@ -1,11 +1,11 @@
 {
-  "name": "gno-js-sdk",
+  "name": "tm2-js-client",
   "version": "1.0.0",
-  "description": "Gnoland JS SDK",
+  "description": "Tendermint2 JS Client",
   "main": "./bin/index.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/gnolang/gno-js-sdk.git"
+    "url": "git+https://github.com/gnolang/tm2-js-client.git"
   },
   "author": "Milos Zivkovic <milos.zivkovic@tendermint.com>",
   "license": "Apache-2.0",

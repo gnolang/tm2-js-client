@@ -1,2 +1,6 @@
-export { JSONRPCProvider } from './jsonrpc/jsonrpc';
-export { WSProvider } from './websocket/ws';
+export * from './jsonrpc';
+export * from './types';
+export * from './utility';
+export * from './websocket';
+export * from './endpoints';
+export * from './provider';
