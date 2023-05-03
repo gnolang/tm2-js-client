@@ -1,22 +1,19 @@
 import {
+  ABCIAccount,
+  ABCIResponse,
   BlockInfo,
   BlockResult,
   BroadcastTxResult,
   ConsensusParams,
   NetworkInfo,
+  RPCRequest,
   Status,
-} from '../types/common';
+} from '../types';
 import axios from 'axios';
 import { JSONRPCProvider } from './jsonrpc';
-import {
-  newResponse,
-  stringToBase64,
-  uint8ArrayToBase64,
-} from '../utility/requests.utility';
+import { newResponse, stringToBase64, uint8ArrayToBase64 } from '../utility';
 import { mock } from 'jest-mock-extended';
-import { ABCIAccount, ABCIResponse } from '../types/abci';
-import { RPCRequest } from '../types/jsonrpc';
-import { Tx } from '../../proto/tm2/tx';
+import { Tx } from '../../proto';
 import { sha256 } from '@cosmjs/crypto';
 import { CommonEndpoint } from '../endpoints';
 
@@ -263,7 +260,7 @@ describe('JSON-RPC Provider', () => {
 
       // Create the provider
       const provider = new JSONRPCProvider(mockURL);
-      const sequence = await provider.getSequence('address');
+      const sequence = await provider.getAccountSequence('address');
 
       expect(axios.post).toHaveBeenCalled();
       expect(sequence).toBe(expected);

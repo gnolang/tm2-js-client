@@ -24,7 +24,6 @@ import {
   ConsensusEndpoint,
   TransactionEndpoint,
 } from '../endpoints';
-import { WebSocket } from 'ws';
 import { Tx } from '../../proto';
 
 /**
@@ -213,7 +212,7 @@ export class WSProvider implements Provider {
     return this.parseResponse<NetworkInfo>(response);
   }
 
-  async getSequence(address: string, height?: number): Promise<number> {
+  async getAccountSequence(address: string, height?: number): Promise<number> {
     const response = await this.sendRequest<ABCIResponse>(
       newRequest(ABCIEndpoint.ABCI_QUERY, [
         `auth/accounts/${address}`,

@@ -129,7 +129,7 @@ export class Wallet {
     // Get the address
     const address: string = await this.getAddress();
 
-    return this.provider.getSequence(address, height);
+    return this.provider.getAccountSequence(address, height);
   };
 
   /**
@@ -217,7 +217,9 @@ export class Wallet {
     // Extract the relevant account data
     const address: string = await this.getAddress();
     const accountNumber: number = await this.provider.getAccountNumber(address);
-    const accountSequence: number = await this.provider.getSequence(address);
+    const accountSequence: number = await this.provider.getAccountSequence(
+      address
+    );
     const publicKey: Uint8Array = await this.signer.getPublicKey();
 
     // Create the signature payload

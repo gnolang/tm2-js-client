@@ -1,4 +1,7 @@
 import {
+  ABCIAccount,
+  ABCIResponse,
+  ABCIResponseBase,
   BeginBlock,
   BlockInfo,
   BlockResult,
@@ -7,43 +10,21 @@ import {
   EndBlock,
   NetworkInfo,
   Status,
-} from '../types/common';
-import { WebSocketServer } from 'ws';
+} from '../types';
+import { newResponse, stringToBase64, uint8ArrayToBase64 } from '../utility';
 import { WSProvider } from './ws';
-import {
-  newResponse,
-  stringToBase64,
-  uint8ArrayToBase64,
-} from '../utility/requests.utility';
-import { ABCIAccount, ABCIResponse, ABCIResponseBase } from '../types/abci';
-import { Tx } from '../../proto/tm2/tx';
+import WS from 'jest-websocket-mock';
+import { Tx } from '../../proto';
 import { sha256 } from '@cosmjs/crypto';
 import { CommonEndpoint } from '../endpoints';
 
-describe.skip('WS Provider', () => {
+describe('WS Provider', () => {
   const wsPort = 8545;
   const wsHost = 'localhost';
   const wsURL = `ws://${wsHost}:${wsPort}`;
 
+  let server: WS;
   let wsProvider: WSProvider;
-  let server: WebSocketServer;
-
-  /**
-   * Sets up the test response handler (single-response)
-   * @param {WebSocketServer} wss the websocket server returning data
-   * @param {Type} testData the test data being returned to the client
-   */
-  const setHandler = <Type>(testData: Type) => {
-    server.on('connection', (socket) => {
-      socket.on('message', (data) => {
-        const request = JSON.parse(data.toString());
-        const response = newResponse<Type>(testData);
-        response.id = request.id;
-
-        socket.send(JSON.stringify(response));
-      });
-    });
-  };
 
   const mockABCIResponse = (response: string): ABCIResponse => {
     return {
@@ -63,19 +44,33 @@ describe.skip('WS Provider', () => {
     };
   };
 
-  beforeEach(async () => {
-    server = new WebSocketServer({
-      host: wsHost,
-      port: wsPort,
+  /**
+   * Sets up the test response handler (single-response)
+   * @param {WebSocketServer} wss the websocket server returning data
+   * @param {Type} testData the test data being returned to the client
+   */
+  const setHandler = async <Type>(testData: Type) => {
+    server.on('connection', (socket) => {
+      socket.on('message', (data) => {
+        const request = JSON.parse(data.toString());
+        const response = newResponse<Type>(testData);
+        response.id = request.id;
+
+        socket.send(JSON.stringify(response));
+      });
     });
 
+    await server.connected;
+  };
+
+  beforeEach(() => {
+    server = new WS(wsURL);
     wsProvider = new WSProvider(wsURL);
   });
 
   afterEach(() => {
-    server.removeAllListeners();
-    server.close();
     wsProvider.closeConnection();
+    WS.clean();
   });
 
   test('getNetwork', async () => {
@@ -87,7 +82,7 @@ describe.skip('WS Provider', () => {
     };
 
     // Set the response
-    setHandler<NetworkInfo>(mockInfo);
+    await setHandler<NetworkInfo>(mockInfo);
 
     const info: NetworkInfo = await wsProvider.getNetwork();
     expect(info).toEqual(mockInfo);
@@ -131,7 +126,7 @@ describe.skip('WS Provider', () => {
     mockStatus.validator_info.address = 'address';
 
     // Set the response
-    setHandler<Status>(mockStatus);
+    await setHandler<Status>(mockStatus);
 
     const status: Status = await wsProvider.getStatus();
     expect(status).toEqual(status);
@@ -155,7 +150,7 @@ describe.skip('WS Provider', () => {
     };
 
     // Set the response
-    setHandler<ConsensusParams>(mockParams);
+    await setHandler<ConsensusParams>(mockParams);
 
     const params: ConsensusParams = await wsProvider.getConsensusParams(1);
     expect(params).toEqual(mockParams);
@@ -182,10 +177,44 @@ describe.skip('WS Provider', () => {
       const mockResponse: ABCIResponse = mockABCIResponse(response);
 
       // Set the response
-      setHandler<ABCIResponse>(mockResponse);
+      await setHandler<ABCIResponse>(mockResponse);
 
-      const sequence: number = await wsProvider.getSequence('address');
+      const sequence: number = await wsProvider.getAccountSequence('address');
       expect(sequence).toBe(expected);
+    });
+  });
+
+  describe('getAccountNumber', () => {
+    const validAccount: ABCIAccount = {
+      BaseAccount: {
+        address: 'random address',
+        coins: '',
+        public_key: null,
+        account_number: '10',
+        sequence: '0',
+      },
+    };
+
+    test.each([
+      [
+        JSON.stringify(validAccount),
+        parseInt(validAccount.BaseAccount.account_number, 10),
+      ], // account exists
+      ['null', 0], // account doesn't exist
+    ])('case %#', async (response, expected) => {
+      const mockResponse: ABCIResponse = mockABCIResponse(response);
+
+      // Set the response
+      await setHandler<ABCIResponse>(mockResponse);
+
+      try {
+        const accountNumber: number = await wsProvider.getAccountNumber(
+          'address'
+        );
+        expect(accountNumber).toBe(expected);
+      } catch (e) {
+        expect((e as Error).message).toContain('account is not initialized');
+      }
     });
   });
 
@@ -199,7 +228,7 @@ describe.skip('WS Provider', () => {
       const mockResponse: ABCIResponse = mockABCIResponse(existing);
 
       // Set the response
-      setHandler<ABCIResponse>(mockResponse);
+      await setHandler<ABCIResponse>(mockResponse);
 
       const balance: number = await wsProvider.getBalance(
         'address',
@@ -215,7 +244,7 @@ describe.skip('WS Provider', () => {
     mockStatus.sync_info.latest_block_height = `${expectedBlockNumber}`;
 
     // Set the response
-    setHandler<Status>(mockStatus);
+    await setHandler<Status>(mockStatus);
 
     const blockNumber: number = await wsProvider.getBlockNumber();
     expect(blockNumber).toBe(expectedBlockNumber);
@@ -230,7 +259,7 @@ describe.skip('WS Provider', () => {
     };
 
     // Set the response
-    setHandler<BroadcastTxResult>(mockResult);
+    await setHandler<BroadcastTxResult>(mockResult);
 
     const hash: string = await wsProvider.sendTransaction('encoded tx');
     expect(hash).toBe(mockResult.hash);
@@ -291,7 +320,7 @@ describe.skip('WS Provider', () => {
     const mockInfo: BlockInfo = getEmptyBlockInfo();
 
     // Set the response
-    setHandler<BlockInfo>(mockInfo);
+    await setHandler<BlockInfo>(mockInfo);
 
     const result: BlockInfo = await wsProvider.getBlock(0);
     expect(result).toEqual(mockInfo);
@@ -331,7 +360,7 @@ describe.skip('WS Provider', () => {
     const mockResult: BlockResult = getEmptyBlockResult();
 
     // Set the response
-    setHandler<BlockResult>(mockResult);
+    await setHandler<BlockResult>(mockResult);
 
     const result: BlockResult = await wsProvider.getBlockResult(0);
     expect(result).toEqual(mockResult);
@@ -396,6 +425,8 @@ describe.skip('WS Provider', () => {
         socket.send(JSON.stringify(response));
       });
     });
+
+    await server.connected;
 
     const receivedTx: Tx = await wsProvider.waitForTransaction(
       uint8ArrayToBase64(txHash),

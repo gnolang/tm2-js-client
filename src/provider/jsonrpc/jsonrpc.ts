@@ -98,7 +98,7 @@ export class JSONRPCProvider implements Provider {
     });
   }
 
-  async getSequence(address: string, height?: number): Promise<number> {
+  async getAccountSequence(address: string, height?: number): Promise<number> {
     const abciResponse: ABCIResponse = await RestService.post<ABCIResponse>(
       this.baseURL,
       {

@@ -32,7 +32,7 @@ export interface Provider {
    * @param {number} [height=0] the height for querying.
    * If omitted, the latest height is used.
    */
-  getSequence(address: string, height?: number): Promise<number>;
+  getAccountSequence(address: string, height?: number): Promise<number>;
 
   /**
    * Fetches the account number. Errors out if the account

@@ -70,7 +70,7 @@ describe('Wallet', () => {
   test('getSequence', async () => {
     const mockSequence = 5;
     const mockProvider = mock<JSONRPCProvider>();
-    mockProvider.getSequence.mockResolvedValue(mockSequence);
+    mockProvider.getAccountSequence.mockResolvedValue(mockSequence);
 
     const wallet: Wallet = await Wallet.createRandom();
     wallet.connect(mockProvider);
@@ -78,7 +78,10 @@ describe('Wallet', () => {
     const address: string = await wallet.getAddress();
     const sequence: number = await wallet.getSequence();
 
-    expect(mockProvider.getSequence).toHaveBeenCalledWith(address, undefined);
+    expect(mockProvider.getAccountSequence).toHaveBeenCalledWith(
+      address,
+      undefined
+    );
     expect(sequence).toBe(mockSequence);
   });
 
@@ -171,7 +174,7 @@ describe('Wallet', () => {
     const mockProvider = mock<JSONRPCProvider>();
     mockProvider.getStatus.mockResolvedValue(mockStatus);
     mockProvider.getAccountNumber.mockResolvedValue(10);
-    mockProvider.getSequence.mockResolvedValue(10);
+    mockProvider.getAccountSequence.mockResolvedValue(10);
 
     const wallet: Wallet = await Wallet.createRandom();
     wallet.connect(mockProvider);
@@ -180,7 +183,7 @@ describe('Wallet', () => {
 
     expect(mockProvider.getStatus).toHaveBeenCalled();
     expect(mockProvider.getAccountNumber).toHaveBeenCalled();
-    expect(mockProvider.getSequence).toHaveBeenCalled();
+    expect(mockProvider.getAccountSequence).toHaveBeenCalled();
 
     expect(signedTx.signatures).toHaveLength(1);
 
@@ -220,7 +223,7 @@ describe('Wallet', () => {
     const mockProvider = mock<JSONRPCProvider>();
     mockProvider.getStatus.mockResolvedValue(mockStatus);
     mockProvider.getAccountNumber.mockResolvedValue(10);
-    mockProvider.getSequence.mockResolvedValue(10);
+    mockProvider.getAccountSequence.mockResolvedValue(10);
     mockProvider.sendTransaction.mockResolvedValue(mockTxHash);
 
     const wallet: Wallet = await Wallet.createRandom();

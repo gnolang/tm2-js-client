@@ -44,10 +44,7 @@ export class LedgerSigner implements Signer {
       throw new Error('Ledger not connected');
     }
 
-    return this.connector.sign(
-      sha256(data), // TODO verify this is the case
-      this.hdPath
-    );
+    return this.connector.sign(data, this.hdPath);
   };
 
   verifySignature = async (
