@@ -36,6 +36,6 @@ for the package [here](#).
 
 It is made by the community, for the community, and any contribution is greatly appreciated.
 
-A special thank-you goes out to the [OnBloc](https://github.com/onbloc) team, building
+A special thank-you goes out to the [Onbloc](https://github.com/onbloc) team, building
 [Adena wallet](https://github.com/onbloc/adena-wallet) and other gno projects, whose extended supported
 made this package possible.
