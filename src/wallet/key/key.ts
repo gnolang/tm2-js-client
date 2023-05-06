@@ -1,7 +1,7 @@
 import { Signer } from '../signer';
 import { encodeSecp256k1Pubkey, pubkeyToAddress } from '@cosmjs/amino';
 import { Secp256k1, Secp256k1Signature, sha256 } from '@cosmjs/crypto';
-import { addressPrefix } from '../utility/utility';
+import { addressPrefix } from '../utility';
 
 /**
  * KeySigner implements the logic for the private key signer
@@ -10,6 +10,11 @@ export class KeySigner implements Signer {
   private readonly privateKey: Uint8Array; // the raw private key
   private readonly publicKey: Uint8Array; // the compressed public key
 
+  /**
+   * Creates a new {@link KeySigner} instance
+   * @param {Uint8Array} privateKey the raw Secp256k1 private key
+   * @param {Uint8Array} publicKey the raw Secp256k1 public key
+   */
   constructor(privateKey: Uint8Array, publicKey: Uint8Array) {
     this.privateKey = privateKey;
     this.publicKey = publicKey;

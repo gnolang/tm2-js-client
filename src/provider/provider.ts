@@ -94,6 +94,7 @@ export interface Provider {
   /**
    * Sends the transaction to the node for committing.
    * The transaction needs to be signed beforehand.
+   * Returns the transaction hash
    * @param {string} tx the base64-encoded signed transaction
    */
   sendTransaction(tx: string): Promise<string>;

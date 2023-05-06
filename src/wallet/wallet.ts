@@ -121,7 +121,7 @@ export class Wallet {
    * Fetches the account sequence for the wallet
    * @param {number} [height=latest] the block height
    */
-  getSequence = async (height?: number): Promise<number> => {
+  getAccountSequence = async (height?: number): Promise<number> => {
     if (!this.provider) {
       throw new Error('provider not connected');
     }

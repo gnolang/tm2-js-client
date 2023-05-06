@@ -1,5 +1,6 @@
 import { Provider } from '../provider';
 import {
+  ABCIResponse,
   BlockInfo,
   BlockResult,
   BroadcastTxResult,
@@ -8,7 +9,13 @@ import {
   Status,
 } from '../types';
 import { RestService } from '../../services/rest/restService';
-import { newRequest } from '../utility';
+import {
+  extractAccountNumberFromResponse,
+  extractBalanceFromResponse,
+  extractSequenceFromResponse,
+  newRequest,
+  waitForTransaction,
+} from '../utility';
 import {
   ABCIEndpoint,
   BlockEndpoint,
@@ -16,14 +23,7 @@ import {
   ConsensusEndpoint,
   TransactionEndpoint,
 } from '../endpoints';
-import { ABCIResponse } from '../types';
 import { Tx } from '../../proto';
-import {
-  extractAccountNumberFromResponse,
-  extractBalanceFromResponse,
-  extractSequenceFromResponse,
-  waitForTransaction,
-} from '../utility';
 
 /**
  * Provider based on JSON-RPC HTTP requests
@@ -31,6 +31,10 @@ import {
 export class JSONRPCProvider implements Provider {
   private readonly baseURL: string;
 
+  /**
+   * Creates a new instance of the JSON-RPC Provider
+   * @param {string} baseURL the JSON-RPC URL of the node
+   */
   constructor(baseURL: string) {
     this.baseURL = baseURL;
   }

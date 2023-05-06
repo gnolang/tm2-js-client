@@ -67,7 +67,7 @@ describe('Wallet', () => {
     );
   });
 
-  test('getSequence', async () => {
+  test('getAccountSequence', async () => {
     const mockSequence = 5;
     const mockProvider = mock<JSONRPCProvider>();
     mockProvider.getAccountSequence.mockResolvedValue(mockSequence);
@@ -76,7 +76,7 @@ describe('Wallet', () => {
     wallet.connect(mockProvider);
 
     const address: string = await wallet.getAddress();
-    const sequence: number = await wallet.getSequence();
+    const sequence: number = await wallet.getAccountSequence();
 
     expect(mockProvider.getAccountSequence).toHaveBeenCalledWith(
       address,

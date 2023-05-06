@@ -11,6 +11,11 @@ export class LedgerSigner implements Signer {
   private readonly connector: LedgerConnector;
   private readonly hdPath: HdPath;
 
+  /**
+   * Creates a new Ledger device signer instance
+   * @param {LedgerConnector} connector the Ledger connector
+   * @param {number} accountIndex the desired account index
+   */
   constructor(connector: LedgerConnector, accountIndex: number) {
     this.connector = connector;
     this.hdPath = generateHDPath(accountIndex);

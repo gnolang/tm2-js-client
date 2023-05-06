@@ -122,7 +122,7 @@ export class WSProvider implements Provider {
   /**
    * Waits for the WS connection to be established
    */
-  waitForOpenConnection = () => {
+  waitForOpenConnection = (): Promise<null> => {
     return new Promise((resolve, reject) => {
       const maxNumberOfAttempts = 10;
       const intervalTime = 200; //ms
