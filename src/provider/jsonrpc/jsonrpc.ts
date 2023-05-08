@@ -55,6 +55,7 @@ export class JSONRPCProvider implements Provider {
           `bank/balances/${address}`,
           '',
           '0', // Height; not supported > 0 for now
+          false,
         ]),
       }
     );
@@ -110,6 +111,7 @@ export class JSONRPCProvider implements Provider {
           `auth/accounts/${address}`,
           '',
           '0', // Height; not supported > 0 for now
+          false,
         ]),
       }
     );
@@ -125,6 +127,7 @@ export class JSONRPCProvider implements Provider {
           `auth/accounts/${address}`,
           '',
           '0', // Height; not supported > 0 for now
+          false,
         ]),
       }
     );

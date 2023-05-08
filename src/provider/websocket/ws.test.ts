@@ -348,7 +348,7 @@ describe('WS Provider', () => {
 
     return {
       height: '',
-      result: {
+      results: {
         deliver_tx: null,
         end_block: emptyEndBlock,
         begin_block: emptyStartBlock,

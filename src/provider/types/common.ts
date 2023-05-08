@@ -123,8 +123,6 @@ export interface ConsensusState {
   };
 }
 
-export const consensusStateKey = 'height/round/step';
-
 export interface BlockInfo {
   // block metadata information
   block_meta: BlockMeta;
@@ -224,7 +222,7 @@ export interface BlockResult {
   // the block height
   height: string;
   // block result info
-  result: {
+  results: {
     // transactions contained in the block
     deliver_tx: DeliverTx[] | null;
     // end-block info

@@ -157,6 +157,7 @@ export class WSProvider implements Provider {
         `auth/accounts/${address}`,
         '',
         '0', // Height; not supported > 0 for now
+        false,
       ])
     );
 
@@ -218,6 +219,7 @@ export class WSProvider implements Provider {
         `auth/accounts/${address}`,
         '',
         '0', // Height; not supported > 0 for now
+        false,
       ])
     );
 
@@ -233,6 +235,7 @@ export class WSProvider implements Provider {
         `auth/accounts/${address}`,
         '',
         '0', // Height; not supported > 0 for now
+        false,
       ])
     );
 

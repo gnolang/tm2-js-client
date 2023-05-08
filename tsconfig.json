@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
     "target": "ES5",
-    "module": "ES6",
+    "module": "commonjs",
     "moduleResolution": "node",
     "outDir": "./bin",
+    "rootDir": "./src",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
@@ -11,6 +12,6 @@
     "declaration": true,
     "strictPropertyInitialization": false
   },
-  "include": ["src"],
-  "exclude": ["node_modules"]
+  "include": ["./src/**/*.ts"],
+  "exclude": ["./node_modules"]
 }
