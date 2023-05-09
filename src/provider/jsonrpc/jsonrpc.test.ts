@@ -201,8 +201,8 @@ describe('JSON-RPC Provider', () => {
   describe('getBalance', () => {
     const denomination = 'atom';
     test.each([
-      ['5gnot,100atom', 100], // balance found
-      ['5universe', 0], // balance not found
+      ['"5gnot,100atom"', 100], // balance found
+      ['"5universe"', 0], // balance not found
       ['""', 0], // account doesn't exist
     ])('case %#', async (existing, expected) => {
       const mockABCIResponse: ABCIResponse = mock<ABCIResponse>();
