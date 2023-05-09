@@ -23,7 +23,9 @@ export const extractBalanceFromResponse = (
   }
 
   // Extract the balances
-  const balancesRaw = Buffer.from(abciData, 'base64').toString();
+  const balancesRaw = Buffer.from(abciData, 'base64')
+    .toString()
+    .replace(/"/gi, '');
 
   // Find the correct balance denomination
   const balances: string[] = balancesRaw.split(',');
