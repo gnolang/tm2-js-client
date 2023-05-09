@@ -8,7 +8,7 @@ import {
   NetworkInfo,
   Status,
 } from '../types';
-import { RestService } from '../../services/rest/restService';
+import { RestService } from '../../services';
 import {
   extractAccountNumberFromResponse,
   extractBalanceFromResponse,
@@ -29,7 +29,7 @@ import { Tx } from '../../proto';
  * Provider based on JSON-RPC HTTP requests
  */
 export class JSONRPCProvider implements Provider {
-  private readonly baseURL: string;
+  protected readonly baseURL: string;
 
   /**
    * Creates a new instance of the JSON-RPC Provider

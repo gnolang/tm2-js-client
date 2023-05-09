@@ -30,8 +30,8 @@ import { Tx } from '../../proto';
  * Provider based on WS JSON-RPC HTTP requests
  */
 export class WSProvider implements Provider {
-  private ws: WebSocket; // the persistent WS connection
-  private readonly requestMap: Map<
+  protected ws: WebSocket; // the persistent WS connection
+  protected readonly requestMap: Map<
     number | string,
     {
       resolve: (response: RPCResponse<any>) => void;
@@ -39,7 +39,7 @@ export class WSProvider implements Provider {
       timeout: NodeJS.Timeout;
     }
   > = new Map(); // callback method map for the individual endpoints
-  private requestTimeout = 15000; // 15s
+  protected requestTimeout = 15000; // 15s
 
   /**
    * Creates a new instance of the {@link WSProvider}
