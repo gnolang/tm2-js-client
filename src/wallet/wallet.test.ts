@@ -9,6 +9,7 @@ import { Signer } from './signer';
 import { Tx, TxSignature } from '../proto';
 import Long from 'long';
 import { Secp256k1PubKeyType } from './types';
+import { Any } from '../proto/google/protobuf/any';
 
 describe('Wallet', () => {
   test('createRandom', async () => {
@@ -179,7 +180,13 @@ describe('Wallet', () => {
     const wallet: Wallet = await Wallet.createRandom();
     wallet.connect(mockProvider);
 
-    const signedTx: Tx = await wallet.signTransaction(mockTx);
+    const emptyDecodeCallback = (_: Any[]): any[] => {
+      return [];
+    };
+    const signedTx: Tx = await wallet.signTransaction(
+      mockTx,
+      emptyDecodeCallback
+    );
 
     expect(mockProvider.getStatus).toHaveBeenCalled();
     expect(mockProvider.getAccountNumber).toHaveBeenCalled();
@@ -188,7 +195,7 @@ describe('Wallet', () => {
     expect(signedTx.signatures).toHaveLength(1);
 
     const sig: TxSignature = signedTx.signatures[0];
-    expect(sig.pubKey?.type).toBe(Secp256k1PubKeyType);
+    expect(sig.pubKey?.typeUrl).toBe(Secp256k1PubKeyType);
     expect(sig.pubKey?.value).not.toBeNull();
     expect(sig.signature).not.toBeNull();
   });

@@ -6,9 +6,10 @@ import { Secp256k1 } from '@cosmjs/crypto';
 import { generateEntropy, generateKeyPair, stringToUTF8 } from './utility';
 import { LedgerConnector } from '@cosmjs/ledger-amino';
 import { entropyToMnemonic } from '@cosmjs/crypto/build/bip39';
-import { Tx, TxMessage, TxSignature } from '../proto';
+import { PubKeySecp256k1, Tx, TxSignature } from '../proto';
 import { Secp256k1PubKeyType, TxSignPayload } from './types';
 import { sortedJsonStringify } from '@cosmjs/amino/build/signdoc';
+import { Any } from '../proto/google/protobuf/any';
 
 /**
  * Wallet is a single account abstraction
@@ -199,8 +200,15 @@ export class Wallet {
   /**
    * Generates a transaction signature, and appends it to the transaction
    * @param {Tx} tx the transaction to be signed
+   * @param {(messages: Any[]) => any[]} decodeTxMessages tx message decode callback
+   * that should expand the concrete message fields into an object. Required because
+   * the transaction sign bytes are generated using sorted JSON, which requires
+   * encoded message values to be decoded for sorting
    */
-  signTransaction = async (tx: Tx): Promise<Tx> => {
+  signTransaction = async (
+    tx: Tx,
+    decodeTxMessages: (messages: Any[]) => any[]
+  ): Promise<Tx> => {
     if (!this.provider) {
       throw new Error('provider not connected');
     }
@@ -222,6 +230,10 @@ export class Wallet {
     );
     const publicKey: Uint8Array = await this.signer.getPublicKey();
 
+    // The timestamp for the signature needs to be set to "zero time"
+    // See https://github.com/gnolang/gno/issues/810
+    const defaultSigTimestamp = '0001-01-01T00:00:00Z';
+
     // Create the signature payload
     const signPayload: TxSignPayload = {
       chain_id: chainID,
@@ -231,12 +243,9 @@ export class Wallet {
         gas_fee: tx.fee.gasFee,
         gas_wanted: tx.fee.gasWanted.toString(10),
       },
-      msgs: tx.messages.map((m: TxMessage) => ({
-        '@type': m.typeUrl,
-        ...m.value,
-      })),
+      msgs: decodeTxMessages(tx.messages), // unrolled message objects
       memo: tx.memo,
-      time: new Date().toISOString(),
+      time: defaultSigTimestamp,
     };
 
     // The TM2 node does signature verification using
@@ -246,13 +255,18 @@ export class Wallet {
       sortedJsonStringify(signPayload)
     );
 
+    // The public key needs to be encoded using protobuf for Amino
+    const wrappedKey: PubKeySecp256k1 = {
+      key: publicKey,
+    };
+
     // Generate the signature
     const txSignature: TxSignature = {
       pubKey: {
-        type: Secp256k1PubKeyType,
-        value: publicKey,
+        typeUrl: Secp256k1PubKeyType,
+        value: PubKeySecp256k1.encode(wrappedKey).finish(),
       },
-      signature: await this.signer.signData(signBytes),
+      signature: await this.getSigner().signData(signBytes),
     };
 
     // Append the signature
@@ -263,19 +277,18 @@ export class Wallet {
   };
 
   /**
-   * Signs and sends the transaction. Returns the transaction hash (base-64)
-   * @param {Tx} tx the unsigned transaction
+   * Encodes and sends the transaction.
+   * The transaction needs to be signed beforehand.
+   * Returns the transaction hash (base-64)
+   * @param {Tx} tx the signed transaction
    */
   sendTransaction = async (tx: Tx): Promise<string> => {
     if (!this.provider) {
       throw new Error('provider not connected');
     }
 
-    // Sign the transaction
-    const signedTx: Tx = await this.signTransaction(tx);
-
     // Encode the transaction to base-64
-    const encodedTx: string = uint8ArrayToBase64(Tx.encode(signedTx).finish());
+    const encodedTx: string = uint8ArrayToBase64(Tx.encode(tx).finish());
 
     // Send the encoded transaction
     return this.provider.sendTransaction(encodedTx);

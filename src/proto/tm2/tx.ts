@@ -1,12 +1,13 @@
 /* eslint-disable */
 import Long from 'long';
 import _m0 from 'protobufjs/minimal';
+import { Any } from '../google/protobuf/any';
 
 export const protobufPackage = 'tm2.tx';
 
 export interface Tx {
   /** specific message types */
-  messages: TxMessage[];
+  messages: Any[];
   /** transaction costs (fee) */
   fee?: TxFee;
   /** the signatures for the transaction */
@@ -24,23 +25,13 @@ export interface TxFee {
 
 export interface TxSignature {
   /** public key associated with the signature */
-  pubKey?: PublicKey;
+  pubKey?: Any;
   /** the signature */
   signature: Uint8Array;
 }
 
-export interface PublicKey {
-  /** type of public key */
-  type: string;
-  /** public key value */
-  value: Uint8Array;
-}
-
-export interface TxMessage {
-  /** URL of the message */
-  typeUrl: string;
-  /** data value of the message */
-  value: Uint8Array;
+export interface PubKeySecp256k1 {
+  key: Uint8Array;
 }
 
 function createBaseTx(): Tx {
@@ -50,7 +41,7 @@ function createBaseTx(): Tx {
 export const Tx = {
   encode(message: Tx, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     for (const v of message.messages) {
-      TxMessage.encode(v!, writer.uint32(10).fork()).ldelim();
+      Any.encode(v!, writer.uint32(10).fork()).ldelim();
     }
     if (message.fee !== undefined) {
       TxFee.encode(message.fee, writer.uint32(18).fork()).ldelim();
@@ -77,7 +68,7 @@ export const Tx = {
             break;
           }
 
-          message.messages.push(TxMessage.decode(reader, reader.uint32()));
+          message.messages.push(Any.decode(reader, reader.uint32()));
           continue;
         case 2:
           if (tag != 18) {
@@ -112,7 +103,7 @@ export const Tx = {
   fromJSON(object: any): Tx {
     return {
       messages: Array.isArray(object?.messages)
-        ? object.messages.map((e: any) => TxMessage.fromJSON(e))
+        ? object.messages.map((e: any) => Any.fromJSON(e))
         : [],
       fee: isSet(object.fee) ? TxFee.fromJSON(object.fee) : undefined,
       signatures: Array.isArray(object?.signatures)
@@ -126,7 +117,7 @@ export const Tx = {
     const obj: any = {};
     if (message.messages) {
       obj.messages = message.messages.map((e) =>
-        e ? TxMessage.toJSON(e) : undefined
+        e ? Any.toJSON(e) : undefined
       );
     } else {
       obj.messages = [];
@@ -150,8 +141,7 @@ export const Tx = {
 
   fromPartial<I extends Exact<DeepPartial<Tx>, I>>(object: I): Tx {
     const message = createBaseTx();
-    message.messages =
-      object.messages?.map((e) => TxMessage.fromPartial(e)) || [];
+    message.messages = object.messages?.map((e) => Any.fromPartial(e)) || [];
     message.fee =
       object.fee !== undefined && object.fee !== null
         ? TxFee.fromPartial(object.fee)
@@ -251,7 +241,7 @@ export const TxSignature = {
     writer: _m0.Writer = _m0.Writer.create()
   ): _m0.Writer {
     if (message.pubKey !== undefined) {
-      PublicKey.encode(message.pubKey, writer.uint32(10).fork()).ldelim();
+      Any.encode(message.pubKey, writer.uint32(10).fork()).ldelim();
     }
     if (message.signature.length !== 0) {
       writer.uint32(18).bytes(message.signature);
@@ -272,7 +262,7 @@ export const TxSignature = {
             break;
           }
 
-          message.pubKey = PublicKey.decode(reader, reader.uint32());
+          message.pubKey = Any.decode(reader, reader.uint32());
           continue;
         case 2:
           if (tag != 18) {
@@ -292,9 +282,7 @@ export const TxSignature = {
 
   fromJSON(object: any): TxSignature {
     return {
-      pubKey: isSet(object.pubKey)
-        ? PublicKey.fromJSON(object.pubKey)
-        : undefined,
+      pubKey: isSet(object.pubKey) ? Any.fromJSON(object.pubKey) : undefined,
       signature: isSet(object.signature)
         ? bytesFromBase64(object.signature)
         : new Uint8Array(),
@@ -304,9 +292,7 @@ export const TxSignature = {
   toJSON(message: TxSignature): unknown {
     const obj: any = {};
     message.pubKey !== undefined &&
-      (obj.pubKey = message.pubKey
-        ? PublicKey.toJSON(message.pubKey)
-        : undefined);
+      (obj.pubKey = message.pubKey ? Any.toJSON(message.pubKey) : undefined);
     message.signature !== undefined &&
       (obj.signature = base64FromBytes(
         message.signature !== undefined ? message.signature : new Uint8Array()
@@ -324,36 +310,33 @@ export const TxSignature = {
     const message = createBaseTxSignature();
     message.pubKey =
       object.pubKey !== undefined && object.pubKey !== null
-        ? PublicKey.fromPartial(object.pubKey)
+        ? Any.fromPartial(object.pubKey)
         : undefined;
     message.signature = object.signature ?? new Uint8Array();
     return message;
   },
 };
 
-function createBasePublicKey(): PublicKey {
-  return { type: '', value: new Uint8Array() };
+function createBasePubKeySecp256k1(): PubKeySecp256k1 {
+  return { key: new Uint8Array() };
 }
 
-export const PublicKey = {
+export const PubKeySecp256k1 = {
   encode(
-    message: PublicKey,
+    message: PubKeySecp256k1,
     writer: _m0.Writer = _m0.Writer.create()
   ): _m0.Writer {
-    if (message.type !== '') {
-      writer.uint32(10).string(message.type);
-    }
-    if (message.value.length !== 0) {
-      writer.uint32(18).bytes(message.value);
+    if (message.key.length !== 0) {
+      writer.uint32(10).bytes(message.key);
     }
     return writer;
   },
 
-  decode(input: _m0.Reader | Uint8Array, length?: number): PublicKey {
+  decode(input: _m0.Reader | Uint8Array, length?: number): PubKeySecp256k1 {
     const reader =
       input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBasePublicKey();
+    const message = createBasePubKeySecp256k1();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -362,14 +345,7 @@ export const PublicKey = {
             break;
           }
 
-          message.type = reader.string();
-          continue;
-        case 2:
-          if (tag != 18) {
-            break;
-          }
-
-          message.value = reader.bytes();
+          message.key = reader.bytes();
           continue;
       }
       if ((tag & 7) == 4 || tag == 0) {
@@ -380,117 +356,32 @@ export const PublicKey = {
     return message;
   },
 
-  fromJSON(object: any): PublicKey {
+  fromJSON(object: any): PubKeySecp256k1 {
     return {
-      type: isSet(object.type) ? String(object.type) : '',
-      value: isSet(object.value)
-        ? bytesFromBase64(object.value)
-        : new Uint8Array(),
+      key: isSet(object.key) ? bytesFromBase64(object.key) : new Uint8Array(),
     };
   },
 
-  toJSON(message: PublicKey): unknown {
+  toJSON(message: PubKeySecp256k1): unknown {
     const obj: any = {};
-    message.type !== undefined && (obj.type = message.type);
-    message.value !== undefined &&
-      (obj.value = base64FromBytes(
-        message.value !== undefined ? message.value : new Uint8Array()
+    message.key !== undefined &&
+      (obj.key = base64FromBytes(
+        message.key !== undefined ? message.key : new Uint8Array()
       ));
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<PublicKey>, I>>(base?: I): PublicKey {
-    return PublicKey.fromPartial(base ?? {});
+  create<I extends Exact<DeepPartial<PubKeySecp256k1>, I>>(
+    base?: I
+  ): PubKeySecp256k1 {
+    return PubKeySecp256k1.fromPartial(base ?? {});
   },
 
-  fromPartial<I extends Exact<DeepPartial<PublicKey>, I>>(
+  fromPartial<I extends Exact<DeepPartial<PubKeySecp256k1>, I>>(
     object: I
-  ): PublicKey {
-    const message = createBasePublicKey();
-    message.type = object.type ?? '';
-    message.value = object.value ?? new Uint8Array();
-    return message;
-  },
-};
-
-function createBaseTxMessage(): TxMessage {
-  return { typeUrl: '', value: new Uint8Array() };
-}
-
-export const TxMessage = {
-  encode(
-    message: TxMessage,
-    writer: _m0.Writer = _m0.Writer.create()
-  ): _m0.Writer {
-    if (message.typeUrl !== '') {
-      writer.uint32(10).string(message.typeUrl);
-    }
-    if (message.value.length !== 0) {
-      writer.uint32(18).bytes(message.value);
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): TxMessage {
-    const reader =
-      input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseTxMessage();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          if (tag != 10) {
-            break;
-          }
-
-          message.typeUrl = reader.string();
-          continue;
-        case 2:
-          if (tag != 18) {
-            break;
-          }
-
-          message.value = reader.bytes();
-          continue;
-      }
-      if ((tag & 7) == 4 || tag == 0) {
-        break;
-      }
-      reader.skipType(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): TxMessage {
-    return {
-      typeUrl: isSet(object.typeUrl) ? String(object.typeUrl) : '',
-      value: isSet(object.value)
-        ? bytesFromBase64(object.value)
-        : new Uint8Array(),
-    };
-  },
-
-  toJSON(message: TxMessage): unknown {
-    const obj: any = {};
-    message.typeUrl !== undefined && (obj.typeUrl = message.typeUrl);
-    message.value !== undefined &&
-      (obj.value = base64FromBytes(
-        message.value !== undefined ? message.value : new Uint8Array()
-      ));
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<TxMessage>, I>>(base?: I): TxMessage {
-    return TxMessage.fromPartial(base ?? {});
-  },
-
-  fromPartial<I extends Exact<DeepPartial<TxMessage>, I>>(
-    object: I
-  ): TxMessage {
-    const message = createBaseTxMessage();
-    message.typeUrl = object.typeUrl ?? '';
-    message.value = object.value ?? new Uint8Array();
+  ): PubKeySecp256k1 {
+    const message = createBasePubKeySecp256k1();
+    message.key = object.key ?? new Uint8Array();
     return message;
   },
 };
