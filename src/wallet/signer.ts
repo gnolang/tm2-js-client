@@ -14,6 +14,11 @@ export interface Signer {
   getPublicKey(): Promise<Uint8Array>;
 
   /**
+   * Returns the signer's Secp256k1-compressed private key
+   */
+  getPrivateKey(): Promise<Uint8Array>;
+
+  /**
    * Generates a data signature for arbitrary input
    * @param {Uint8Array} data the data to be signed
    */
