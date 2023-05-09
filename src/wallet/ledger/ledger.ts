@@ -45,7 +45,7 @@ export class LedgerSigner implements Signer {
   };
 
   getPrivateKey = async (): Promise<Uint8Array> => {
-    throw new Error('Ledger does not support private key');
+    throw new Error('Ledger does not support private key exports');
   };
 
   signData = async (data: Uint8Array): Promise<Uint8Array> => {

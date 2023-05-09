@@ -14,7 +14,7 @@ export interface Signer {
   getPublicKey(): Promise<Uint8Array>;
 
   /**
-   * Returns the signer's Secp256k1-compressed private key
+   * Returns the signer's actual raw private key
    */
   getPrivateKey(): Promise<Uint8Array>;
 
