@@ -29,6 +29,14 @@ describe('Private Key Signer', () => {
     expect(publicKey).toHaveLength(65);
   });
 
+  test('getPrivateKey', async () => {
+    const signer: KeySigner = await generateRandomKeySigner();
+    const privateKey: Uint8Array = await signer.getPrivateKey();
+
+    expect(privateKey).not.toBeNull();
+    expect(privateKey).toHaveLength(32);
+  });
+
   test('signData', async () => {
     const rawData: Uint8Array = stringToUTF8('random raw data');
     const signer: KeySigner = await generateRandomKeySigner();

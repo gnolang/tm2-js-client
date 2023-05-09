@@ -44,6 +44,10 @@ export class LedgerSigner implements Signer {
     return this.connector.getPubkey(this.hdPath);
   };
 
+  getPrivateKey = async (): Promise<Uint8Array> => {
+    throw new Error('Ledger does not support private key exports');
+  };
+
   signData = async (data: Uint8Array): Promise<Uint8Array> => {
     if (!this.connector) {
       throw new Error('Ledger not connected');

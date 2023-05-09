@@ -31,6 +31,10 @@ export class KeySigner implements Signer {
     return this.publicKey;
   };
 
+  getPrivateKey = async (): Promise<Uint8Array> => {
+    return this.privateKey;
+  };
+
   signData = async (data: Uint8Array): Promise<Uint8Array> => {
     const signature = await Secp256k1.createSignature(
       sha256(data),
