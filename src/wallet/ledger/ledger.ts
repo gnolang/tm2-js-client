@@ -1,6 +1,6 @@
 import { Signer } from '../signer';
 import { LedgerConnector } from '@cosmjs/ledger-amino';
-import { addressPrefix, generateHDPath } from '../utility';
+import { defaultAddressPrefix, generateHDPath } from '../utility';
 import { HdPath, Secp256k1, Secp256k1Signature, sha256 } from '@cosmjs/crypto';
 import { encodeSecp256k1Pubkey, pubkeyToAddress } from '@cosmjs/amino';
 
@@ -10,15 +10,22 @@ import { encodeSecp256k1Pubkey, pubkeyToAddress } from '@cosmjs/amino';
 export class LedgerSigner implements Signer {
   private readonly connector: LedgerConnector;
   private readonly hdPath: HdPath;
+  private readonly addressPrefix: string;
 
   /**
    * Creates a new Ledger device signer instance
    * @param {LedgerConnector} connector the Ledger connector
    * @param {number} accountIndex the desired account index
+   * @param {string} addressPrefix the address prefix
    */
-  constructor(connector: LedgerConnector, accountIndex: number) {
+  constructor(
+    connector: LedgerConnector,
+    accountIndex: number,
+    addressPrefix: string = defaultAddressPrefix
+  ) {
     this.connector = connector;
     this.hdPath = generateHDPath(accountIndex);
+    this.addressPrefix = addressPrefix;
   }
 
   getAddress = async (): Promise<string> => {
@@ -32,7 +39,7 @@ export class LedgerSigner implements Signer {
 
     return pubkeyToAddress(
       encodeSecp256k1Pubkey(compressedPubKey),
-      addressPrefix
+      this.addressPrefix
     );
   };
 

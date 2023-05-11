@@ -32,7 +32,9 @@ export class Wallet {
   /**
    * Generates a private key-based wallet, using a random seed
    */
-  static createRandom = async (): Promise<Wallet> => {
+  static createRandom = async (options?: {
+    addressPrefix?: string;
+  }): Promise<Wallet> => {
     const { publicKey, privateKey } = await generateKeyPair(
       entropyToMnemonic(generateEntropy()),
       0
@@ -42,7 +44,8 @@ export class Wallet {
     const wallet: Wallet = new Wallet();
     wallet.signer = new KeySigner(
       privateKey,
-      Secp256k1.compressPubkey(publicKey)
+      Secp256k1.compressPubkey(publicKey),
+      options?.addressPrefix
     );
 
     return wallet;
@@ -55,18 +58,22 @@ export class Wallet {
    */
   static fromMnemonic = async (
     mnemonic: string,
-    accountIndex?: number
+    options?: {
+      accountIndex?: number;
+      addressPrefix?: string;
+    }
   ): Promise<Wallet> => {
     const { publicKey, privateKey } = await generateKeyPair(
       mnemonic,
-      accountIndex
+      options?.accountIndex
     );
 
     // Initialize the wallet
     const wallet: Wallet = new Wallet();
     wallet.signer = new KeySigner(
       privateKey,
-      Secp256k1.compressPubkey(publicKey)
+      Secp256k1.compressPubkey(publicKey),
+      options?.addressPrefix
     );
 
     return wallet;
@@ -76,7 +83,12 @@ export class Wallet {
    * Generates a private key-based wallet
    * @param {string} privateKey the private key
    */
-  static fromPrivateKey = async (privateKey: Uint8Array): Promise<Wallet> => {
+  static fromPrivateKey = async (
+    privateKey: Uint8Array,
+    options?: {
+      addressPrefix?: string;
+    }
+  ): Promise<Wallet> => {
     // Derive the public key
     const { pubkey: publicKey } = await Secp256k1.makeKeypair(privateKey);
 
@@ -84,7 +96,8 @@ export class Wallet {
     const wallet: Wallet = new Wallet();
     wallet.signer = new KeySigner(
       privateKey,
-      Secp256k1.compressPubkey(publicKey)
+      Secp256k1.compressPubkey(publicKey),
+      options?.addressPrefix
     );
 
     return wallet;
@@ -97,13 +110,17 @@ export class Wallet {
    */
   static fromLedger = (
     connector: LedgerConnector,
-    accountIndex?: number
+    options?: {
+      accountIndex?: number;
+      addressPrefix?: string;
+    }
   ): Wallet => {
     const wallet: Wallet = new Wallet();
 
     wallet.signer = new LedgerSigner(
       connector,
-      accountIndex ? accountIndex : 0
+      options?.accountIndex ?? 0,
+      options?.addressPrefix
     );
 
     return wallet;

@@ -2,7 +2,11 @@ import { JSONRPCProvider, Status } from '../provider';
 import { mock } from 'jest-mock-extended';
 import { Wallet } from './wallet';
 import { EnglishMnemonic, Secp256k1 } from '@cosmjs/crypto';
-import { addressPrefix, generateEntropy, generateKeyPair } from './utility';
+import {
+  defaultAddressPrefix,
+  generateEntropy,
+  generateKeyPair,
+} from './utility';
 import { entropyToMnemonic } from '@cosmjs/crypto/build/bip39';
 import { KeySigner } from './key';
 import { Signer } from './signer';
@@ -44,7 +48,7 @@ describe('Wallet', () => {
     const address: string = await wallet.getAddress();
 
     expect(address).toBe(
-      `${addressPrefix}1vcjvkjdvckprkcpm7l44plrtg83asfu9geaz90`
+      `${defaultAddressPrefix}1vcjvkjdvckprkcpm7l44plrtg83asfu9geaz90`
     );
   });
 
