@@ -72,7 +72,7 @@ export const generateKeyPair = async (
 };
 
 // Address prefix for TM2 networks
-export const addressPrefix = 'g';
+export const defaultAddressPrefix = 'g';
 
 /**
  * Encodes a string into a Uint8Array
