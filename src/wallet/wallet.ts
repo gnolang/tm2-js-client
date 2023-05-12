@@ -6,10 +6,14 @@ import { Secp256k1 } from '@cosmjs/crypto';
 import { generateEntropy, generateKeyPair, stringToUTF8 } from './utility';
 import { LedgerConnector } from '@cosmjs/ledger-amino';
 import { entropyToMnemonic } from '@cosmjs/crypto/build/bip39';
-import { PubKeySecp256k1, Tx, TxSignature } from '../proto';
-import { Secp256k1PubKeyType, TxSignPayload } from './types';
+import { Any, PubKeySecp256k1, Tx, TxSignature } from '../proto';
+import {
+  AccountWalletOption,
+  CreateWalletOptions,
+  Secp256k1PubKeyType,
+  TxSignPayload,
+} from './types';
 import { sortedJsonStringify } from '@cosmjs/amino/build/signdoc';
-import { Any } from '../proto/google/protobuf/any';
 
 /**
  * Wallet is a single account abstraction
@@ -31,10 +35,11 @@ export class Wallet {
 
   /**
    * Generates a private key-based wallet, using a random seed
+   * @param {AccountWalletOption} options the account options
    */
-  static createRandom = async (options?: {
-    addressPrefix?: string;
-  }): Promise<Wallet> => {
+  static createRandom = async (
+    options?: AccountWalletOption
+  ): Promise<Wallet> => {
     const { publicKey, privateKey } = await generateKeyPair(
       entropyToMnemonic(generateEntropy()),
       0
@@ -54,14 +59,11 @@ export class Wallet {
   /**
    * Generates a bip39 mnemonic-based wallet
    * @param {string} mnemonic the bip39 mnemonic
-   * @param {number} [accountIndex=0] the account index
+   * @param {CreateWalletOptions} options the wallet generation options
    */
   static fromMnemonic = async (
     mnemonic: string,
-    options?: {
-      accountIndex?: number;
-      addressPrefix?: string;
-    }
+    options?: CreateWalletOptions
   ): Promise<Wallet> => {
     const { publicKey, privateKey } = await generateKeyPair(
       mnemonic,
@@ -82,12 +84,11 @@ export class Wallet {
   /**
    * Generates a private key-based wallet
    * @param {string} privateKey the private key
+   * @param {AccountWalletOption} options the account options
    */
   static fromPrivateKey = async (
     privateKey: Uint8Array,
-    options?: {
-      addressPrefix?: string;
-    }
+    options?: AccountWalletOption
   ): Promise<Wallet> => {
     // Derive the public key
     const { pubkey: publicKey } = await Secp256k1.makeKeypair(privateKey);
@@ -106,14 +107,11 @@ export class Wallet {
   /**
    * Creates a Ledger-based wallet
    * @param {LedgerConnector} connector the Ledger device connector
-   * @param {number} [accountIndex=0] the account index
+   * @param {CreateWalletOptions} options the wallet generation options
    */
   static fromLedger = (
     connector: LedgerConnector,
-    options?: {
-      accountIndex?: number;
-      addressPrefix?: string;
-    }
+    options?: CreateWalletOptions
   ): Wallet => {
     const wallet: Wallet = new Wallet();
 
