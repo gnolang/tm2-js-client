@@ -41,7 +41,7 @@
     "prettier": "^2.8.8",
     "ts-jest": "^29.1.0",
     "ts-proto": "^1.146.0",
-    "typescript": "^5.0.3"
+    "typescript": "^5.0.4"
   },
   "dependencies": {
     "@cosmjs/amino": "^0.30.1",
