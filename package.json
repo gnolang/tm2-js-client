@@ -1,15 +1,30 @@
 {
-  "name": "tm2-js-client",
+  "name": "@gnolang/tm2-js-client",
   "version": "1.0.0",
-  "description": "Tendermint2 JS Client",
+  "description": "Tendermint2 JS / TS Client",
   "main": "./bin/index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/gnolang/tm2-js-client.git"
   },
+  "keywords": [
+    "tm2",
+    "tendermint2",
+    "sdk",
+    "client",
+    "js"
+  ],
   "author": "Milos Zivkovic <milos.zivkovic@tendermint.com>",
   "license": "Apache-2.0",
+  "homepage": "https://gno.land/",
+  "files": [
+    "bin/**/*"
+  ],
   "private": false,
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "devDependencies": {
     "@types/jest": "^29.5.0",
     "@types/long": "^5.0.0",
@@ -42,6 +57,8 @@
     "lint": "eslint '**/*.ts' --fix",
     "prettier": "prettier --write .",
     "build": "yarn tsc",
-    "test": "jest"
+    "test": "jest",
+    "prepare": "yarn build",
+    "prepublishOnly": "yarn lint && yarn prettier"
   }
 }
