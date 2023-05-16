@@ -65,7 +65,7 @@ about account management.
 ## Documentation
 
 For the sake of keeping the README short and sweet, you can find the documentation and usage examples
-for the package [here](#).
+for the package [here](https://onbloc.gitbook.io/gnoland-developer-portal/docs/tm2-js-client).
 
 ## Acknowledgements
 
