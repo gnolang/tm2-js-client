@@ -154,7 +154,7 @@ export class WSProvider implements Provider {
   ): Promise<number> {
     const response = await this.sendRequest<ABCIResponse>(
       newRequest(ABCIEndpoint.ABCI_QUERY, [
-        `auth/accounts/${address}`,
+        `bank/balances/${address}`,
         '',
         '0', // Height; not supported > 0 for now
         false,
