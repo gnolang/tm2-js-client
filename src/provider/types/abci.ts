@@ -36,7 +36,7 @@ export interface ABCIAccount {
     // the public key info
     public_key: {
       // type of public key
-      type: string;
+      '@type': string;
       // public key value
       value: string;
     } | null;
