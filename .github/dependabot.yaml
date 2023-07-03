@@ -5,6 +5,10 @@ updates:
     target-branch: 'main'
     schedule:
       interval: weekly
+    ignore:
+      # ignore all patch upgrades
+      - dependency-name: '*'
+        update-types: ['version-update:semver-patch']
     open-pull-requests-limit: 10
     pull-request-branch-name:
       separator: '-'
