@@ -1,5 +1,6 @@
 import { Provider } from '../provider';
 import {
+  ABCIErrorKey,
   ABCIResponse,
   BlockInfo,
   BlockResult,
@@ -260,7 +261,19 @@ export class WSProvider implements Provider {
       newRequest(TransactionEndpoint.BROADCAST_TX_SYNC, [tx])
     );
 
-    return this.parseResponse<BroadcastTxResult>(response).hash;
+    const broadcastResponse: BroadcastTxResult =
+      this.parseResponse<BroadcastTxResult>(response);
+
+    // Check if there is an immediate tx-broadcast error
+    // (originating from basic transaction checks like CheckTx)
+    if (broadcastResponse.error) {
+      const errType: string = broadcastResponse.error.ABCIErrorKey;
+      const log: string = broadcastResponse.Log;
+
+      throw new Error(`${errType}: ${log}`);
+    }
+
+    return broadcastResponse.hash;
   }
 
   waitForTransaction(

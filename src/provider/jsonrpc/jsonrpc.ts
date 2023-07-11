@@ -1,5 +1,6 @@
 import { Provider } from '../provider';
 import {
+  ABCIErrorKey,
   ABCIResponse,
   BlockInfo,
   BlockResult,
@@ -148,6 +149,15 @@ export class JSONRPCProvider implements Provider {
       await RestService.post<BroadcastTxResult>(this.baseURL, {
         request: newRequest(TransactionEndpoint.BROADCAST_TX_SYNC, [tx]),
       });
+
+    // Check if there is an immediate tx-broadcast error
+    // (originating from basic transaction checks like CheckTx)
+    if (response.error) {
+      const errType: string = response.error.ABCIErrorKey;
+      const log: string = response.Log;
+
+      throw new Error(`${errType}: ${log}`);
+    }
 
     return response.hash;
   }

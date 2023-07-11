@@ -17,6 +17,8 @@ import WS from 'jest-websocket-mock';
 import { Tx } from '../../proto';
 import { sha256 } from '@cosmjs/crypto';
 import { CommonEndpoint } from '../endpoints';
+import { JSONRPCProvider } from '../jsonrpc';
+import axios from 'axios/index';
 
 describe('WS Provider', () => {
   const wsPort = 8545;
@@ -250,19 +252,43 @@ describe('WS Provider', () => {
     expect(blockNumber).toBe(expectedBlockNumber);
   });
 
-  test('sendTransaction', async () => {
-    const mockResult: BroadcastTxResult = {
+  describe('sendTransaction', () => {
+    const validResult: BroadcastTxResult = {
       error: null,
       data: null,
       Log: '',
       hash: 'hash123',
     };
 
-    // Set the response
-    await setHandler<BroadcastTxResult>(mockResult);
+    const mockError = '/std.UnauthorizedError';
+    const mockLog = 'random error message';
+    const invalidResult: BroadcastTxResult = {
+      error: {
+        ABCIErrorKey: mockError,
+      },
+      data: null,
+      Log: mockLog,
+      hash: '',
+    };
 
-    const hash: string = await wsProvider.sendTransaction('encoded tx');
-    expect(hash).toBe(mockResult.hash);
+    test.each([
+      [validResult, validResult.hash, ''], // no error
+      [invalidResult, invalidResult.hash, `${mockError}: ${mockLog}`], // error out
+    ])('case %#', async (response, expectedHash, expectedErr) => {
+      await setHandler<BroadcastTxResult>(response);
+
+      try {
+        const hash = await wsProvider.sendTransaction('encoded tx');
+
+        expect(hash).toEqual(expectedHash);
+
+        if (expectedErr != '') {
+          fail('expected error');
+        }
+      } catch (e) {
+        expect((e as Error).message).toContain(expectedErr);
+      }
+    });
   });
 
   const getEmptyBlockInfo = (): BlockInfo => {
