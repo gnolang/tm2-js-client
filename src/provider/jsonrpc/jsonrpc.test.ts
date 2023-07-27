@@ -3,7 +3,7 @@ import {
   ABCIResponse,
   BlockInfo,
   BlockResult,
-  BroadcastTxResult,
+  BroadcastTxSyncResult,
   ConsensusParams,
   NetworkInfo,
   RPCRequest,
@@ -70,7 +70,7 @@ describe('JSON-RPC Provider', () => {
   });
 
   describe('sendTransaction', () => {
-    const validResult: BroadcastTxResult = {
+    const validResult: BroadcastTxSyncResult = {
       error: null,
       data: null,
       Log: '',
@@ -79,7 +79,7 @@ describe('JSON-RPC Provider', () => {
 
     const mockError = '/std.UnauthorizedError';
     const mockLog = 'random error message';
-    const invalidResult: BroadcastTxResult = {
+    const invalidResult: BroadcastTxSyncResult = {
       error: {
         ABCIErrorKey: mockError,
       },
@@ -93,7 +93,7 @@ describe('JSON-RPC Provider', () => {
       [invalidResult, invalidResult.hash, `${mockError}: ${mockLog}`], // error out
     ])('case %#', async (response, expectedHash, expectedErr) => {
       mockedAxios.post.mockResolvedValue({
-        data: newResponse<BroadcastTxResult>(response),
+        data: newResponse<BroadcastTxSyncResult>(response),
       });
 
       try {

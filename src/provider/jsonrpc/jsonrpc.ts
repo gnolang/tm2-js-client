@@ -1,12 +1,13 @@
 import { Provider } from '../provider';
 import {
-  ABCIErrorKey,
   ABCIResponse,
   BlockInfo,
   BlockResult,
-  BroadcastTxResult,
+  BroadcastTxCommitResult,
+  BroadcastTxSyncResult,
   ConsensusParams,
   NetworkInfo,
+  RPCRequest,
   Status,
 } from '../types';
 import { RestService } from '../../services';
@@ -144,10 +145,31 @@ export class JSONRPCProvider implements Provider {
     });
   }
 
-  async sendTransaction(tx: string): Promise<string> {
-    const response: BroadcastTxResult =
-      await RestService.post<BroadcastTxResult>(this.baseURL, {
-        request: newRequest(TransactionEndpoint.BROADCAST_TX_SYNC, [tx]),
+  async sendTransaction(
+    tx: string,
+    endpoint?:
+      | TransactionEndpoint.BROADCAST_TX_SYNC
+      | TransactionEndpoint.BROADCAST_TX_COMMIT
+  ): Promise<string> {
+    const queryEndpoint = endpoint
+      ? endpoint
+      : TransactionEndpoint.BROADCAST_TX_SYNC;
+
+    const request: RPCRequest = newRequest(queryEndpoint, [tx]);
+
+    if (queryEndpoint == TransactionEndpoint.BROADCAST_TX_SYNC) {
+      return this.broadcastTxSync(request);
+    }
+
+    // The endpoint is a commit broadcast
+    // (it waits for the transaction to be committed) to the chain before returning
+    return this.broadcastTxCommit(request);
+  }
+
+  private async broadcastTxSync(request: RPCRequest): Promise<string> {
+    const response: BroadcastTxSyncResult =
+      await RestService.post<BroadcastTxSyncResult>(this.baseURL, {
+        request,
       });
 
     // Check if there is an immediate tx-broadcast error
@@ -155,6 +177,33 @@ export class JSONRPCProvider implements Provider {
     if (response.error) {
       const errType: string = response.error.ABCIErrorKey;
       const log: string = response.Log;
+
+      throw new Error(`${errType}: ${log}`);
+    }
+
+    return response.hash;
+  }
+
+  private async broadcastTxCommit(request: RPCRequest): Promise<string> {
+    const response: BroadcastTxCommitResult =
+      await RestService.post<BroadcastTxCommitResult>(this.baseURL, {
+        request,
+      });
+
+    const { check_tx, deliver_tx } = response;
+
+    // Check if there is an immediate tx-broadcast error (in CheckTx)
+    if (check_tx.ResponseBase.Error) {
+      const errType: string = check_tx.ResponseBase.Error.ABCIErrorKey;
+      const log: string = check_tx.ResponseBase.Log;
+
+      throw new Error(`${errType}: ${log}`);
+    }
+
+    // Check if there is a parsing error with the transaction (in DeliverTx)
+    if (deliver_tx.ResponseBase.Error) {
+      const errType: string = deliver_tx.ResponseBase.Error.ABCIErrorKey;
+      const log: string = deliver_tx.ResponseBase.Log;
 
       throw new Error(`${errType}: ${log}`);
     }

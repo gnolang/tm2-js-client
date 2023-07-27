@@ -5,7 +5,7 @@ import {
   BeginBlock,
   BlockInfo,
   BlockResult,
-  BroadcastTxResult,
+  BroadcastTxSyncResult,
   ConsensusParams,
   EndBlock,
   NetworkInfo,
@@ -253,7 +253,7 @@ describe('WS Provider', () => {
   });
 
   describe('sendTransaction', () => {
-    const validResult: BroadcastTxResult = {
+    const validResult: BroadcastTxSyncResult = {
       error: null,
       data: null,
       Log: '',
@@ -262,7 +262,7 @@ describe('WS Provider', () => {
 
     const mockError = '/std.UnauthorizedError';
     const mockLog = 'random error message';
-    const invalidResult: BroadcastTxResult = {
+    const invalidResult: BroadcastTxSyncResult = {
       error: {
         ABCIErrorKey: mockError,
       },
@@ -275,7 +275,7 @@ describe('WS Provider', () => {
       [validResult, validResult.hash, ''], // no error
       [invalidResult, invalidResult.hash, `${mockError}: ${mockLog}`], // error out
     ])('case %#', async (response, expectedHash, expectedErr) => {
-      await setHandler<BroadcastTxResult>(response);
+      await setHandler<BroadcastTxSyncResult>(response);
 
       try {
         const hash = await wsProvider.sendTransaction('encoded tx');
