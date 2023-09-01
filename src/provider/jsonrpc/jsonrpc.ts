@@ -26,6 +26,7 @@ import {
   TransactionEndpoint,
 } from '../endpoints';
 import { Tx } from '../../proto';
+import { constructRequestError } from '../utility/errors.utility';
 
 /**
  * Provider based on JSON-RPC HTTP requests
@@ -178,7 +179,7 @@ export class JSONRPCProvider implements Provider {
       const errType: string = response.error.ABCIErrorKey;
       const log: string = response.Log;
 
-      throw new Error(`${errType}: ${log}`);
+      throw constructRequestError(errType, log);
     }
 
     return response.hash;
@@ -197,7 +198,7 @@ export class JSONRPCProvider implements Provider {
       const errType: string = check_tx.ResponseBase.Error.ABCIErrorKey;
       const log: string = check_tx.ResponseBase.Log;
 
-      throw new Error(`${errType}: ${log}`);
+      throw constructRequestError(errType, log);
     }
 
     // Check if there is a parsing error with the transaction (in DeliverTx)
@@ -205,7 +206,7 @@ export class JSONRPCProvider implements Provider {
       const errType: string = deliver_tx.ResponseBase.Error.ABCIErrorKey;
       const log: string = deliver_tx.ResponseBase.Log;
 
-      throw new Error(`${errType}: ${log}`);
+      throw constructRequestError(errType, log);
     }
 
     return response.hash;

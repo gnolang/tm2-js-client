@@ -26,6 +26,7 @@ import {
   TransactionEndpoint,
 } from '../endpoints';
 import { Tx } from '../../proto';
+import { constructRequestError } from '../utility/errors.utility';
 
 /**
  * Provider based on WS JSON-RPC HTTP requests
@@ -290,7 +291,7 @@ export class WSProvider implements Provider {
       const errType: string = broadcastResponse.error.ABCIErrorKey;
       const log: string = broadcastResponse.Log;
 
-      throw new Error(`${errType}: ${log}`);
+      throw constructRequestError(errType, log);
     }
 
     return broadcastResponse.hash;
@@ -310,7 +311,7 @@ export class WSProvider implements Provider {
       const errType: string = check_tx.ResponseBase.Error.ABCIErrorKey;
       const log: string = check_tx.ResponseBase.Log;
 
-      throw new Error(`${errType}: ${log}`);
+      throw constructRequestError(errType, log);
     }
 
     // Check if there is a parsing error with the transaction (in DeliverTx)
@@ -318,7 +319,7 @@ export class WSProvider implements Provider {
       const errType: string = deliver_tx.ResponseBase.Error.ABCIErrorKey;
       const log: string = deliver_tx.ResponseBase.Log;
 
-      throw new Error(`${errType}: ${log}`);
+      throw constructRequestError(errType, log);
     }
 
     return broadcastResponse.hash;

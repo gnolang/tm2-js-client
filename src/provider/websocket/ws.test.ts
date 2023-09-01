@@ -17,8 +17,8 @@ import WS from 'jest-websocket-mock';
 import { Tx } from '../../proto';
 import { sha256 } from '@cosmjs/crypto';
 import { CommonEndpoint } from '../endpoints';
-import { JSONRPCProvider } from '../jsonrpc';
-import axios from 'axios/index';
+import { UnauthorizedErrorMessage } from '../errors/messages';
+import { TM2Error } from '../errors';
 
 describe('WS Provider', () => {
   const wsPort = 8545;
@@ -272,9 +272,9 @@ describe('WS Provider', () => {
     };
 
     test.each([
-      [validResult, validResult.hash, ''], // no error
-      [invalidResult, invalidResult.hash, `${mockError}: ${mockLog}`], // error out
-    ])('case %#', async (response, expectedHash, expectedErr) => {
+      [validResult, validResult.hash, '', ''], // no error
+      [invalidResult, invalidResult.hash, UnauthorizedErrorMessage, mockLog], // error out
+    ])('case %#', async (response, expectedHash, expectedErr, expectedLog) => {
       await setHandler<BroadcastTxSyncResult>(response);
 
       try {
@@ -286,7 +286,8 @@ describe('WS Provider', () => {
           fail('expected error');
         }
       } catch (e) {
-        expect((e as Error).message).toContain(expectedErr);
+        expect((e as Error).message).toBe(expectedErr);
+        expect((e as TM2Error).log).toBe(expectedLog);
       }
     });
   });

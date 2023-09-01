@@ -16,6 +16,8 @@ import { mock } from 'jest-mock-extended';
 import { Tx } from '../../proto';
 import { sha256 } from '@cosmjs/crypto';
 import { CommonEndpoint } from '../endpoints';
+import { UnauthorizedErrorMessage } from '../errors/messages';
+import { TM2Error } from '../errors';
 
 jest.mock('axios');
 
@@ -89,9 +91,9 @@ describe('JSON-RPC Provider', () => {
     };
 
     test.each([
-      [validResult, validResult.hash, ''], // no error
-      [invalidResult, invalidResult.hash, `${mockError}: ${mockLog}`], // error out
-    ])('case %#', async (response, expectedHash, expectedErr) => {
+      [validResult, validResult.hash, '', ''], // no error
+      [invalidResult, invalidResult.hash, UnauthorizedErrorMessage, mockLog], // error out
+    ])('case %#', async (response, expectedHash, expectedErr, expectedLog) => {
       mockedAxios.post.mockResolvedValue({
         data: newResponse<BroadcastTxSyncResult>(response),
       });
@@ -108,7 +110,8 @@ describe('JSON-RPC Provider', () => {
           fail('expected error');
         }
       } catch (e) {
-        expect((e as Error).message).toContain(expectedErr);
+        expect((e as Error).message).toBe(expectedErr);
+        expect((e as TM2Error).log).toBe(expectedLog);
       }
     });
   });
