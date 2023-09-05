@@ -71,6 +71,6 @@ export const constructRequestError = (
     case '/std.GasOverflowError':
       return new GasOverflowError(log);
     default:
-      return new TM2Error('unknown error');
+      return new TM2Error(`unknown error: ${errorID}`, log);
   }
 };
