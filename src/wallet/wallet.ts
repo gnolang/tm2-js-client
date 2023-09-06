@@ -1,4 +1,9 @@
-import { Provider, Status, uint8ArrayToBase64 } from '../provider';
+import {
+  Provider,
+  Status,
+  TransactionEndpoint,
+  uint8ArrayToBase64,
+} from '../provider';
 import { Signer } from './signer';
 import { LedgerSigner } from './ledger';
 import { KeySigner } from './key';
@@ -296,8 +301,15 @@ export class Wallet {
    * The transaction needs to be signed beforehand.
    * Returns the transaction hash (base-64)
    * @param {Tx} tx the signed transaction
+   * @param {TransactionEndpoint} endpoint the transaction broadcast type (sync / commit).
+   * Defaults to broadcast_sync
    */
-  sendTransaction = async (tx: Tx): Promise<string> => {
+  sendTransaction = async (
+    tx: Tx,
+    endpoint?:
+      | TransactionEndpoint.BROADCAST_TX_SYNC
+      | TransactionEndpoint.BROADCAST_TX_COMMIT
+  ): Promise<string> => {
     if (!this.provider) {
       throw new Error('provider not connected');
     }
@@ -306,7 +318,7 @@ export class Wallet {
     const encodedTx: string = uint8ArrayToBase64(Tx.encode(tx).finish());
 
     // Send the encoded transaction
-    return this.provider.sendTransaction(encodedTx);
+    return this.provider.sendTransaction(encodedTx, endpoint);
   };
 
   /**
