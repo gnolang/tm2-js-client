@@ -1,6 +1,6 @@
 {
   "name": "@gnolang/tm2-js-client",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Tendermint2 JS / TS Client",
   "main": "./bin/index.js",
   "repository": {

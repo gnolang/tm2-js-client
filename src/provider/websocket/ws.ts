@@ -3,7 +3,8 @@ import {
   ABCIResponse,
   BlockInfo,
   BlockResult,
-  BroadcastTxResult,
+  BroadcastTxCommitResult,
+  BroadcastTxSyncResult,
   ConsensusParams,
   NetworkInfo,
   RPCRequest,
@@ -25,6 +26,7 @@ import {
   TransactionEndpoint,
 } from '../endpoints';
 import { Tx } from '../../proto';
+import { constructRequestError } from '../utility/errors.utility';
 
 /**
  * Provider based on WS JSON-RPC HTTP requests
@@ -255,12 +257,72 @@ export class WSProvider implements Provider {
     return this.parseResponse<Status>(response);
   }
 
-  async sendTransaction(tx: string): Promise<string> {
-    const response = await this.sendRequest<BroadcastTxResult>(
-      newRequest(TransactionEndpoint.BROADCAST_TX_SYNC, [tx])
-    );
+  async sendTransaction(
+    tx: string,
+    endpoint?:
+      | TransactionEndpoint.BROADCAST_TX_SYNC
+      | TransactionEndpoint.BROADCAST_TX_COMMIT
+  ): Promise<string> {
+    const queryEndpoint = endpoint
+      ? endpoint
+      : TransactionEndpoint.BROADCAST_TX_SYNC;
 
-    return this.parseResponse<BroadcastTxResult>(response).hash;
+    const request: RPCRequest = newRequest(queryEndpoint, [tx]);
+
+    if (queryEndpoint == TransactionEndpoint.BROADCAST_TX_SYNC) {
+      return this.broadcastTxSync(request);
+    }
+
+    // The endpoint is a commit broadcast
+    // (it waits for the transaction to be committed) to the chain before returning
+    return this.broadcastTxCommit(request);
+  }
+
+  private async broadcastTxSync(request: RPCRequest): Promise<string> {
+    const response: RPCResponse<BroadcastTxSyncResult> =
+      await this.sendRequest<BroadcastTxSyncResult>(request);
+
+    const broadcastResponse: BroadcastTxSyncResult =
+      this.parseResponse<BroadcastTxSyncResult>(response);
+
+    // Check if there is an immediate tx-broadcast error
+    // (originating from basic transaction checks like CheckTx)
+    if (broadcastResponse.error) {
+      const errType: string = broadcastResponse.error.ABCIErrorKey;
+      const log: string = broadcastResponse.Log;
+
+      throw constructRequestError(errType, log);
+    }
+
+    return broadcastResponse.hash;
+  }
+
+  private async broadcastTxCommit(request: RPCRequest): Promise<string> {
+    const response: RPCResponse<BroadcastTxCommitResult> =
+      await this.sendRequest<BroadcastTxCommitResult>(request);
+
+    const broadcastResponse: BroadcastTxCommitResult =
+      this.parseResponse<BroadcastTxCommitResult>(response);
+
+    const { check_tx, deliver_tx } = broadcastResponse;
+
+    // Check if there is an immediate tx-broadcast error (in CheckTx)
+    if (check_tx.ResponseBase.Error) {
+      const errType: string = check_tx.ResponseBase.Error.ABCIErrorKey;
+      const log: string = check_tx.ResponseBase.Log;
+
+      throw constructRequestError(errType, log);
+    }
+
+    // Check if there is a parsing error with the transaction (in DeliverTx)
+    if (deliver_tx.ResponseBase.Error) {
+      const errType: string = deliver_tx.ResponseBase.Error.ABCIErrorKey;
+      const log: string = deliver_tx.ResponseBase.Log;
+
+      throw constructRequestError(errType, log);
+    }
+
+    return broadcastResponse.hash;
   }
 
   waitForTransaction(

@@ -257,7 +257,7 @@ export interface BeginBlock {
   ResponseBase: ABCIResponseBase;
 }
 
-export interface BroadcastTxResult {
+export interface BroadcastTxSyncResult {
   error: {
     // ABCIErrorKey
     [key: string]: string;
@@ -266,4 +266,11 @@ export interface BroadcastTxResult {
   Log: string;
 
   hash: string;
+}
+
+export interface BroadcastTxCommitResult {
+  check_tx: DeliverTx;
+  deliver_tx: DeliverTx;
+  hash: string;
+  height: string; // decimal number
 }

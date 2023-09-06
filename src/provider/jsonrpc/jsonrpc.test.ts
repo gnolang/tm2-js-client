@@ -3,7 +3,7 @@ import {
   ABCIResponse,
   BlockInfo,
   BlockResult,
-  BroadcastTxResult,
+  BroadcastTxSyncResult,
   ConsensusParams,
   NetworkInfo,
   RPCRequest,
@@ -16,6 +16,8 @@ import { mock } from 'jest-mock-extended';
 import { Tx } from '../../proto';
 import { sha256 } from '@cosmjs/crypto';
 import { CommonEndpoint } from '../endpoints';
+import { UnauthorizedErrorMessage } from '../errors/messages';
+import { TM2Error } from '../errors';
 
 jest.mock('axios');
 
@@ -69,20 +71,49 @@ describe('JSON-RPC Provider', () => {
     expect(result).toEqual(mockResult);
   });
 
-  test('sendTransaction', async () => {
-    const mockResult: BroadcastTxResult = mock<BroadcastTxResult>();
-    mockResult.hash = 'hash123';
+  describe('sendTransaction', () => {
+    const validResult: BroadcastTxSyncResult = {
+      error: null,
+      data: null,
+      Log: '',
+      hash: 'hash123',
+    };
 
-    mockedAxios.post.mockResolvedValue({
-      data: newResponse<BroadcastTxResult>(mockResult),
+    const mockError = '/std.UnauthorizedError';
+    const mockLog = 'random error message';
+    const invalidResult: BroadcastTxSyncResult = {
+      error: {
+        ABCIErrorKey: mockError,
+      },
+      data: null,
+      Log: mockLog,
+      hash: '',
+    };
+
+    test.each([
+      [validResult, validResult.hash, '', ''], // no error
+      [invalidResult, invalidResult.hash, UnauthorizedErrorMessage, mockLog], // error out
+    ])('case %#', async (response, expectedHash, expectedErr, expectedLog) => {
+      mockedAxios.post.mockResolvedValue({
+        data: newResponse<BroadcastTxSyncResult>(response),
+      });
+
+      try {
+        // Create the provider
+        const provider = new JSONRPCProvider(mockURL);
+        const hash = await provider.sendTransaction('encoded tx');
+
+        expect(axios.post).toHaveBeenCalled();
+        expect(hash).toEqual(expectedHash);
+
+        if (expectedErr != '') {
+          fail('expected error');
+        }
+      } catch (e) {
+        expect((e as Error).message).toBe(expectedErr);
+        expect((e as TM2Error).log).toBe(expectedLog);
+      }
     });
-
-    // Create the provider
-    const provider = new JSONRPCProvider(mockURL);
-    const hash = await provider.sendTransaction('encoded tx');
-
-    expect(axios.post).toHaveBeenCalled();
-    expect(hash).toEqual(mockResult.hash);
   });
 
   test('waitForTransaction', async () => {

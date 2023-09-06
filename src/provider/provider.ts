@@ -6,6 +6,7 @@ import {
   Status,
 } from './types';
 import { Tx } from '../proto';
+import { TransactionEndpoint } from './endpoints';
 
 /**
  * Read-only abstraction for accessing blockchain data
@@ -96,8 +97,15 @@ export interface Provider {
    * The transaction needs to be signed beforehand.
    * Returns the transaction hash
    * @param {string} tx the base64-encoded signed transaction
+   * @param {TransactionEndpoint} endpoint the transaction broadcast type (sync / commit).
+   * Defaults to broadcast_sync
    */
-  sendTransaction(tx: string): Promise<string>;
+  sendTransaction(
+    tx: string,
+    endpoint?:
+      | TransactionEndpoint.BROADCAST_TX_SYNC
+      | TransactionEndpoint.BROADCAST_TX_COMMIT
+  ): Promise<string>;
 
   /**
    * Waits for the transaction to be committed on the chain.
