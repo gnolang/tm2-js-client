@@ -101,10 +101,12 @@ describe('JSON-RPC Provider', () => {
       try {
         // Create the provider
         const provider = new JSONRPCProvider(mockURL);
-        const hash = await provider.sendTransaction('encoded tx');
+        const tx = await provider.sendTransaction<BroadcastTxSyncResult>(
+          'encoded tx'
+        );
 
         expect(axios.post).toHaveBeenCalled();
-        expect(hash).toEqual(expectedHash);
+        expect(tx.hash).toEqual(expectedHash);
 
         if (expectedErr != '') {
           fail('expected error');

@@ -1,4 +1,5 @@
 import { ABCIResponseBase } from './abci';
+import { TransactionEndpoint } from '../endpoints';
 
 export interface NetworkInfo {
   // flag indicating if networking is up
@@ -274,3 +275,11 @@ export interface BroadcastTxCommitResult {
   hash: string;
   height: string; // decimal number
 }
+
+export type BroadcastType =
+  | TransactionEndpoint.BROADCAST_TX_SYNC
+  | TransactionEndpoint.BROADCAST_TX_COMMIT;
+
+export type BroadcastTransactionResult =
+  | BroadcastTxSyncResult
+  | BroadcastTxCommitResult;

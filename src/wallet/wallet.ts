@@ -1,7 +1,7 @@
 import {
+  BroadcastType,
   Provider,
   Status,
-  TransactionEndpoint,
   uint8ArrayToBase64,
 } from '../provider';
 import { Signer } from './signer';
@@ -301,15 +301,13 @@ export class Wallet {
    * The transaction needs to be signed beforehand.
    * Returns the transaction hash (base-64)
    * @param {Tx} tx the signed transaction
-   * @param {TransactionEndpoint} endpoint the transaction broadcast type (sync / commit).
+   * @param {BroadcastType} endpoint the transaction broadcast type (sync / commit).
    * Defaults to broadcast_sync
    */
-  sendTransaction = async (
+  sendTransaction = async <BroadcastTransactionResult>(
     tx: Tx,
-    endpoint?:
-      | TransactionEndpoint.BROADCAST_TX_SYNC
-      | TransactionEndpoint.BROADCAST_TX_COMMIT
-  ): Promise<string> => {
+    endpoint?: BroadcastType
+  ): Promise<BroadcastTransactionResult> => {
     if (!this.provider) {
       throw new Error('provider not connected');
     }

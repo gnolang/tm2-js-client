@@ -5,6 +5,7 @@ import {
   BlockResult,
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
+  BroadcastType,
   ConsensusParams,
   NetworkInfo,
   RPCRequest,
@@ -257,12 +258,10 @@ export class WSProvider implements Provider {
     return this.parseResponse<Status>(response);
   }
 
-  async sendTransaction(
+  async sendTransaction<BroadcastTransactionResult>(
     tx: string,
-    endpoint?:
-      | TransactionEndpoint.BROADCAST_TX_SYNC
-      | TransactionEndpoint.BROADCAST_TX_COMMIT
-  ): Promise<string> {
+    endpoint?: BroadcastType
+  ): Promise<BroadcastTransactionResult> {
     const queryEndpoint = endpoint
       ? endpoint
       : TransactionEndpoint.BROADCAST_TX_SYNC;
@@ -270,12 +269,16 @@ export class WSProvider implements Provider {
     const request: RPCRequest = newRequest(queryEndpoint, [tx]);
 
     if (queryEndpoint == TransactionEndpoint.BROADCAST_TX_SYNC) {
-      return this.broadcastTxSync(request);
+      return (await this.broadcastTxSync(
+        request
+      )) as BroadcastTransactionResult;
     }
 
     // The endpoint is a commit broadcast
     // (it waits for the transaction to be committed) to the chain before returning
-    return this.broadcastTxCommit(request);
+    return (await this.broadcastTxCommit(
+      request
+    )) as BroadcastTransactionResult;
   }
 
   private async broadcastTxSync(request: RPCRequest): Promise<string> {

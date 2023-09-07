@@ -5,6 +5,7 @@ import {
   BlockResult,
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
+  BroadcastType,
   ConsensusParams,
   NetworkInfo,
   RPCRequest,
@@ -146,12 +147,10 @@ export class JSONRPCProvider implements Provider {
     });
   }
 
-  async sendTransaction(
+  async sendTransaction<BroadcastTransactionResult>(
     tx: string,
-    endpoint?:
-      | TransactionEndpoint.BROADCAST_TX_SYNC
-      | TransactionEndpoint.BROADCAST_TX_COMMIT
-  ): Promise<string> {
+    endpoint?: BroadcastType
+  ): Promise<BroadcastTransactionResult> {
     const queryEndpoint = endpoint
       ? endpoint
       : TransactionEndpoint.BROADCAST_TX_SYNC;
@@ -159,15 +158,21 @@ export class JSONRPCProvider implements Provider {
     const request: RPCRequest = newRequest(queryEndpoint, [tx]);
 
     if (queryEndpoint == TransactionEndpoint.BROADCAST_TX_SYNC) {
-      return this.broadcastTxSync(request);
+      return (await this.broadcastTxSync(
+        request
+      )) as BroadcastTransactionResult;
     }
 
     // The endpoint is a commit broadcast
     // (it waits for the transaction to be committed) to the chain before returning
-    return this.broadcastTxCommit(request);
+    return (await this.broadcastTxCommit(
+      request
+    )) as BroadcastTransactionResult;
   }
 
-  private async broadcastTxSync(request: RPCRequest): Promise<string> {
+  private async broadcastTxSync(
+    request: RPCRequest
+  ): Promise<BroadcastTxSyncResult> {
     const response: BroadcastTxSyncResult =
       await RestService.post<BroadcastTxSyncResult>(this.baseURL, {
         request,
@@ -182,10 +187,12 @@ export class JSONRPCProvider implements Provider {
       throw constructRequestError(errType, log);
     }
 
-    return response.hash;
+    return response;
   }
 
-  private async broadcastTxCommit(request: RPCRequest): Promise<string> {
+  private async broadcastTxCommit(
+    request: RPCRequest
+  ): Promise<BroadcastTxCommitResult> {
     const response: BroadcastTxCommitResult =
       await RestService.post<BroadcastTxCommitResult>(this.baseURL, {
         request,
@@ -209,7 +216,7 @@ export class JSONRPCProvider implements Provider {
       throw constructRequestError(errType, log);
     }
 
-    return response.hash;
+    return response;
   }
 
   async waitForTransaction(
