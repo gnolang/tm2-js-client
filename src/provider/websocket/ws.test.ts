@@ -16,7 +16,7 @@ import { WSProvider } from './ws';
 import WS from 'jest-websocket-mock';
 import { Tx } from '../../proto';
 import { sha256 } from '@cosmjs/crypto';
-import { CommonEndpoint } from '../endpoints';
+import { CommonEndpoint, TransactionEndpoint } from '../endpoints';
 import { UnauthorizedErrorMessage } from '../errors/messages';
 import { TM2Error } from '../errors';
 
@@ -278,9 +278,12 @@ describe('WS Provider', () => {
       await setHandler<BroadcastTxSyncResult>(response);
 
       try {
-        const hash = await wsProvider.sendTransaction('encoded tx');
+        const tx = await wsProvider.sendTransaction(
+          'encoded tx',
+          TransactionEndpoint.BROADCAST_TX_SYNC
+        );
 
-        expect(hash).toEqual(expectedHash);
+        expect(tx.hash).toEqual(expectedHash);
 
         if (expectedErr != '') {
           fail('expected error');

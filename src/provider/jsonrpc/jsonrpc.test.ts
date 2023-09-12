@@ -15,7 +15,7 @@ import { newResponse, stringToBase64, uint8ArrayToBase64 } from '../utility';
 import { mock } from 'jest-mock-extended';
 import { Tx } from '../../proto';
 import { sha256 } from '@cosmjs/crypto';
-import { CommonEndpoint } from '../endpoints';
+import { CommonEndpoint, TransactionEndpoint } from '../endpoints';
 import { UnauthorizedErrorMessage } from '../errors/messages';
 import { TM2Error } from '../errors';
 
@@ -101,8 +101,9 @@ describe('JSON-RPC Provider', () => {
       try {
         // Create the provider
         const provider = new JSONRPCProvider(mockURL);
-        const tx = await provider.sendTransaction<BroadcastTxSyncResult>(
-          'encoded tx'
+        const tx = await provider.sendTransaction(
+          'encoded tx',
+          TransactionEndpoint.BROADCAST_TX_SYNC
         );
 
         expect(axios.post).toHaveBeenCalled();

@@ -3,9 +3,9 @@ import {
   ABCIResponse,
   BlockInfo,
   BlockResult,
+  BroadcastTransactionMap,
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
-  BroadcastType,
   ConsensusParams,
   NetworkInfo,
   RPCRequest,
@@ -258,30 +258,26 @@ export class WSProvider implements Provider {
     return this.parseResponse<Status>(response);
   }
 
-  async sendTransaction<BroadcastTransactionResult>(
+  async sendTransaction<K extends keyof BroadcastTransactionMap>(
     tx: string,
-    endpoint?: BroadcastType
-  ): Promise<BroadcastTransactionResult> {
-    const queryEndpoint = endpoint
-      ? endpoint
-      : TransactionEndpoint.BROADCAST_TX_SYNC;
+    endpoint: K
+  ): Promise<BroadcastTransactionMap[K]['result']> {
+    const request: RPCRequest = newRequest(endpoint, [tx]);
 
-    const request: RPCRequest = newRequest(queryEndpoint, [tx]);
-
-    if (queryEndpoint == TransactionEndpoint.BROADCAST_TX_SYNC) {
-      return (await this.broadcastTxSync(
-        request
-      )) as BroadcastTransactionResult;
+    switch (endpoint) {
+      case TransactionEndpoint.BROADCAST_TX_COMMIT:
+        // The endpoint is a commit broadcast
+        // (it waits for the transaction to be committed) to the chain before returning
+        return this.broadcastTxCommit(request);
+      case TransactionEndpoint.BROADCAST_TX_SYNC:
+      default:
+        return this.broadcastTxSync(request);
     }
-
-    // The endpoint is a commit broadcast
-    // (it waits for the transaction to be committed) to the chain before returning
-    return (await this.broadcastTxCommit(
-      request
-    )) as BroadcastTransactionResult;
   }
 
-  private async broadcastTxSync(request: RPCRequest): Promise<string> {
+  private async broadcastTxSync(
+    request: RPCRequest
+  ): Promise<BroadcastTxSyncResult> {
     const response: RPCResponse<BroadcastTxSyncResult> =
       await this.sendRequest<BroadcastTxSyncResult>(request);
 
@@ -297,10 +293,12 @@ export class WSProvider implements Provider {
       throw constructRequestError(errType, log);
     }
 
-    return broadcastResponse.hash;
+    return broadcastResponse;
   }
 
-  private async broadcastTxCommit(request: RPCRequest): Promise<string> {
+  private async broadcastTxCommit(
+    request: RPCRequest
+  ): Promise<BroadcastTxCommitResult> {
     const response: RPCResponse<BroadcastTxCommitResult> =
       await this.sendRequest<BroadcastTxCommitResult>(request);
 
@@ -325,7 +323,7 @@ export class WSProvider implements Provider {
       throw constructRequestError(errType, log);
     }
 
-    return broadcastResponse.hash;
+    return broadcastResponse;
   }
 
   waitForTransaction(

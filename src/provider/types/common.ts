@@ -280,6 +280,23 @@ export type BroadcastType =
   | TransactionEndpoint.BROADCAST_TX_SYNC
   | TransactionEndpoint.BROADCAST_TX_COMMIT;
 
-export type BroadcastTransactionResult =
-  | BroadcastTxSyncResult
-  | BroadcastTxCommitResult;
+export type BroadcastTransactionSync = {
+  endpoint: TransactionEndpoint.BROADCAST_TX_SYNC;
+  result: BroadcastTxSyncResult;
+};
+
+export type BroadcastTransactionCommit = {
+  endpoint: TransactionEndpoint.BROADCAST_TX_COMMIT;
+  result: BroadcastTxCommitResult;
+};
+
+export type BroadcastTransactionMap = {
+  [TransactionEndpoint.BROADCAST_TX_COMMIT]: BroadcastTransactionCommit;
+  [TransactionEndpoint.BROADCAST_TX_SYNC]: BroadcastTransactionSync;
+};
+
+export type BroadcastAsGeneric<
+  K extends keyof BroadcastTransactionMap = keyof BroadcastTransactionMap,
+> = {
+  [P in K]: BroadcastTransactionMap[P];
+}[K];

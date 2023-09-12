@@ -1,5 +1,5 @@
 import {
-  BroadcastType,
+  BroadcastTransactionMap,
   Provider,
   Status,
   uint8ArrayToBase64,
@@ -297,17 +297,17 @@ export class Wallet {
   };
 
   /**
-   * Encodes and sends the transaction.
+   * Encodes and sends the transaction. If the type of endpoint
+   * is a broadcast commit, waits for the transaction to be committed to the chain.
    * The transaction needs to be signed beforehand.
    * Returns the transaction hash (base-64)
    * @param {Tx} tx the signed transaction
-   * @param {BroadcastType} endpoint the transaction broadcast type (sync / commit).
-   * Defaults to broadcast_sync
+   * @param {BroadcastType} endpoint the transaction broadcast type (sync / commit)
    */
-  sendTransaction = async <BroadcastTransactionResult>(
+  async sendTransaction<K extends keyof BroadcastTransactionMap>(
     tx: Tx,
-    endpoint?: BroadcastType
-  ): Promise<BroadcastTransactionResult> => {
+    endpoint: K
+  ): Promise<BroadcastTransactionMap[K]['result']> {
     if (!this.provider) {
       throw new Error('provider not connected');
     }
@@ -317,7 +317,7 @@ export class Wallet {
 
     // Send the encoded transaction
     return this.provider.sendTransaction(encodedTx, endpoint);
-  };
+  }
 
   /**
    * Returns the associated signer

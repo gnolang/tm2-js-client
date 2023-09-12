@@ -1,4 +1,9 @@
-import { BroadcastTxSyncResult, JSONRPCProvider, Status } from '../provider';
+import {
+  BroadcastTxSyncResult,
+  JSONRPCProvider,
+  Status,
+  TransactionEndpoint,
+} from '../provider';
 import { mock } from 'jest-mock-extended';
 import { Wallet } from './wallet';
 import { EnglishMnemonic, Secp256k1 } from '@cosmjs/crypto';
@@ -247,8 +252,10 @@ describe('Wallet', () => {
     const wallet: Wallet = await Wallet.createRandom();
     wallet.connect(mockProvider);
 
-    const tx: BroadcastTxSyncResult =
-      await wallet.sendTransaction<BroadcastTxSyncResult>(mockTx);
+    const tx: BroadcastTxSyncResult = await wallet.sendTransaction(
+      mockTx,
+      TransactionEndpoint.BROADCAST_TX_SYNC
+    );
 
     expect(tx.hash).toBe(mockTxHash);
   });

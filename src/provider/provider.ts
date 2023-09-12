@@ -1,7 +1,8 @@
 import {
   BlockInfo,
   BlockResult,
-  BroadcastType,
+  BroadcastAsGeneric,
+  BroadcastTransactionMap,
   ConsensusParams,
   NetworkInfo,
   Status,
@@ -93,17 +94,17 @@ export interface Provider {
   // Transaction specific methods //
 
   /**
-   * Sends the transaction to the node for committing.
+   * Sends the transaction to the node. If the type of endpoint
+   * is a broadcast commit, waits for the transaction to be committed to the chain.
    * The transaction needs to be signed beforehand.
-   * Returns the transaction hash
+   * Returns the transaction broadcast result.
    * @param {string} tx the base64-encoded signed transaction
-   * @param {BroadcastType} endpoint the transaction broadcast type (sync / commit).
-   * Defaults to broadcast_sync
+   * @param {BroadcastType} endpoint the transaction broadcast type (sync / commit)
    */
-  sendTransaction<BroadcastTransactionResult>(
+  sendTransaction<K extends keyof BroadcastTransactionMap>(
     tx: string,
-    endpoint?: BroadcastType
-  ): Promise<BroadcastTransactionResult>;
+    endpoint: K
+  ): Promise<BroadcastAsGeneric<K>['result']>;
 
   /**
    * Waits for the transaction to be committed on the chain.

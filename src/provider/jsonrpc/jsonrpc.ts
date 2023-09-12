@@ -3,9 +3,9 @@ import {
   ABCIResponse,
   BlockInfo,
   BlockResult,
+  BroadcastTransactionMap,
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
-  BroadcastType,
   ConsensusParams,
   NetworkInfo,
   RPCRequest,
@@ -147,27 +147,21 @@ export class JSONRPCProvider implements Provider {
     });
   }
 
-  async sendTransaction<BroadcastTransactionResult>(
+  async sendTransaction<K extends keyof BroadcastTransactionMap>(
     tx: string,
-    endpoint?: BroadcastType
-  ): Promise<BroadcastTransactionResult> {
-    const queryEndpoint = endpoint
-      ? endpoint
-      : TransactionEndpoint.BROADCAST_TX_SYNC;
+    endpoint: K
+  ): Promise<BroadcastTransactionMap[K]['result']> {
+    const request: RPCRequest = newRequest(endpoint, [tx]);
 
-    const request: RPCRequest = newRequest(queryEndpoint, [tx]);
-
-    if (queryEndpoint == TransactionEndpoint.BROADCAST_TX_SYNC) {
-      return (await this.broadcastTxSync(
-        request
-      )) as BroadcastTransactionResult;
+    switch (endpoint) {
+      case TransactionEndpoint.BROADCAST_TX_COMMIT:
+        // The endpoint is a commit broadcast
+        // (it waits for the transaction to be committed) to the chain before returning
+        return this.broadcastTxCommit(request);
+      case TransactionEndpoint.BROADCAST_TX_SYNC:
+      default:
+        return this.broadcastTxSync(request);
     }
-
-    // The endpoint is a commit broadcast
-    // (it waits for the transaction to be committed) to the chain before returning
-    return (await this.broadcastTxCommit(
-      request
-    )) as BroadcastTransactionResult;
   }
 
   private async broadcastTxSync(
