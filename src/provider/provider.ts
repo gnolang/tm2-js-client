@@ -1,12 +1,13 @@
 import {
   BlockInfo,
   BlockResult,
+  BroadcastAsGeneric,
+  BroadcastTransactionMap,
   ConsensusParams,
   NetworkInfo,
   Status,
 } from './types';
 import { Tx } from '../proto';
-import { TransactionEndpoint } from './endpoints';
 
 /**
  * Read-only abstraction for accessing blockchain data
@@ -93,19 +94,17 @@ export interface Provider {
   // Transaction specific methods //
 
   /**
-   * Sends the transaction to the node for committing.
+   * Sends the transaction to the node. If the type of endpoint
+   * is a broadcast commit, waits for the transaction to be committed to the chain.
    * The transaction needs to be signed beforehand.
-   * Returns the transaction hash
+   * Returns the transaction broadcast result.
    * @param {string} tx the base64-encoded signed transaction
-   * @param {TransactionEndpoint} endpoint the transaction broadcast type (sync / commit).
-   * Defaults to broadcast_sync
+   * @param {BroadcastType} endpoint the transaction broadcast type (sync / commit)
    */
-  sendTransaction(
+  sendTransaction<K extends keyof BroadcastTransactionMap>(
     tx: string,
-    endpoint?:
-      | TransactionEndpoint.BROADCAST_TX_SYNC
-      | TransactionEndpoint.BROADCAST_TX_COMMIT
-  ): Promise<string>;
+    endpoint: K
+  ): Promise<BroadcastAsGeneric<K>['result']>;
 
   /**
    * Waits for the transaction to be committed on the chain.
