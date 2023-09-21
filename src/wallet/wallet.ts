@@ -25,8 +25,8 @@ import { sortedJsonStringify } from '@cosmjs/amino/build/signdoc';
  * that can interact with the blockchain
  */
 export class Wallet {
-  private provider: Provider;
-  private signer: Signer;
+  protected provider: Provider;
+  protected signer: Signer;
 
   /**
    * Connects the wallet to the specified {@link Provider}
