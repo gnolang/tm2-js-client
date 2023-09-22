@@ -1,5 +1,6 @@
 import { Provider } from '../provider';
 import {
+  ABCIErrorKey,
   ABCIResponse,
   BlockInfo,
   BlockResult,
@@ -175,7 +176,7 @@ export class JSONRPCProvider implements Provider {
     // Check if there is an immediate tx-broadcast error
     // (originating from basic transaction checks like CheckTx)
     if (response.error) {
-      const errType: string = response.error.ABCIErrorKey;
+      const errType: string = response.error[ABCIErrorKey];
       const log: string = response.Log;
 
       throw constructRequestError(errType, log);
@@ -196,7 +197,7 @@ export class JSONRPCProvider implements Provider {
 
     // Check if there is an immediate tx-broadcast error (in CheckTx)
     if (check_tx.ResponseBase.Error) {
-      const errType: string = check_tx.ResponseBase.Error.ABCIErrorKey;
+      const errType: string = check_tx.ResponseBase.Error[ABCIErrorKey];
       const log: string = check_tx.ResponseBase.Log;
 
       throw constructRequestError(errType, log);
@@ -204,7 +205,7 @@ export class JSONRPCProvider implements Provider {
 
     // Check if there is a parsing error with the transaction (in DeliverTx)
     if (deliver_tx.ResponseBase.Error) {
-      const errType: string = deliver_tx.ResponseBase.Error.ABCIErrorKey;
+      const errType: string = deliver_tx.ResponseBase.Error[ABCIErrorKey];
       const log: string = deliver_tx.ResponseBase.Log;
 
       throw constructRequestError(errType, log);

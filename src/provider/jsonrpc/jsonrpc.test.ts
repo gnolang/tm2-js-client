@@ -1,5 +1,6 @@
 import {
   ABCIAccount,
+  ABCIErrorKey,
   ABCIResponse,
   BlockInfo,
   BlockResult,
@@ -83,7 +84,7 @@ describe('JSON-RPC Provider', () => {
     const mockLog = 'random error message';
     const invalidResult: BroadcastTxSyncResult = {
       error: {
-        ABCIErrorKey: mockError,
+        [ABCIErrorKey]: mockError,
       },
       data: null,
       Log: mockLog,
