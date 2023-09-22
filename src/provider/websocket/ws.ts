@@ -1,5 +1,6 @@
 import { Provider } from '../provider';
 import {
+  ABCIErrorKey,
   ABCIResponse,
   BlockInfo,
   BlockResult,
@@ -287,7 +288,7 @@ export class WSProvider implements Provider {
     // Check if there is an immediate tx-broadcast error
     // (originating from basic transaction checks like CheckTx)
     if (broadcastResponse.error) {
-      const errType: string = broadcastResponse.error.ABCIErrorKey;
+      const errType: string = broadcastResponse.error[ABCIErrorKey];
       const log: string = broadcastResponse.Log;
 
       throw constructRequestError(errType, log);
@@ -309,7 +310,7 @@ export class WSProvider implements Provider {
 
     // Check if there is an immediate tx-broadcast error (in CheckTx)
     if (check_tx.ResponseBase.Error) {
-      const errType: string = check_tx.ResponseBase.Error.ABCIErrorKey;
+      const errType: string = check_tx.ResponseBase.Error[ABCIErrorKey];
       const log: string = check_tx.ResponseBase.Log;
 
       throw constructRequestError(errType, log);
@@ -317,7 +318,7 @@ export class WSProvider implements Provider {
 
     // Check if there is a parsing error with the transaction (in DeliverTx)
     if (deliver_tx.ResponseBase.Error) {
-      const errType: string = deliver_tx.ResponseBase.Error.ABCIErrorKey;
+      const errType: string = deliver_tx.ResponseBase.Error[ABCIErrorKey];
       const log: string = deliver_tx.ResponseBase.Log;
 
       throw constructRequestError(errType, log);

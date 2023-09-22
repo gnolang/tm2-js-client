@@ -1,5 +1,6 @@
 import {
   ABCIAccount,
+  ABCIErrorKey,
   ABCIResponse,
   ABCIResponseBase,
   BeginBlock,
@@ -264,7 +265,7 @@ describe('WS Provider', () => {
     const mockLog = 'random error message';
     const invalidResult: BroadcastTxSyncResult = {
       error: {
-        ABCIErrorKey: mockError,
+        [ABCIErrorKey]: mockError,
       },
       data: null,
       Log: mockLog,
