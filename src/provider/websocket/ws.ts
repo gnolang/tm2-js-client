@@ -128,8 +128,8 @@ export class WSProvider implements Provider {
    */
   waitForOpenConnection = (): Promise<null> => {
     return new Promise((resolve, reject) => {
-      const maxNumberOfAttempts = 10;
-      const intervalTime = 200; //ms
+      const maxNumberOfAttempts = 20;
+      const intervalTime = 500; // ms
 
       let currentAttempt = 0;
       const interval = setInterval(() => {
@@ -139,9 +139,9 @@ export class WSProvider implements Provider {
         }
 
         currentAttempt++;
-        if (currentAttempt > maxNumberOfAttempts - 1) {
+        if (currentAttempt >= maxNumberOfAttempts) {
           clearInterval(interval);
-          reject(new Error('Maximum number of attempts exceeded'));
+          reject(new Error('Unable to establish WS connection'));
         }
       }, intervalTime);
     });

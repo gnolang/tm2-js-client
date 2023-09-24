@@ -1,4 +1,5 @@
 import { RPCError, RPCRequest, RPCResponse } from '../types';
+import { v4 as uuidv4 } from 'uuid';
 
 // The version of the supported JSON-RPC protocol
 const standardVersion = '2.0';
@@ -29,7 +30,7 @@ export const newResponse = <Result>(
   error?: RPCError
 ): RPCResponse<Result> => {
   return {
-    id: Date.now(),
+    id: uuidv4(),
     jsonrpc: standardVersion,
     result: result,
     error: error,
