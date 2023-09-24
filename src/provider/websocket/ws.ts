@@ -128,8 +128,8 @@ export class WSProvider implements Provider {
    */
   waitForOpenConnection = (): Promise<null> => {
     return new Promise((resolve, reject) => {
-      const maxNumberOfAttempts = 50;
-      const intervalTime = 200; // ms
+      const maxNumberOfAttempts = 20;
+      const intervalTime = 500; // ms
 
       let currentAttempt = 0;
       const interval = setInterval(() => {
