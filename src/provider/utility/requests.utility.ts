@@ -13,7 +13,7 @@ export const newRequest = (method: string, params?: any[]): RPCRequest => {
   return {
     // the ID of the request is not that relevant for this helper method;
     // for finer ID control, instantiate the request object directly
-    id: Date.now(),
+    id: uuidv4(),
     jsonrpc: standardVersion,
     method: method,
     params: params,
