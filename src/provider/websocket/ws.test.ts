@@ -211,9 +211,8 @@ describe('WS Provider', () => {
       await setHandler<ABCIResponse>(mockResponse);
 
       try {
-        const accountNumber: number = await wsProvider.getAccountNumber(
-          'address'
-        );
+        const accountNumber: number =
+          await wsProvider.getAccountNumber('address');
         expect(accountNumber).toBe(expected);
       } catch (e) {
         expect((e as Error).message).toContain('account is not initialized');
