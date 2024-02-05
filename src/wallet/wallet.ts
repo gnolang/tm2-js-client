@@ -8,7 +8,12 @@ import { Signer } from './signer';
 import { LedgerSigner } from './ledger';
 import { KeySigner } from './key';
 import { Secp256k1 } from '@cosmjs/crypto';
-import { generateEntropy, generateKeyPair, stringToUTF8 } from './utility';
+import {
+  encodeCharacterSet,
+  generateEntropy,
+  generateKeyPair,
+  stringToUTF8,
+} from './utility';
 import { LedgerConnector } from '@cosmjs/ledger-amino';
 import { entropyToMnemonic } from '@cosmjs/crypto/build/bip39';
 import { Any, PubKeySecp256k1, Tx, TxSignature } from '../proto';
@@ -271,7 +276,7 @@ export class Wallet {
     // a sorted JSON object, so the payload needs to be sorted
     // before signing
     const signBytes: Uint8Array = stringToUTF8(
-      sortedJsonStringify(signPayload)
+      encodeCharacterSet(sortedJsonStringify(signPayload))
     );
 
     // The public key needs to be encoded using protobuf for Amino

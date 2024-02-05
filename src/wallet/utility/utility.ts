@@ -81,3 +81,15 @@ export const defaultAddressPrefix = 'g';
 export const stringToUTF8 = (str: string): Uint8Array => {
   return new TextEncoder().encode(str);
 };
+
+/**
+ * Escapes <,>,& in string.
+ * Golang's json marshaller escapes <,>,& by default.
+ * https://cs.opensource.google/go/go/+/refs/tags/go1.20.6:src/encoding/json/encode.go;l=46-53
+ */
+export function encodeCharacterSet(data: string) {
+  return data
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026');
+}
