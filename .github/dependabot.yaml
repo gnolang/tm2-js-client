@@ -8,10 +8,25 @@ updates:
     ignore:
       # ignore all patch upgrades
       - dependency-name: '*'
-        update-types: ['version-update:semver-patch']
+        update-types: [ 'version-update:semver-patch' ]
     open-pull-requests-limit: 10
     versioning-strategy: increase
     pull-request-branch-name:
       separator: '-'
+    groups:
+      eslint:
+        patterns:
+          - 'eslint'
+          - 'eslint-config-prettier'
+          - '@typescript-eslint/*'
+      types:
+        patterns:
+          - '@types/*'
+      prettier:
+        patterns:
+          - 'prettier'
+      everything-else:
+        patterns:
+          - '*'
     reviewers:
       - 'zivkovicmilos'
