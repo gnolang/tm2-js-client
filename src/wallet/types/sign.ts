@@ -27,8 +27,6 @@ export interface TxSignPayload {
   msgs: any[];
   // the transaction memo
   memo: string;
-  // signature generation time
-  time: string;
 }
 
 export const Secp256k1PubKeyType = '/tm.PubKeySecp256k1';

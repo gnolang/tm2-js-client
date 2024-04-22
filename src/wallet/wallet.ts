@@ -254,10 +254,6 @@ export class Wallet {
       await this.provider.getAccountSequence(address);
     const publicKey: Uint8Array = await this.signer.getPublicKey();
 
-    // The timestamp for the signature needs to be set to "zero time"
-    // See https://github.com/gnolang/gno/issues/810
-    const defaultSigTimestamp = '0001-01-01T00:00:00Z';
-
     // Create the signature payload
     const signPayload: TxSignPayload = {
       chain_id: chainID,
@@ -269,7 +265,6 @@ export class Wallet {
       },
       msgs: decodeTxMessages(tx.messages), // unrolled message objects
       memo: tx.memo,
-      time: defaultSigTimestamp,
     };
 
     // The TM2 node does signature verification using
