@@ -3587,10 +3587,10 @@ ts-proto-descriptors@1.15.0:
     long "^5.2.3"
     protobufjs "^7.2.4"
 
-ts-proto@^1.172.0:
-  version "1.172.0"
-  resolved "https://registry.yarnpkg.com/ts-proto/-/ts-proto-1.172.0.tgz#86bc94e452334f951a4ed5a6ded6a0354255dabf"
-  integrity sha512-+4myxp5H+qD4r3sQUwvewN3zpdKpApeuUI0+lxfdznvkd2TUFVaeOD0q6dHszEYKTzR7DHu96Z1pqpNSOXF8iQ==
+ts-proto@^1.174.0:
+  version "1.174.0"
+  resolved "https://registry.yarnpkg.com/ts-proto/-/ts-proto-1.174.0.tgz#423748c4556496a55740f483d605e7254835f1c1"
+  integrity sha512-hptQp5Nu5Vj3Mrj70fx5ccw3rTwPPpKXpa5RJ/WlmWiliVMqNPGYzUuBvd9N/EKsxiSQHiw62aGlZezzF19fKA==
   dependencies:
     case-anything "^2.1.13"
     protobufjs "^7.2.4"
@@ -3734,10 +3734,10 @@ write-file-atomic@^4.0.2:
     imurmurhash "^0.1.4"
     signal-exit "^3.0.7"
 
-ws@^8.16.0:
-  version "8.16.0"
-  resolved "https://registry.yarnpkg.com/ws/-/ws-8.16.0.tgz#d1cd774f36fbc07165066a60e40323eab6446fd4"
-  integrity sha512-HS0c//TP7Ina87TfiPUz1rQzMhHrl/SG2guqRcTOIUYD2q8uhUdNHZYJUaQ8aTGPzCh+c6oawMKW35nFl1dxyQ==
+ws@^8.17.0:
+  version "8.17.0"
+  resolved "https://registry.yarnpkg.com/ws/-/ws-8.17.0.tgz#d145d18eca2ed25aaf791a183903f7be5e295fea"
+  integrity sha512-uJq6108EgZMAl20KagGkzCKfMEjxmKvZHG7Tlq0Z6nOky7YF7aq4mOx6xK8TJ/i1LeK4Qus7INktacctDgY8Ow==
 
 y18n@^5.0.5:
   version "5.0.8"

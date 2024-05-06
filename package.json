@@ -40,7 +40,7 @@
     "jest-websocket-mock": "^2.4.0",
     "prettier": "^3.2.2",
     "ts-jest": "^29.1.0",
-    "ts-proto": "^1.172.0",
+    "ts-proto": "^1.174.0",
     "typescript": "^5.4.4"
   },
   "dependencies": {
@@ -52,7 +52,7 @@
     "long": "^5.2.3",
     "protobufjs": "^7.2.3",
     "uuid": "^9.0.1",
-    "ws": "^8.16.0"
+    "ws": "^8.17.0"
   },
   "scripts": {
     "tsc": "tsc",
