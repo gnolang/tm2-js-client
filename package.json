@@ -1,6 +1,6 @@
 {
   "name": "@gnolang/tm2-js-client",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Tendermint2 JS / TS Client",
   "main": "./bin/index.js",
   "repository": {
@@ -44,9 +44,9 @@
     "typescript": "^5.4.4"
   },
   "dependencies": {
-    "@cosmjs/amino": "^0.32.0",
-    "@cosmjs/crypto": "^0.32.0",
-    "@cosmjs/ledger-amino": "^0.32.0",
+    "@cosmjs/amino": "^0.32.4",
+    "@cosmjs/crypto": "^0.32.4",
+    "@cosmjs/ledger-amino": "^0.32.4",
     "@types/uuid": "^9.0.4",
     "axios": "^1.4.0",
     "long": "^5.2.3",
