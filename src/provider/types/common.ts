@@ -233,6 +233,19 @@ export interface BlockResult {
   };
 }
 
+export interface TxResult {
+  // the transaction hash
+  hash: string;
+  // tx index in the block
+  index: number;
+  // the block height
+  height: string;
+  // deliver tx response
+  tx_result: DeliverTx;
+  // base64 encoded transaction
+  tx: string;
+}
+
 export interface DeliverTx {
   // the transaction ABCI response
   ResponseBase: ABCIResponseBase;

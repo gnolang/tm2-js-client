@@ -12,6 +12,7 @@ import {
   RPCRequest,
   RPCResponse,
   Status,
+  TxResult,
 } from '../types';
 import {
   extractAccountNumberFromResponse,
@@ -257,6 +258,14 @@ export class WSProvider implements Provider {
     );
 
     return this.parseResponse<Status>(response);
+  }
+
+  async getTransaction(hash: string): Promise<TxResult> {
+    const response = await this.sendRequest<TxResult>(
+      newRequest(TransactionEndpoint.TX, [hash])
+    );
+
+    return this.parseResponse<TxResult>(response);
   }
 
   async sendTransaction<K extends keyof BroadcastTransactionMap>(

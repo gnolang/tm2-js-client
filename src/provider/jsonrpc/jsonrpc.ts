@@ -11,6 +11,7 @@ import {
   NetworkInfo,
   RPCRequest,
   Status,
+  TxResult,
 } from '../types';
 import { RestService } from '../../services';
 import {
@@ -145,6 +146,12 @@ export class JSONRPCProvider implements Provider {
   async getStatus(): Promise<Status> {
     return await RestService.post<Status>(this.baseURL, {
       request: newRequest(CommonEndpoint.STATUS),
+    });
+  }
+
+  async getTransaction(hash: string): Promise<TxResult> {
+    return await RestService.post<TxResult>(this.baseURL, {
+      request: newRequest(TransactionEndpoint.TX, [hash]),
     });
   }
 
