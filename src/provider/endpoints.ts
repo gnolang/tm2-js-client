@@ -24,6 +24,7 @@ export enum TransactionEndpoint {
   BROADCAST_TX_ASYNC = 'broadcast_tx_async',
   BROADCAST_TX_SYNC = 'broadcast_tx_sync',
   BROADCAST_TX_COMMIT = 'broadcast_tx_commit',
+  TX = 'tx',
 }
 
 export enum ABCIEndpoint {
