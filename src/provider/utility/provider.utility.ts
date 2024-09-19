@@ -62,7 +62,9 @@ export const extractSequenceFromResponse = (
     const account: ABCIAccount = parseABCI<ABCIAccount>(abciData);
 
     return parseInt(account.BaseAccount.sequence, 10);
-  } catch (e) {}
+  } catch (e) {
+    // unused case
+  }
 
   // Account not initialized,
   // return default value (0)
