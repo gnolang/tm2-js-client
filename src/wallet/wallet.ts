@@ -249,7 +249,18 @@ export class Wallet {
 
     // Extract the relevant account data
     const address: string = await this.getAddress();
-    const accountNumber: number = await this.provider.getAccountNumber(address);
+    // For case Sponsor Service will skip getAccountNumber if account not initialized
+    let accountNumber: number = 0;
+    if (tx.messages[0].typeUrl === '/vm.m_noop') {
+      try {
+        accountNumber = await this.provider.getAccountNumber(address);
+      } catch (e) {
+        // Skip getAccountNumber if account not initialized
+        accountNumber = 0;
+      }
+    } else {
+      accountNumber = await this.provider.getAccountNumber(address);
+    }
     const accountSequence: number =
       await this.provider.getAccountSequence(address);
     const publicKey: Uint8Array = await this.signer.getPublicKey();
