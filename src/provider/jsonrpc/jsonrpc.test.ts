@@ -1,7 +1,16 @@
+import { sha256 } from '@cosmjs/crypto';
+import axios from 'axios';
+import { mock } from 'jest-mock-extended';
+import Long from 'long';
+import { Tx } from '../../proto';
+import { CommonEndpoint, TransactionEndpoint } from '../endpoints';
+import { TM2Error } from '../errors';
+import { UnauthorizedErrorMessage } from '../errors/messages';
 import {
   ABCIAccount,
   ABCIErrorKey,
   ABCIResponse,
+  ABCIResponseSimulateTx,
   BlockInfo,
   BlockResult,
   BroadcastTxSyncResult,
@@ -10,15 +19,8 @@ import {
   RPCRequest,
   Status,
 } from '../types';
-import axios from 'axios';
-import { JSONRPCProvider } from './jsonrpc';
 import { newResponse, stringToBase64, uint8ArrayToBase64 } from '../utility';
-import { mock } from 'jest-mock-extended';
-import { Tx } from '../../proto';
-import { sha256 } from '@cosmjs/crypto';
-import { CommonEndpoint, TransactionEndpoint } from '../endpoints';
-import { UnauthorizedErrorMessage } from '../errors/messages';
-import { TM2Error } from '../errors';
+import { JSONRPCProvider } from './jsonrpc';
 
 jest.mock('axios');
 
@@ -26,6 +28,47 @@ const mockedAxios = axios as jest.Mocked<typeof axios>;
 const mockURL = '127.0.0.1:26657';
 
 describe('JSON-RPC Provider', () => {
+  test('estimateGas', async () => {
+    const tx = Tx.fromJSON({
+      signatures: [],
+      fee: {
+        gasFee: '',
+        gasWanted: new Long(0),
+      },
+      messages: [],
+      memo: '',
+    });
+    const expectedEstimation = 1000;
+
+    const mockSimulateResponse: ABCIResponseSimulateTx = {
+      Data: null,
+      Error: null,
+      Events: null,
+      GasWanted: 0,
+      GasUsed: expectedEstimation,
+    };
+
+    const mockABCIResponse: ABCIResponse = mock<ABCIResponse>();
+    mockABCIResponse.response.ResponseBase = {
+      Log: '',
+      Info: '',
+      Error: null,
+      Events: null,
+      Data: stringToBase64(JSON.stringify(mockSimulateResponse)),
+    };
+
+    mockedAxios.post.mockResolvedValue({
+      data: newResponse<ABCIResponse>(mockABCIResponse),
+    });
+
+    // Create the provider
+    const provider = new JSONRPCProvider(mockURL);
+    const estimation = await provider.estimateGas(tx);
+
+    expect(axios.post).toHaveBeenCalled();
+    expect(estimation).toEqual(expectedEstimation);
+  });
+
   test('getNetwork', async () => {
     const mockInfo: NetworkInfo = mock<NetworkInfo>();
     mockInfo.listening = false;

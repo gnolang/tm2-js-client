@@ -1,4 +1,4 @@
-import { ABCIAccount, BlockInfo } from '../types';
+import { ABCIAccount, ABCIResponseSimulateTx, BlockInfo } from '../types';
 import {
   base64ToUint8Array,
   parseABCI,
@@ -88,6 +88,26 @@ export const extractAccountNumberFromResponse = (
     const account: ABCIAccount = parseABCI<ABCIAccount>(abciData);
 
     return parseInt(account.BaseAccount.account_number, 10);
+  } catch (e) {
+    throw new Error('account is not initialized');
+  }
+};
+
+/**
+ * Extracts the simulate transaction response from the ABCI response
+ * @param {string | null} abciData the base64-encoded ABCI data
+ */
+export const extractSimulateFromResponse = (
+  abciData: string | null
+): ABCIResponseSimulateTx => {
+  // Make sure the response is initialized
+  if (!abciData) {
+    throw new Error('abci data is not initialized');
+  }
+
+  try {
+    // Parse the account
+    return parseABCI<ABCIResponseSimulateTx>(abciData);
   } catch (e) {
     throw new Error('account is not initialized');
   }
