@@ -1,12 +1,12 @@
-import { ABCIAccount, ABCIResponseSimulateTx, BlockInfo } from '../types';
+import { sha256 } from '@cosmjs/crypto';
+import { Tx } from '../../proto';
+import { Provider } from '../provider';
+import { ABCIAccount, BlockInfo, DeliverTx } from '../types';
 import {
   base64ToUint8Array,
   parseABCI,
   uint8ArrayToBase64,
 } from './requests.utility';
-import { Provider } from '../provider';
-import { Tx } from '../../proto';
-import { sha256 } from '@cosmjs/crypto';
 
 /**
  * Extracts the specific balance denomination from the ABCI response
@@ -99,7 +99,7 @@ export const extractAccountNumberFromResponse = (
  */
 export const extractSimulateFromResponse = (
   abciData: string | null
-): ABCIResponseSimulateTx => {
+): DeliverTx => {
   // Make sure the response is initialized
   if (!abciData) {
     throw new Error('abci data is not initialized');
@@ -107,7 +107,7 @@ export const extractSimulateFromResponse = (
 
   try {
     // Parse the account
-    return parseABCI<ABCIResponseSimulateTx>(abciData);
+    return parseABCI<DeliverTx>(abciData);
   } catch (e) {
     throw new Error('account is not initialized');
   }

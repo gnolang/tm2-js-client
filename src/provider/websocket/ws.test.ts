@@ -10,12 +10,12 @@ import {
   ABCIErrorKey,
   ABCIResponse,
   ABCIResponseBase,
-  ABCIResponseSimulateTx,
   BeginBlock,
   BlockInfo,
   BlockResult,
   BroadcastTxSyncResult,
   ConsensusParams,
+  DeliverTx,
   EndBlock,
   NetworkInfo,
   Status,
@@ -90,12 +90,16 @@ describe('WS Provider', () => {
     });
     const expectedEstimation = 1000;
 
-    const mockSimulateResponse: ABCIResponseSimulateTx = {
-      Data: null,
-      Error: null,
-      Events: null,
-      GasWanted: 0,
-      GasUsed: expectedEstimation,
+    const mockSimulateResponse: DeliverTx = {
+      ResponseBase: {
+        Data: null,
+        Error: null,
+        Events: null,
+        Info: '',
+        Log: '',
+      },
+      GasWanted: '0',
+      GasUsed: expectedEstimation.toString(),
     };
 
     const mockABCIResponse: ABCIResponse = {

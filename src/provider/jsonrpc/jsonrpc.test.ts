@@ -10,11 +10,11 @@ import {
   ABCIAccount,
   ABCIErrorKey,
   ABCIResponse,
-  ABCIResponseSimulateTx,
   BlockInfo,
   BlockResult,
   BroadcastTxSyncResult,
   ConsensusParams,
+  DeliverTx,
   NetworkInfo,
   RPCRequest,
   Status,
@@ -40,12 +40,16 @@ describe('JSON-RPC Provider', () => {
     });
     const expectedEstimation = 1000;
 
-    const mockSimulateResponse: ABCIResponseSimulateTx = {
-      Data: null,
-      Error: null,
-      Events: null,
-      GasWanted: 0,
-      GasUsed: expectedEstimation,
+    const mockSimulateResponse: DeliverTx = {
+      ResponseBase: {
+        Data: null,
+        Error: null,
+        Events: null,
+        Info: '',
+        Log: '',
+      },
+      GasWanted: '0',
+      GasUsed: expectedEstimation.toString(),
     };
 
     const mockABCIResponse: ABCIResponse = mock<ABCIResponse>();

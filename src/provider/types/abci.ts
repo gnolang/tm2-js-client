@@ -47,12 +47,4 @@ export interface ABCIAccount {
   };
 }
 
-export interface ABCIResponseSimulateTx {
-  Error: string | null;
-  Data: string | null;
-  Events: any[] | null;
-  GasWanted: number;
-  GasUsed: number;
-}
-
 export const ABCIErrorKey = '@type';

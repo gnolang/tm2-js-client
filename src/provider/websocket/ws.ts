@@ -167,7 +167,7 @@ export class WSProvider implements Provider {
     const simulateResult = extractSimulateFromResponse(
       abciResponse.response.Value
     );
-    return simulateResult.GasUsed;
+    return parseInt(simulateResult.GasUsed);
   }
 
   async getBalance(
