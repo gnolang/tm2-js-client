@@ -62,7 +62,7 @@ export class JSONRPCProvider implements Provider {
     );
 
     const simulateResult = extractSimulateFromResponse(
-      abciResponse.response.ResponseBase.Data
+      abciResponse.response.Value
     );
     return simulateResult.GasUsed;
   }

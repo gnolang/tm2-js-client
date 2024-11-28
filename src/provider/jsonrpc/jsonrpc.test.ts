@@ -49,13 +49,9 @@ describe('JSON-RPC Provider', () => {
     };
 
     const mockABCIResponse: ABCIResponse = mock<ABCIResponse>();
-    mockABCIResponse.response.ResponseBase = {
-      Log: '',
-      Info: '',
-      Error: null,
-      Events: null,
-      Data: stringToBase64(JSON.stringify(mockSimulateResponse)),
-    };
+    mockABCIResponse.response.Value = stringToBase64(
+      JSON.stringify(mockSimulateResponse)
+    );
 
     mockedAxios.post.mockResolvedValue({
       data: newResponse<ABCIResponse>(mockABCIResponse),

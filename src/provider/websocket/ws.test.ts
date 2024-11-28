@@ -103,13 +103,13 @@ describe('WS Provider', () => {
         Height: '',
         Key: '',
         Proof: null,
-        Value: null,
+        Value: stringToBase64(JSON.stringify(mockSimulateResponse)),
         ResponseBase: {
           Log: '',
           Info: '',
           Error: null,
           Events: null,
-          Data: stringToBase64(JSON.stringify(mockSimulateResponse)),
+          Data: '',
         },
       },
     };
