@@ -14,7 +14,6 @@ import {
   BlockResult,
   BroadcastTxSyncResult,
   ConsensusParams,
-  DeliverTx,
   NetworkInfo,
   RPCRequest,
   Status,
@@ -38,24 +37,11 @@ describe('JSON-RPC Provider', () => {
       messages: [],
       memo: '',
     });
-    const expectedEstimation = 1000;
-
-    const mockSimulateResponse: DeliverTx = {
-      ResponseBase: {
-        Data: null,
-        Error: null,
-        Events: null,
-        Info: '',
-        Log: '',
-      },
-      GasWanted: '0',
-      GasUsed: expectedEstimation.toString(),
-    };
+    const expectedEstimation = 44900;
 
     const mockABCIResponse: ABCIResponse = mock<ABCIResponse>();
-    mockABCIResponse.response.Value = stringToBase64(
-      JSON.stringify(mockSimulateResponse)
-    );
+    mockABCIResponse.response.Value =
+      'CiMiIW1zZzowLHN1Y2Nlc3M6dHJ1ZSxsb2c6LGV2ZW50czpbXRCAiXoYyL0F';
 
     mockedAxios.post.mockResolvedValue({
       data: newResponse<ABCIResponse>(mockABCIResponse),

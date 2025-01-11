@@ -61,10 +61,9 @@ export class JSONRPCProvider implements Provider {
       }
     );
 
-    const simulateResult = extractSimulateFromResponse(
-      abciResponse.response.Value
-    );
-    return parseInt(simulateResult.GasUsed);
+    const simulateResult = extractSimulateFromResponse(abciResponse);
+
+    return simulateResult.gasUsed.toInt();
   }
 
   async getBalance(

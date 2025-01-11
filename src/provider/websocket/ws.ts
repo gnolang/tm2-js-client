@@ -164,10 +164,14 @@ export class WSProvider implements Provider {
     // Parse the response
     const abciResponse = this.parseResponse<ABCIResponse>(response);
 
-    const simulateResult = extractSimulateFromResponse(
-      abciResponse.response.Value
-    );
-    return parseInt(simulateResult.GasUsed);
+    const simulateResult = extractSimulateFromResponse(abciResponse);
+
+    const resultErrorKey = simulateResult.responseBase?.error?.typeUrl;
+    if (resultErrorKey) {
+      throw constructRequestError(resultErrorKey);
+    }
+
+    return simulateResult.gasUsed.toInt();
   }
 
   async getBalance(

@@ -1,10 +1,13 @@
 import { sha256 } from '@cosmjs/crypto';
 import { Tx } from '../../proto';
+import { ResponseDeliverTx } from '../../proto/tm2/abci';
 import { Provider } from '../provider';
-import { ABCIAccount, BlockInfo, DeliverTx } from '../types';
+import { ABCIAccount, ABCIErrorKey, ABCIResponse, BlockInfo } from '../types';
+import { constructRequestError } from './errors.utility';
 import {
   base64ToUint8Array,
   parseABCI,
+  parseProto,
   uint8ArrayToBase64,
 } from './requests.utility';
 
@@ -94,22 +97,31 @@ export const extractAccountNumberFromResponse = (
 };
 
 /**
- * Extracts the simulate transaction response from the ABCI response
- * @param {string | null} abciData the base64-encoded ABCI data
+ * Extracts the simulate transaction response from the ABCI response value
+ * @param {string | null} abciData the base64-encoded ResponseDeliverTx proto message
  */
 export const extractSimulateFromResponse = (
-  abciData: string | null
-): DeliverTx => {
+  abciResponse: ABCIResponse | null
+): ResponseDeliverTx => {
   // Make sure the response is initialized
-  if (!abciData) {
+  if (!abciResponse) {
+    throw new Error('abci data is not initialized');
+  }
+
+  const error = abciResponse.response?.ResponseBase?.Error;
+  if (error && error[ABCIErrorKey]) {
+    throw constructRequestError(error[ABCIErrorKey]);
+  }
+
+  const value = abciResponse.response.Value;
+  if (!value) {
     throw new Error('abci data is not initialized');
   }
 
   try {
-    // Parse the account
-    return parseABCI<DeliverTx>(abciData);
+    return parseProto(value, ResponseDeliverTx.decode);
   } catch (e) {
-    throw new Error('account is not initialized');
+    throw new Error('unable to parse simulate response');
   }
 };
 

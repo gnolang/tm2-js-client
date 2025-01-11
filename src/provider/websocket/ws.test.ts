@@ -15,7 +15,6 @@ import {
   BlockResult,
   BroadcastTxSyncResult,
   ConsensusParams,
-  DeliverTx,
   EndBlock,
   NetworkInfo,
   Status,
@@ -88,26 +87,17 @@ describe('WS Provider', () => {
       messages: [],
       memo: '',
     });
-    const expectedEstimation = 1000;
+    const expectedEstimation = 44900;
 
-    const mockSimulateResponse: DeliverTx = {
-      ResponseBase: {
-        Data: null,
-        Error: null,
-        Events: null,
-        Info: '',
-        Log: '',
-      },
-      GasWanted: '0',
-      GasUsed: expectedEstimation.toString(),
-    };
+    const mockSimulateResponseVale =
+      'CiMiIW1zZzowLHN1Y2Nlc3M6dHJ1ZSxsb2c6LGV2ZW50czpbXRCAiXoYyL0F';
 
     const mockABCIResponse: ABCIResponse = {
       response: {
         Height: '',
         Key: '',
         Proof: null,
-        Value: stringToBase64(JSON.stringify(mockSimulateResponse)),
+        Value: mockSimulateResponseVale,
         ResponseBase: {
           Log: '',
           Info: '',
