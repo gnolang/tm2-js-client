@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+import "google/protobuf/any.proto";
+
+package tm2.abci;
+
+message ResponseDeliverTx {
+	ResponseBase response_base = 1 [json_name = "ResponseBase"];
+	sint64 gas_wanted = 2 [json_name = "GasWanted"];
+	sint64 gas_used = 3 [json_name = "GasUsed"];
+}
+
+message ResponseBase {
+	google.protobuf.Any error = 1 [json_name = "Error"];
+	bytes data = 2 [json_name = "Data"];
+	repeated google.protobuf.Any events = 3 [json_name = "Events"];
+	string log = 4 [json_name = "Log"];
+	string info = 5 [json_name = "Info"];
+}
