@@ -1,3 +1,10 @@
+import { sha256 } from '@cosmjs/crypto';
+import WS from 'jest-websocket-mock';
+import Long from 'long';
+import { Tx } from '../../proto';
+import { CommonEndpoint, TransactionEndpoint } from '../endpoints';
+import { TM2Error } from '../errors';
+import { UnauthorizedErrorMessage } from '../errors/messages';
 import {
   ABCIAccount,
   ABCIErrorKey,
@@ -14,12 +21,6 @@ import {
 } from '../types';
 import { newResponse, stringToBase64, uint8ArrayToBase64 } from '../utility';
 import { WSProvider } from './ws';
-import WS from 'jest-websocket-mock';
-import { Tx } from '../../proto';
-import { sha256 } from '@cosmjs/crypto';
-import { CommonEndpoint, TransactionEndpoint } from '../endpoints';
-import { UnauthorizedErrorMessage } from '../errors/messages';
-import { TM2Error } from '../errors';
 
 describe('WS Provider', () => {
   const wsPort = 8545;
@@ -74,6 +75,45 @@ describe('WS Provider', () => {
   afterEach(() => {
     wsProvider.closeConnection();
     WS.clean();
+  });
+
+  test('estimateGas', async () => {
+    const tx = Tx.fromJSON({
+      signatures: [],
+      fee: {
+        gasFee: '',
+        gasWanted: new Long(0),
+      },
+      messages: [],
+      memo: '',
+    });
+    const expectedEstimation = 44900;
+
+    const mockSimulateResponseVale =
+      'CiMiIW1zZzowLHN1Y2Nlc3M6dHJ1ZSxsb2c6LGV2ZW50czpbXRCAiXoYyL0F';
+
+    const mockABCIResponse: ABCIResponse = {
+      response: {
+        Height: '',
+        Key: '',
+        Proof: null,
+        Value: mockSimulateResponseVale,
+        ResponseBase: {
+          Log: '',
+          Info: '',
+          Error: null,
+          Events: null,
+          Data: '',
+        },
+      },
+    };
+
+    // Set the response
+    await setHandler<ABCIResponse>(mockABCIResponse);
+
+    const estimation = await wsProvider.estimateGas(tx);
+
+    expect(estimation).toEqual(expectedEstimation);
   });
 
   test('getNetwork', async () => {

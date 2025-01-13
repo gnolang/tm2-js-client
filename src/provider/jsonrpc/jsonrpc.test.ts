@@ -1,3 +1,11 @@
+import { sha256 } from '@cosmjs/crypto';
+import axios from 'axios';
+import { mock } from 'jest-mock-extended';
+import Long from 'long';
+import { Tx } from '../../proto';
+import { CommonEndpoint, TransactionEndpoint } from '../endpoints';
+import { TM2Error } from '../errors';
+import { UnauthorizedErrorMessage } from '../errors/messages';
 import {
   ABCIAccount,
   ABCIErrorKey,
@@ -10,15 +18,8 @@ import {
   RPCRequest,
   Status,
 } from '../types';
-import axios from 'axios';
-import { JSONRPCProvider } from './jsonrpc';
 import { newResponse, stringToBase64, uint8ArrayToBase64 } from '../utility';
-import { mock } from 'jest-mock-extended';
-import { Tx } from '../../proto';
-import { sha256 } from '@cosmjs/crypto';
-import { CommonEndpoint, TransactionEndpoint } from '../endpoints';
-import { UnauthorizedErrorMessage } from '../errors/messages';
-import { TM2Error } from '../errors';
+import { JSONRPCProvider } from './jsonrpc';
 
 jest.mock('axios');
 
@@ -26,6 +27,34 @@ const mockedAxios = axios as jest.Mocked<typeof axios>;
 const mockURL = '127.0.0.1:26657';
 
 describe('JSON-RPC Provider', () => {
+  test('estimateGas', async () => {
+    const tx = Tx.fromJSON({
+      signatures: [],
+      fee: {
+        gasFee: '',
+        gasWanted: new Long(0),
+      },
+      messages: [],
+      memo: '',
+    });
+    const expectedEstimation = 44900;
+
+    const mockABCIResponse: ABCIResponse = mock<ABCIResponse>();
+    mockABCIResponse.response.Value =
+      'CiMiIW1zZzowLHN1Y2Nlc3M6dHJ1ZSxsb2c6LGV2ZW50czpbXRCAiXoYyL0F';
+
+    mockedAxios.post.mockResolvedValue({
+      data: newResponse<ABCIResponse>(mockABCIResponse),
+    });
+
+    // Create the provider
+    const provider = new JSONRPCProvider(mockURL);
+    const estimation = await provider.estimateGas(tx);
+
+    expect(axios.post).toHaveBeenCalled();
+    expect(estimation).toEqual(expectedEstimation);
+  });
+
   test('getNetwork', async () => {
     const mockInfo: NetworkInfo = mock<NetworkInfo>();
     mockInfo.listening = false;

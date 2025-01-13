@@ -1,3 +1,12 @@
+import { Tx } from '../../proto';
+import { RestService } from '../../services';
+import {
+  ABCIEndpoint,
+  BlockEndpoint,
+  CommonEndpoint,
+  ConsensusEndpoint,
+  TransactionEndpoint,
+} from '../endpoints';
 import { Provider } from '../provider';
 import {
   ABCIErrorKey,
@@ -13,22 +22,15 @@ import {
   Status,
   TxResult,
 } from '../types';
-import { RestService } from '../../services';
 import {
   extractAccountNumberFromResponse,
   extractBalanceFromResponse,
   extractSequenceFromResponse,
+  extractSimulateFromResponse,
   newRequest,
+  uint8ArrayToBase64,
   waitForTransaction,
 } from '../utility';
-import {
-  ABCIEndpoint,
-  BlockEndpoint,
-  CommonEndpoint,
-  ConsensusEndpoint,
-  TransactionEndpoint,
-} from '../endpoints';
-import { Tx } from '../../proto';
 import { constructRequestError } from '../utility/errors.utility';
 
 /**
@@ -45,8 +47,23 @@ export class JSONRPCProvider implements Provider {
     this.baseURL = baseURL;
   }
 
-  estimateGas(tx: Tx): Promise<number> {
-    return Promise.reject('not supported');
+  async estimateGas(tx: Tx): Promise<number> {
+    const encodedTx = uint8ArrayToBase64(Tx.encode(tx).finish());
+    const abciResponse: ABCIResponse = await RestService.post<ABCIResponse>(
+      this.baseURL,
+      {
+        request: newRequest(ABCIEndpoint.ABCI_QUERY, [
+          `.app/simulate`,
+          `${encodedTx}`,
+          '0', // Height; not supported > 0 for now
+          false,
+        ]),
+      }
+    );
+
+    const simulateResult = extractSimulateFromResponse(abciResponse);
+
+    return simulateResult.gasUsed.toInt();
   }
 
   async getBalance(

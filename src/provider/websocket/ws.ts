@@ -1,3 +1,11 @@
+import { Tx } from '../../proto';
+import {
+  ABCIEndpoint,
+  BlockEndpoint,
+  CommonEndpoint,
+  ConsensusEndpoint,
+  TransactionEndpoint,
+} from '../endpoints';
 import { Provider } from '../provider';
 import {
   ABCIErrorKey,
@@ -18,17 +26,11 @@ import {
   extractAccountNumberFromResponse,
   extractBalanceFromResponse,
   extractSequenceFromResponse,
+  extractSimulateFromResponse,
   newRequest,
+  uint8ArrayToBase64,
   waitForTransaction,
 } from '../utility';
-import {
-  ABCIEndpoint,
-  BlockEndpoint,
-  CommonEndpoint,
-  ConsensusEndpoint,
-  TransactionEndpoint,
-} from '../endpoints';
-import { Tx } from '../../proto';
 import { constructRequestError } from '../utility/errors.utility';
 
 /**
@@ -148,8 +150,28 @@ export class WSProvider implements Provider {
     });
   };
 
-  estimateGas(tx: Tx): Promise<number> {
-    return Promise.reject('implement me');
+  async estimateGas(tx: Tx): Promise<number> {
+    const encodedTx = uint8ArrayToBase64(Tx.encode(tx).finish());
+    const response = await this.sendRequest<ABCIResponse>(
+      newRequest(ABCIEndpoint.ABCI_QUERY, [
+        `.app/simulate`,
+        `${encodedTx}`,
+        '0', // Height; not supported > 0 for now
+        false,
+      ])
+    );
+
+    // Parse the response
+    const abciResponse = this.parseResponse<ABCIResponse>(response);
+
+    const simulateResult = extractSimulateFromResponse(abciResponse);
+
+    const resultErrorKey = simulateResult.responseBase?.error?.typeUrl;
+    if (resultErrorKey) {
+      throw constructRequestError(resultErrorKey);
+    }
+
+    return simulateResult.gasUsed.toInt();
   }
 
   async getBalance(

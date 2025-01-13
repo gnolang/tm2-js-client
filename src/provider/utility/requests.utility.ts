@@ -1,5 +1,6 @@
-import { RPCError, RPCRequest, RPCResponse } from '../types';
+import { BinaryReader } from '@bufbuild/protobuf/wire';
 import { v4 as uuidv4 } from 'uuid';
+import { RPCError, RPCRequest, RPCResponse } from '../types';
 
 // The version of the supported JSON-RPC protocol
 const standardVersion = '2.0';
@@ -50,6 +51,15 @@ export const parseABCI = <Result>(data: string): Result => {
   }
 
   return parsedData;
+};
+
+export const parseProto = <T>(
+  data: string,
+  decodeFn: (input: BinaryReader | Uint8Array, length?: number) => T
+) => {
+  const protoData = decodeFn(Buffer.from(data, 'base64'));
+
+  return protoData;
 };
 
 /**
