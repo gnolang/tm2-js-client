@@ -66,22 +66,19 @@ export class Wallet {
     return wallet;
   };
 
- /**
+  /**
    * Generates a custom signer-based wallet
    * @param {Signer} signer the custom signer implementing the Signer interface
    * @param {CreateWalletOptions} options the wallet generation options
    */
-  static fromSigner = async (
-    signer: Signer,
-  ): Promise<Wallet> => {
-
+  static fromSigner = async (signer: Signer): Promise<Wallet> => {
     // Initialize the wallet
     const wallet: Wallet = new Wallet();
     wallet.signer = signer;
 
     return wallet;
   };
-  
+
   /**
    * Generates a bip39 mnemonic-based wallet
    * @param {string} mnemonic the bip39 mnemonic
