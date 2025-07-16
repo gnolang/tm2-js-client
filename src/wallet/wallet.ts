@@ -273,8 +273,8 @@ export class Wallet {
       account_number: accountNumber.toString(10),
       sequence: accountSequence.toString(10),
       fee: {
-        gas_fee: tx.fee.gasFee,
-        gas_wanted: tx.fee.gasWanted.toString(10),
+        gas_fee: tx.fee.gas_fee,
+        gas_wanted: tx.fee.gas_wanted.toString(10),
       },
       msgs: decodeTxMessages(tx.messages), // unrolled message objects
       memo: tx.memo,
@@ -294,8 +294,8 @@ export class Wallet {
 
     // Generate the signature
     const txSignature: TxSignature = {
-      pubKey: {
-        typeUrl: Secp256k1PubKeyType,
+      pub_key: {
+        type_url: Secp256k1PubKeyType,
         value: PubKeySecp256k1.encode(wrappedKey).finish(),
       },
       signature: await this.getSigner().signData(signBytes),

@@ -161,8 +161,8 @@ describe('Wallet', () => {
     const mockTx = mock<Tx>();
     mockTx.signatures = [];
     mockTx.fee = {
-      gasFee: '10',
-      gasWanted: new Long(10),
+      gas_fee: '10',
+      gas_wanted: new Long(10),
     };
     mockTx.messages = [];
 
@@ -204,8 +204,8 @@ describe('Wallet', () => {
     expect(signedTx.signatures).toHaveLength(1);
 
     const sig: TxSignature = signedTx.signatures[0];
-    expect(sig.pubKey?.typeUrl).toBe(Secp256k1PubKeyType);
-    expect(sig.pubKey?.value).not.toBeNull();
+    expect(sig.pub_key?.type_url).toBe(Secp256k1PubKeyType);
+    expect(sig.pub_key?.value).not.toBeNull();
     expect(sig.signature).not.toBeNull();
   });
 
@@ -213,8 +213,8 @@ describe('Wallet', () => {
     const mockTx = mock<Tx>();
     mockTx.signatures = [];
     mockTx.fee = {
-      gasFee: '10',
-      gasWanted: new Long(10),
+      gas_fee: '10',
+      gas_wanted: new Long(10),
     };
     mockTx.messages = [];
     mockTx.memo = '';

@@ -166,12 +166,12 @@ export class WSProvider implements Provider {
 
     const simulateResult = extractSimulateFromResponse(abciResponse);
 
-    const resultErrorKey = simulateResult.responseBase?.error?.typeUrl;
+    const resultErrorKey = simulateResult.response_base?.error?.type_url;
     if (resultErrorKey) {
       throw constructRequestError(resultErrorKey);
     }
 
-    return simulateResult.gasUsed.toInt();
+    return simulateResult.gas_used.toInt();
   }
 
   async getBalance(

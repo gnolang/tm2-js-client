@@ -24,14 +24,14 @@ export interface Tx {
 
 export interface TxFee {
   /** gas limit */
-  gasWanted: Long;
+  gas_wanted: Long;
   /** gas fee details (<value><denomination>) */
-  gasFee: string;
+  gas_fee: string;
 }
 
 export interface TxSignature {
   /** public key associated with the signature */
-  pubKey?: Any | undefined;
+  pub_key?: Any | undefined;
   /** the signature */
   signature: Uint8Array;
 }
@@ -158,7 +158,7 @@ export const Tx: MessageFns<Tx> = {
 };
 
 function createBaseTxFee(): TxFee {
-  return { gasWanted: Long.ZERO, gasFee: '' };
+  return { gas_wanted: Long.ZERO, gas_fee: '' };
 }
 
 export const TxFee: MessageFns<TxFee> = {
@@ -166,11 +166,11 @@ export const TxFee: MessageFns<TxFee> = {
     message: TxFee,
     writer: BinaryWriter = new BinaryWriter()
   ): BinaryWriter {
-    if (!message.gasWanted.equals(Long.ZERO)) {
-      writer.uint32(8).sint64(message.gasWanted.toString());
+    if (!message.gas_wanted.equals(Long.ZERO)) {
+      writer.uint32(8).sint64(message.gas_wanted.toString());
     }
-    if (message.gasFee !== '') {
-      writer.uint32(18).string(message.gasFee);
+    if (message.gas_fee !== '') {
+      writer.uint32(18).string(message.gas_fee);
     }
     return writer;
   },
@@ -188,7 +188,7 @@ export const TxFee: MessageFns<TxFee> = {
             break;
           }
 
-          message.gasWanted = Long.fromString(reader.sint64().toString());
+          message.gas_wanted = Long.fromString(reader.sint64().toString());
           continue;
         }
         case 2: {
@@ -196,7 +196,7 @@ export const TxFee: MessageFns<TxFee> = {
             break;
           }
 
-          message.gasFee = reader.string();
+          message.gas_fee = reader.string();
           continue;
         }
       }
@@ -210,20 +210,20 @@ export const TxFee: MessageFns<TxFee> = {
 
   fromJSON(object: any): TxFee {
     return {
-      gasWanted: isSet(object.gasWanted)
-        ? Long.fromValue(object.gasWanted)
+      gas_wanted: isSet(object.gas_wanted)
+        ? Long.fromValue(object.gas_wanted)
         : Long.ZERO,
-      gasFee: isSet(object.gasFee) ? globalThis.String(object.gasFee) : '',
+      gas_fee: isSet(object.gas_fee) ? globalThis.String(object.gas_fee) : '',
     };
   },
 
   toJSON(message: TxFee): unknown {
     const obj: any = {};
-    if (message.gasWanted !== undefined) {
-      obj.gasWanted = (message.gasWanted || Long.ZERO).toString();
+    if (message.gas_wanted !== undefined) {
+      obj.gas_wanted = (message.gas_wanted || Long.ZERO).toString();
     }
-    if (message.gasFee !== undefined) {
-      obj.gasFee = message.gasFee;
+    if (message.gas_fee !== undefined) {
+      obj.gas_fee = message.gas_fee;
     }
     return obj;
   },
@@ -233,17 +233,17 @@ export const TxFee: MessageFns<TxFee> = {
   },
   fromPartial<I extends Exact<DeepPartial<TxFee>, I>>(object: I): TxFee {
     const message = createBaseTxFee();
-    message.gasWanted =
-      object.gasWanted !== undefined && object.gasWanted !== null
-        ? Long.fromValue(object.gasWanted)
+    message.gas_wanted =
+      object.gas_wanted !== undefined && object.gas_wanted !== null
+        ? Long.fromValue(object.gas_wanted)
         : Long.ZERO;
-    message.gasFee = object.gasFee ?? '';
+    message.gas_fee = object.gas_fee ?? '';
     return message;
   },
 };
 
 function createBaseTxSignature(): TxSignature {
-  return { pubKey: undefined, signature: new Uint8Array(0) };
+  return { pub_key: undefined, signature: new Uint8Array(0) };
 }
 
 export const TxSignature: MessageFns<TxSignature> = {
@@ -251,8 +251,8 @@ export const TxSignature: MessageFns<TxSignature> = {
     message: TxSignature,
     writer: BinaryWriter = new BinaryWriter()
   ): BinaryWriter {
-    if (message.pubKey !== undefined) {
-      Any.encode(message.pubKey, writer.uint32(10).fork()).join();
+    if (message.pub_key !== undefined) {
+      Any.encode(message.pub_key, writer.uint32(10).fork()).join();
     }
     if (message.signature.length !== 0) {
       writer.uint32(18).bytes(message.signature);
@@ -273,7 +273,7 @@ export const TxSignature: MessageFns<TxSignature> = {
             break;
           }
 
-          message.pubKey = Any.decode(reader, reader.uint32());
+          message.pub_key = Any.decode(reader, reader.uint32());
           continue;
         }
         case 2: {
@@ -295,7 +295,7 @@ export const TxSignature: MessageFns<TxSignature> = {
 
   fromJSON(object: any): TxSignature {
     return {
-      pubKey: isSet(object.pubKey) ? Any.fromJSON(object.pubKey) : undefined,
+      pub_key: isSet(object.pub_key) ? Any.fromJSON(object.pub_key) : undefined,
       signature: isSet(object.signature)
         ? bytesFromBase64(object.signature)
         : new Uint8Array(0),
@@ -304,8 +304,8 @@ export const TxSignature: MessageFns<TxSignature> = {
 
   toJSON(message: TxSignature): unknown {
     const obj: any = {};
-    if (message.pubKey !== undefined) {
-      obj.pubKey = Any.toJSON(message.pubKey);
+    if (message.pub_key !== undefined) {
+      obj.pub_key = Any.toJSON(message.pub_key);
     }
     if (message.signature !== undefined) {
       obj.signature = base64FromBytes(message.signature);
@@ -320,9 +320,9 @@ export const TxSignature: MessageFns<TxSignature> = {
     object: I
   ): TxSignature {
     const message = createBaseTxSignature();
-    message.pubKey =
-      object.pubKey !== undefined && object.pubKey !== null
-        ? Any.fromPartial(object.pubKey)
+    message.pub_key =
+      object.pub_key !== undefined && object.pub_key !== null
+        ? Any.fromPartial(object.pub_key)
         : undefined;
     message.signature = object.signature ?? new Uint8Array(0);
     return message;

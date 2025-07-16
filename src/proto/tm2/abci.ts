@@ -12,9 +12,9 @@ import { Any } from '../google/protobuf/any';
 export const protobufPackage = 'tm2.abci';
 
 export interface ResponseDeliverTx {
-  responseBase?: ResponseBase | undefined;
-  gasWanted: Long;
-  gasUsed: Long;
+  response_base?: ResponseBase | undefined;
+  gas_wanted: Long;
+  gas_used: Long;
 }
 
 export interface ResponseBase {
@@ -26,7 +26,11 @@ export interface ResponseBase {
 }
 
 function createBaseResponseDeliverTx(): ResponseDeliverTx {
-  return { responseBase: undefined, gasWanted: Long.ZERO, gasUsed: Long.ZERO };
+  return {
+    response_base: undefined,
+    gas_wanted: Long.ZERO,
+    gas_used: Long.ZERO,
+  };
 }
 
 export const ResponseDeliverTx: MessageFns<ResponseDeliverTx> = {
@@ -34,17 +38,17 @@ export const ResponseDeliverTx: MessageFns<ResponseDeliverTx> = {
     message: ResponseDeliverTx,
     writer: BinaryWriter = new BinaryWriter()
   ): BinaryWriter {
-    if (message.responseBase !== undefined) {
+    if (message.response_base !== undefined) {
       ResponseBase.encode(
-        message.responseBase,
+        message.response_base,
         writer.uint32(10).fork()
       ).join();
     }
-    if (!message.gasWanted.equals(Long.ZERO)) {
-      writer.uint32(16).sint64(message.gasWanted.toString());
+    if (!message.gas_wanted.equals(Long.ZERO)) {
+      writer.uint32(16).sint64(message.gas_wanted.toString());
     }
-    if (!message.gasUsed.equals(Long.ZERO)) {
-      writer.uint32(24).sint64(message.gasUsed.toString());
+    if (!message.gas_used.equals(Long.ZERO)) {
+      writer.uint32(24).sint64(message.gas_used.toString());
     }
     return writer;
   },
@@ -62,7 +66,7 @@ export const ResponseDeliverTx: MessageFns<ResponseDeliverTx> = {
             break;
           }
 
-          message.responseBase = ResponseBase.decode(reader, reader.uint32());
+          message.response_base = ResponseBase.decode(reader, reader.uint32());
           continue;
         }
         case 2: {
@@ -70,7 +74,7 @@ export const ResponseDeliverTx: MessageFns<ResponseDeliverTx> = {
             break;
           }
 
-          message.gasWanted = Long.fromString(reader.sint64().toString());
+          message.gas_wanted = Long.fromString(reader.sint64().toString());
           continue;
         }
         case 3: {
@@ -78,7 +82,7 @@ export const ResponseDeliverTx: MessageFns<ResponseDeliverTx> = {
             break;
           }
 
-          message.gasUsed = Long.fromString(reader.sint64().toString());
+          message.gas_used = Long.fromString(reader.sint64().toString());
           continue;
         }
       }
@@ -92,13 +96,13 @@ export const ResponseDeliverTx: MessageFns<ResponseDeliverTx> = {
 
   fromJSON(object: any): ResponseDeliverTx {
     return {
-      responseBase: isSet(object.ResponseBase)
+      response_base: isSet(object.ResponseBase)
         ? ResponseBase.fromJSON(object.ResponseBase)
         : undefined,
-      gasWanted: isSet(object.GasWanted)
+      gas_wanted: isSet(object.GasWanted)
         ? Long.fromValue(object.GasWanted)
         : Long.ZERO,
-      gasUsed: isSet(object.GasUsed)
+      gas_used: isSet(object.GasUsed)
         ? Long.fromValue(object.GasUsed)
         : Long.ZERO,
     };
@@ -106,14 +110,14 @@ export const ResponseDeliverTx: MessageFns<ResponseDeliverTx> = {
 
   toJSON(message: ResponseDeliverTx): unknown {
     const obj: any = {};
-    if (message.responseBase !== undefined) {
-      obj.ResponseBase = ResponseBase.toJSON(message.responseBase);
+    if (message.response_base !== undefined) {
+      obj.ResponseBase = ResponseBase.toJSON(message.response_base);
     }
-    if (message.gasWanted !== undefined) {
-      obj.GasWanted = (message.gasWanted || Long.ZERO).toString();
+    if (message.gas_wanted !== undefined) {
+      obj.GasWanted = (message.gas_wanted || Long.ZERO).toString();
     }
-    if (message.gasUsed !== undefined) {
-      obj.GasUsed = (message.gasUsed || Long.ZERO).toString();
+    if (message.gas_used !== undefined) {
+      obj.GasUsed = (message.gas_used || Long.ZERO).toString();
     }
     return obj;
   },
@@ -127,17 +131,17 @@ export const ResponseDeliverTx: MessageFns<ResponseDeliverTx> = {
     object: I
   ): ResponseDeliverTx {
     const message = createBaseResponseDeliverTx();
-    message.responseBase =
-      object.responseBase !== undefined && object.responseBase !== null
-        ? ResponseBase.fromPartial(object.responseBase)
+    message.response_base =
+      object.response_base !== undefined && object.response_base !== null
+        ? ResponseBase.fromPartial(object.response_base)
         : undefined;
-    message.gasWanted =
-      object.gasWanted !== undefined && object.gasWanted !== null
-        ? Long.fromValue(object.gasWanted)
+    message.gas_wanted =
+      object.gas_wanted !== undefined && object.gas_wanted !== null
+        ? Long.fromValue(object.gas_wanted)
         : Long.ZERO;
-    message.gasUsed =
-      object.gasUsed !== undefined && object.gasUsed !== null
-        ? Long.fromValue(object.gasUsed)
+    message.gas_used =
+      object.gas_used !== undefined && object.gas_used !== null
+        ? Long.fromValue(object.gas_used)
         : Long.ZERO;
     return message;
   },
