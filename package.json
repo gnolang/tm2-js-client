@@ -65,6 +65,5 @@
     "test": "jest",
     "prepare": "yarn build",
     "prepublishOnly": "yarn lint && yarn prettier"
-  },
-  "packageManager": "yarn@4.9.2"
+  }
 }
