@@ -8,3 +8,9 @@ bin
 .idea
 .DS_Store
 *.log
+
+# Yarn leftovers
+.yarn/cache
+.pnp.*
+.yarn/install-state.gz
+.yarn/unplugged
