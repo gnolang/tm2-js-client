@@ -374,4 +374,48 @@ describe('JSON-RPC Provider', () => {
       }
     });
   });
+
+  describe('getAccount', () => {
+    const validAccount: ABCIAccount = {
+      BaseAccount: {
+        address: 'random address',
+        coins: '',
+        public_key: {"@type": "pktype", value: "pk"},
+        account_number: '10',
+        sequence: '42',
+      },
+    };
+
+    test.each([
+      [
+        JSON.stringify(validAccount),
+        validAccount,
+      ], // account exists
+      ['null', null], // account doesn't exist
+    ])('case %#', async (response, expected) => {
+      const mockABCIResponse: ABCIResponse = mock<ABCIResponse>();
+      mockABCIResponse.response.ResponseBase = {
+        Log: '',
+        Info: '',
+        Data: stringToBase64(response),
+        Error: null,
+        Events: null,
+      };
+
+      mockedAxios.post.mockResolvedValue({
+        data: newResponse<ABCIResponse>(mockABCIResponse),
+      });
+
+      try {
+        // Create the provider
+        const provider = new JSONRPCProvider(mockURL);
+        const account = await provider.getAccount('address');
+
+        expect(axios.post).toHaveBeenCalled();
+        expect(account).toStrictEqual(expected);
+      } catch (e) {
+        expect((e as Error).message).toContain('account is not initialized');
+      }
+    });
+  });
 });

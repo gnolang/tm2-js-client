@@ -260,6 +260,39 @@ describe('WS Provider', () => {
     });
   });
 
+    describe('getAccount', () => {
+    const validAccount: ABCIAccount = {
+      BaseAccount: {
+        address: 'random address',
+        coins: '',
+        public_key: null,
+        account_number: '10',
+        sequence: '0',
+      },
+    };
+
+    test.each([
+      [
+        JSON.stringify(validAccount),
+        validAccount,
+      ], // account exists
+      ['null', null], // account doesn't exist
+    ])('case %#', async (response, expected) => {
+      const mockResponse: ABCIResponse = mockABCIResponse(response);
+
+      // Set the response
+      await setHandler<ABCIResponse>(mockResponse);
+
+      try {
+        const account: ABCIAccount =
+          await wsProvider.getAccount('address');
+        expect(account).toStrictEqual(expected);
+      } catch (e) {
+        expect((e as Error).message).toContain('account is not initialized');
+      }
+    });
+  });
+
   describe('getBalance', () => {
     const denomination = 'atom';
     test.each([

@@ -8,6 +8,7 @@ import {
 } from '../endpoints';
 import { Provider } from '../provider';
 import {
+  ABCIAccount,
   ABCIErrorKey,
   ABCIResponse,
   BlockInfo,
@@ -23,6 +24,7 @@ import {
   TxResult,
 } from '../types';
 import {
+  extractAccountFromResponse,
   extractAccountNumberFromResponse,
   extractBalanceFromResponse,
   extractSequenceFromResponse,
@@ -270,6 +272,24 @@ export class WSProvider implements Provider {
     const abciResponse = this.parseResponse<ABCIResponse>(response);
 
     return extractAccountNumberFromResponse(
+      abciResponse.response.ResponseBase.Data
+    );
+  }
+
+  async getAccount(address: string, height?: number): Promise<ABCIAccount> {
+    const response = await this.sendRequest<ABCIResponse>(
+      newRequest(ABCIEndpoint.ABCI_QUERY, [
+        `auth/accounts/${address}`,
+        '',
+        '0', // Height; not supported > 0 for now
+        false,
+      ])
+    );
+
+    // Parse the response
+    const abciResponse = this.parseResponse<ABCIResponse>(response);
+
+    return extractAccountFromResponse(
       abciResponse.response.ResponseBase.Data
     );
   }
