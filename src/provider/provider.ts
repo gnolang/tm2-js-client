@@ -1,4 +1,5 @@
 import {
+  ABCIAccount,
   BlockInfo,
   BlockResult,
   BroadcastAsGeneric,
@@ -33,6 +34,7 @@ export interface Provider {
    * @param {string} address the bech32 address of the account
    * @param {number} [height=0] the height for querying.
    * If omitted, the latest height is used.
+   * @deprecated use {@link getAccount} instead
    */
   getAccountSequence(address: string, height?: number): Promise<number>;
 
@@ -42,8 +44,18 @@ export interface Provider {
    * @param {string} address the bech32 address of the account
    * @param {number} [height=0] the height for querying.
    * If omitted, the latest height is used
+   * @deprecated use {@link getAccount} instead
    */
   getAccountNumber(address: string, height?: number): Promise<number>;
+
+  /**
+   * Fetches the account. Errors out if the account
+   * is not initialized
+   * @param {string} address the bech32 address of the account
+   * @param {number} [height=0] the height for querying.
+   * If omitted, the latest height is used
+   */
+  getAccount(address: string, height?: number): Promise<ABCIAccount>;
 
   /**
    * Fetches the block at the specific height, if any

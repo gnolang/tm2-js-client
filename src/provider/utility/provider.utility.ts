@@ -97,6 +97,28 @@ export const extractAccountNumberFromResponse = (
 };
 
 /**
+ * Extracts the account from the ABCI response
+ * @param {string | null} abciData the base64-encoded ABCI data
+ */
+export const extractAccountFromResponse = (
+  abciData: string | null
+): ABCIAccount => {
+  // Make sure the response is initialized
+  if (!abciData) {
+    throw new Error('account is not initialized');
+  }
+
+  try {
+    // Parse the account
+    const account: ABCIAccount = parseABCI<ABCIAccount>(abciData);
+
+    return account;
+  } catch (e) {
+    throw new Error('account is not initialized');
+  }
+};
+
+/**
  * Extracts the simulate transaction response from the ABCI response value
  * @param {string | null} abciData the base64-encoded ResponseDeliverTx proto message
  */

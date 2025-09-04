@@ -9,6 +9,7 @@ import {
 } from '../endpoints';
 import { Provider } from '../provider';
 import {
+  ABCIAccount,
   ABCIErrorKey,
   ABCIResponse,
   BlockInfo,
@@ -23,6 +24,7 @@ import {
   TxResult,
 } from '../types';
 import {
+  extractAccountFromResponse,
   extractAccountNumberFromResponse,
   extractBalanceFromResponse,
   extractSequenceFromResponse,
@@ -158,6 +160,22 @@ export class JSONRPCProvider implements Provider {
     return extractAccountNumberFromResponse(
       abciResponse.response.ResponseBase.Data
     );
+  }
+
+  async getAccount(address: string, height?: number): Promise<ABCIAccount> {
+    const abciResponse: ABCIResponse = await RestService.post<ABCIResponse>(
+      this.baseURL,
+      {
+        request: newRequest(ABCIEndpoint.ABCI_QUERY, [
+          `auth/accounts/${address}`,
+          '',
+          '0', // Height; not supported > 0 for now
+          false,
+        ]),
+      }
+    );
+
+    return extractAccountFromResponse(abciResponse.response.ResponseBase.Data);
   }
 
   async getStatus(): Promise<Status> {
