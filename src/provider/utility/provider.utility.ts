@@ -112,7 +112,7 @@ export const extractAccountFromResponse = (
     // Parse the account
     const account: ABCIAccount = parseABCI<ABCIAccount>(abciData);
 
-    return account
+    return account;
   } catch (e) {
     throw new Error('account is not initialized');
   }

@@ -175,9 +175,7 @@ export class JSONRPCProvider implements Provider {
       }
     );
 
-    return extractAccountFromResponse(
-      abciResponse.response.ResponseBase.Data
-    );
+    return extractAccountFromResponse(abciResponse.response.ResponseBase.Data);
   }
 
   async getStatus(): Promise<Status> {

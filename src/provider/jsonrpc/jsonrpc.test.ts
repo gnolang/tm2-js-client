@@ -380,17 +380,14 @@ describe('JSON-RPC Provider', () => {
       BaseAccount: {
         address: 'random address',
         coins: '',
-        public_key: {"@type": "pktype", value: "pk"},
+        public_key: { '@type': 'pktype', value: 'pk' },
         account_number: '10',
         sequence: '42',
       },
     };
 
     test.each([
-      [
-        JSON.stringify(validAccount),
-        validAccount,
-      ], // account exists
+      [JSON.stringify(validAccount), validAccount], // account exists
       ['null', null], // account doesn't exist
     ])('case %#', async (response, expected) => {
       const mockABCIResponse: ABCIResponse = mock<ABCIResponse>();

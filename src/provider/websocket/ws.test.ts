@@ -260,7 +260,7 @@ describe('WS Provider', () => {
     });
   });
 
-    describe('getAccount', () => {
+  describe('getAccount', () => {
     const validAccount: ABCIAccount = {
       BaseAccount: {
         address: 'random address',
@@ -272,10 +272,7 @@ describe('WS Provider', () => {
     };
 
     test.each([
-      [
-        JSON.stringify(validAccount),
-        validAccount,
-      ], // account exists
+      [JSON.stringify(validAccount), validAccount], // account exists
       ['null', null], // account doesn't exist
     ])('case %#', async (response, expected) => {
       const mockResponse: ABCIResponse = mockABCIResponse(response);
@@ -284,8 +281,7 @@ describe('WS Provider', () => {
       await setHandler<ABCIResponse>(mockResponse);
 
       try {
-        const account: ABCIAccount =
-          await wsProvider.getAccount('address');
+        const account: ABCIAccount = await wsProvider.getAccount('address');
         expect(account).toStrictEqual(expected);
       } catch (e) {
         expect((e as Error).message).toContain('account is not initialized');

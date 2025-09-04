@@ -289,9 +289,7 @@ export class WSProvider implements Provider {
     // Parse the response
     const abciResponse = this.parseResponse<ABCIResponse>(response);
 
-    return extractAccountFromResponse(
-      abciResponse.response.ResponseBase.Data
-    );
+    return extractAccountFromResponse(abciResponse.response.ResponseBase.Data);
   }
 
   async getStatus(): Promise<Status> {
