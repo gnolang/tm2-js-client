@@ -223,7 +223,7 @@ export const CompactBitArray: MessageFns<CompactBitArray> = {
     writer: BinaryWriter = new BinaryWriter()
   ): BinaryWriter {
     if (message.extra_bits_stored !== 0) {
-      writer.uint32(8).bytes(new Uint8Array([message.extra_bits_stored]));
+      writer.uint32(8).uint32(message.extra_bits_stored);
     }
     if (message.elems.length !== 0) {
       writer.uint32(18).bytes(message.elems);
@@ -264,12 +264,40 @@ export const CompactBitArray: MessageFns<CompactBitArray> = {
     return message;
   },
 
-  fromJSON(object: any): CompactBitArray {
-    throw new Error("not implemented")
+  fromJSON(json: any): CompactBitArray {
+    if (json === null) {
+      // Handle null case
+      return createBaseCompactBitArray();
+    }
+
+    if (typeof json !== 'string') {
+      throw new Error(
+        `CompactBitArray in JSON should be a string or null but got ${typeof json}`
+      );
+    }
+
+    const bits = json;
+    const numBits = bits.length;
+
+    // Create a new CompactBitArray
+    const numBytes = Math.ceil(numBits / 8);
+    const elems = new Uint8Array(numBytes);
+    const extraBitsStored = numBits % 8;
+    const bitArray = { extra_bits_stored: extraBitsStored, elems };
+
+    // Set bits based on the string representation
+    for (let i = 0; i < numBits; i++) {
+      if (bits[i] === 'x') {
+        compactBitArraySetIndex(bitArray, i, true);
+      }
+      // For '_', we don't need to do anything as bits are initialized to 0
+    }
+
+    return bitArray;
   },
 
   toJSON(message: CompactBitArray): unknown {
-    throw new Error("not implemented")
+    throw new Error('not implemented');
   },
 
   create<I extends Exact<DeepPartial<CompactBitArray>, I>>(
@@ -286,6 +314,41 @@ export const CompactBitArray: MessageFns<CompactBitArray> = {
     return message;
   },
 };
+
+function compactBitArraySize(bA: CompactBitArray): number {
+  if (bA.elems === null) {
+    return 0;
+  } else if (bA.extra_bits_stored === 0) {
+    return bA.elems.length * 8;
+  }
+  return (bA.elems.length - 1) * 8 + bA.extra_bits_stored;
+}
+
+// SetIndex sets the bit at index i within the bit array
+// Returns true if successful, false if out of bounds or array is null
+function compactBitArraySetIndex(
+  bA: CompactBitArray,
+  i: number,
+  v: boolean
+): boolean {
+  if (bA.elems === null) {
+    return false;
+  }
+
+  if (i >= compactBitArraySize(bA)) {
+    return false;
+  }
+
+  if (v) {
+    // Set the bit (most significant bit first)
+    bA.elems[i >> 3] |= 1 << (7 - (i % 8));
+  } else {
+    // Clear the bit
+    bA.elems[i >> 3] &= ~(1 << (7 - (i % 8)));
+  }
+
+  return true;
+}
 
 function bytesFromBase64(b64: string): Uint8Array {
   if ((globalThis as any).Buffer) {
