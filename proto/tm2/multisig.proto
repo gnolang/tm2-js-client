@@ -18,6 +18,6 @@ message Multisignature {
 }
 
 message CompactBitArray {
-	uint32 extra_bits_stored = 1 [json_name = "extra_bits"]; // The number of extra bits in elems. XXX: this is a single byte in go, how to translate this in protobuf?
+	uint32 extra_bits_stored = 1 [json_name = "extra_bits"]; // The number of extra bits in elems.
 	bytes elems = 2 [json_name = "bits"];
 }

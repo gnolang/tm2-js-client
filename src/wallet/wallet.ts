@@ -25,6 +25,12 @@ import {
 } from './types';
 import { sortedJsonStringify } from '@cosmjs/amino/build/signdoc';
 
+export interface SignTransactionOptions {
+  chainId?: string;
+  accountNumber?: string;
+  sequence?: string;
+}
+
 /**
  * Wallet is a single account abstraction
  * that can interact with the blockchain
@@ -245,7 +251,8 @@ export class Wallet {
    */
   signTransaction = async (
     tx: Tx,
-    decodeTxMessages: (messages: Any[]) => any[]
+    decodeTxMessages: (messages: Any[]) => any[],
+    opts?: SignTransactionOptions
   ): Promise<Tx> => {
     if (!this.provider) {
       throw new Error('provider not connected');
@@ -257,21 +264,32 @@ export class Wallet {
     }
 
     // Extract the relevant chain data
-    const status: Status = await this.provider.getStatus();
-    const chainID: string = status.node_info.network;
+    let chainID = opts?.chainId;
+    if (chainID === undefined) {
+      const status: Status = await this.provider.getStatus();
+      chainID = status.node_info.network;
+    }
 
     // Extract the relevant account data
-    const address: string = await this.getAddress();
-    const accountNumber: number = await this.provider.getAccountNumber(address);
-    const accountSequence: number =
-      await this.provider.getAccountSequence(address);
+    let accountNumber = opts?.accountNumber;
+    let accountSequence = opts?.sequence;
+    if (accountNumber === undefined || accountSequence === undefined) {
+      const address: string = await this.getAddress();
+      const account = await this.provider.getAccount(address);
+      if (accountNumber === undefined) {
+        accountNumber = account.BaseAccount.account_number;
+      }
+      if (accountSequence === undefined) {
+        accountSequence = account.BaseAccount.sequence;
+      }
+    }
     const publicKey: Uint8Array = await this.signer.getPublicKey();
 
     // Create the signature payload
     const signPayload: TxSignPayload = {
       chain_id: chainID,
-      account_number: accountNumber.toString(10),
-      sequence: accountSequence.toString(10),
+      account_number: accountNumber,
+      sequence: accountSequence,
       fee: {
         gas_fee: tx.fee.gas_fee,
         gas_wanted: tx.fee.gas_wanted.toString(10),

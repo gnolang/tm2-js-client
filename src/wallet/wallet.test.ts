@@ -1,11 +1,12 @@
 import {
+  ABCIAccount,
   BroadcastTxSyncResult,
   JSONRPCProvider,
   Status,
   TransactionEndpoint,
 } from '../provider';
 import { mock } from 'jest-mock-extended';
-import { Wallet } from './wallet';
+import { SignTransactionOptions, Wallet } from './wallet';
 import { EnglishMnemonic, Secp256k1 } from '@cosmjs/crypto';
 import {
   defaultAddressPrefix,
@@ -183,8 +184,16 @@ describe('Wallet', () => {
 
     const mockProvider = mock<JSONRPCProvider>();
     mockProvider.getStatus.mockResolvedValue(mockStatus);
-    mockProvider.getAccountNumber.mockResolvedValue(10);
-    mockProvider.getAccountSequence.mockResolvedValue(10);
+    const mockAccount: ABCIAccount = {
+      BaseAccount: {
+        address: '',
+        coins: '',
+        public_key: null,
+        account_number: '',
+        sequence: '',
+      },
+    };
+    mockProvider.getAccount.mockResolvedValue(mockAccount);
 
     const wallet: Wallet = await Wallet.createRandom();
     wallet.connect(mockProvider);
@@ -198,8 +207,73 @@ describe('Wallet', () => {
     );
 
     expect(mockProvider.getStatus).toHaveBeenCalled();
-    expect(mockProvider.getAccountNumber).toHaveBeenCalled();
-    expect(mockProvider.getAccountSequence).toHaveBeenCalled();
+    expect(mockProvider.getAccount).toHaveBeenCalled();
+
+    expect(signedTx.signatures).toHaveLength(1);
+
+    const sig: TxSignature = signedTx.signatures[0];
+    expect(sig.pub_key?.type_url).toBe(Secp256k1PubKeyType);
+    expect(sig.pub_key?.value).not.toBeNull();
+    expect(sig.signature).not.toBeNull();
+  });
+
+  test('signTransactionWithAllOpts', async () => {
+    const mockTx = mock<Tx>();
+    mockTx.signatures = [];
+    mockTx.fee = {
+      gas_fee: '10',
+      gas_wanted: new Long(10),
+    };
+    mockTx.messages = [];
+
+    const opts: SignTransactionOptions = {
+      chainId: 'test',
+      accountNumber: '42',
+      sequence: '42',
+    };
+
+    const mockStatus = mock<Status>();
+    mockStatus.node_info = {
+      version_set: [],
+      version: '',
+      net_address: '',
+      software: '',
+      channels: '',
+      monkier: '',
+      other: {
+        tx_index: '',
+        rpc_address: '',
+      },
+      network: 'testchain',
+    };
+
+    const mockProvider = mock<JSONRPCProvider>();
+    mockProvider.getStatus.mockResolvedValue(mockStatus);
+    const mockAccount: ABCIAccount = {
+      BaseAccount: {
+        address: '',
+        coins: '',
+        public_key: null,
+        account_number: '',
+        sequence: '',
+      },
+    };
+    mockProvider.getAccount.mockResolvedValue(mockAccount);
+
+    const wallet: Wallet = await Wallet.createRandom();
+    wallet.connect(mockProvider);
+
+    const emptyDecodeCallback = (_: Any[]): any[] => {
+      return [];
+    };
+    const signedTx: Tx = await wallet.signTransaction(
+      mockTx,
+      emptyDecodeCallback,
+      opts
+    );
+
+    expect(mockProvider.getStatus).not.toHaveBeenCalled();
+    expect(mockProvider.getAccount).not.toHaveBeenCalled();
 
     expect(signedTx.signatures).toHaveLength(1);
 
