@@ -315,7 +315,18 @@ export const CompactBitArray: MessageFns<CompactBitArray> = {
   },
 };
 
-function compactBitArraySize(bA: CompactBitArray): number {
+export function createCompactBitArray(bits: number): CompactBitArray {
+  if (bits <= 0) {
+    throw new Error('empty');
+  }
+
+  const extraBitsStored = bits % 8;
+  const elems = new Uint8Array(Math.ceil(bits / 8));
+
+  return { extra_bits_stored: extraBitsStored, elems };
+}
+
+export function compactBitArraySize(bA: CompactBitArray): number {
   if (bA.elems === null) {
     return 0;
   } else if (bA.extra_bits_stored === 0) {
@@ -326,7 +337,7 @@ function compactBitArraySize(bA: CompactBitArray): number {
 
 // SetIndex sets the bit at index i within the bit array
 // Returns true if successful, false if out of bounds or array is null
-function compactBitArraySetIndex(
+export function compactBitArraySetIndex(
   bA: CompactBitArray,
   i: number,
   v: boolean
