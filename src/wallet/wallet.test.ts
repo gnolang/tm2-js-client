@@ -227,7 +227,6 @@ describe('Wallet', () => {
     mockTx.messages = [];
 
     const opts: SignTransactionOptions = {
-      chainId: 'test',
       accountNumber: '42',
       sequence: '42',
     };
@@ -272,7 +271,7 @@ describe('Wallet', () => {
       opts
     );
 
-    expect(mockProvider.getStatus).not.toHaveBeenCalled();
+    expect(mockProvider.getStatus).toHaveBeenCalled();
     expect(mockProvider.getAccount).not.toHaveBeenCalled();
 
     expect(signedTx.signatures).toHaveLength(1);

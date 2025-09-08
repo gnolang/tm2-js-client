@@ -26,7 +26,6 @@ import {
 import { sortedJsonStringify } from '@cosmjs/amino/build/signdoc';
 
 export interface SignTransactionOptions {
-  chainId?: string;
   accountNumber?: string;
   sequence?: string;
 }
@@ -264,11 +263,8 @@ export class Wallet {
     }
 
     // Extract the relevant chain data
-    let chainID = opts?.chainId;
-    if (chainID === undefined) {
-      const status: Status = await this.provider.getStatus();
-      chainID = status.node_info.network;
-    }
+    const status: Status = await this.provider.getStatus();
+    const chainID = status.node_info.network;
 
     // Extract the relevant account data
     let accountNumber = opts?.accountNumber;
