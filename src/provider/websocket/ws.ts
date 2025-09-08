@@ -294,7 +294,7 @@ export class WSProvider implements Provider {
 
   async getStatus(): Promise<Status> {
     const response = await this.sendRequest<Status>(
-      newRequest(CommonEndpoint.STATUS)
+      newRequest(CommonEndpoint.STATUS, [null])
     );
 
     return this.parseResponse<Status>(response);

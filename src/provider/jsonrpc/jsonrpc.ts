@@ -180,7 +180,7 @@ export class JSONRPCProvider implements Provider {
 
   async getStatus(): Promise<Status> {
     return await RestService.post<Status>(this.baseURL, {
-      request: newRequest(CommonEndpoint.STATUS),
+      request: newRequest(CommonEndpoint.STATUS, [null]),
     });
   }
 
