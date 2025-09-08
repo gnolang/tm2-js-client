@@ -23,7 +23,7 @@ export interface Multisignature {
 }
 
 export interface CompactBitArray {
-  /** The number of extra bits in elems. XXX: this is a single byte in go, how to translate this in protobuf? */
+  /** The number of extra bits in elems. */
   extra_bits_stored: number;
   elems: Uint8Array;
 }
