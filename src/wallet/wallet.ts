@@ -264,7 +264,7 @@ export class Wallet {
 
     // Extract the relevant chain data
     const status: Status = await this.provider.getStatus();
-    const chainID = status.node_info.network;
+    const chainID: string = status.node_info.network;
 
     // Extract the relevant account data
     let accountNumber = opts?.accountNumber;
