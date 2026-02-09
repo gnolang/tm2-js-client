@@ -921,7 +921,7 @@ __metadata:
     "@eslint/js": ^9.33.0
     "@types/jest": ^30.0.0
     "@types/long": ^5.0.0
-    "@types/node": ^25.0.9
+    "@types/node": ^25.2.2
     "@types/uuid": ^10.0.0
     "@types/ws": ^8.5.11
     "@typescript-eslint/eslint-plugin": ^8.54.0
@@ -1785,12 +1785,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:^25.0.9":
-  version: 25.0.9
-  resolution: "@types/node@npm:25.0.9"
+"@types/node@npm:^25.2.2":
+  version: 25.2.2
+  resolution: "@types/node@npm:25.2.2"
   dependencies:
     undici-types: ~7.16.0
-  checksum: 0dd245ed1823d32851007da980319af17f9794b0fe4b6b46093cee185e4c3ea033162238d2dc053b4474c1eeb534d47d2679a92907b5e7a27dac0938cb250c7a
+  checksum: 917d0dc0cbc18e615282825d8ec5352da9c0eda9992fce995d12219b3c8de11f19923a52ad4cbb90f808a210ecf8d6f6ca4efa4a974dfd555982cdb8b9ee8d67
   languageName: node
   linkType: hard
 
