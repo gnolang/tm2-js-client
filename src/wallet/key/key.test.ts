@@ -1,13 +1,14 @@
-import { generateEntropy, generateKeyPair, stringToUTF8 } from '../utility';
-import { entropyToMnemonic } from '@cosmjs/crypto/build/bip39';
-import { KeySigner } from './key';
+import { describe, expect, test } from 'vitest';
+import { Bip39 } from '@cosmjs/crypto';
+import { generateEntropy, generateKeyPair, stringToUTF8 } from '../utility/index.js';
+import { KeySigner } from './key.js';
 
 describe('Private Key Signer', () => {
   const generateRandomKeySigner = async (
     index?: number
   ): Promise<KeySigner> => {
     const { publicKey, privateKey } = await generateKeyPair(
-      entropyToMnemonic(generateEntropy()),
+      Bip39.encode(generateEntropy()).toString(),
       index ? index : 0
     );
 

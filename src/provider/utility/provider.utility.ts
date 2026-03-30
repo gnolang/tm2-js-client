@@ -1,15 +1,15 @@
 import { sha256 } from '@cosmjs/crypto';
-import { Tx } from '../../proto';
-import { ResponseDeliverTx } from '../../proto/tm2/abci';
-import { Provider } from '../provider';
-import { ABCIAccount, ABCIErrorKey, ABCIResponse, BlockInfo } from '../types';
-import { constructRequestError } from './errors.utility';
+import { Tx } from '../../proto/index.js';
+import { ResponseDeliverTx } from '../../proto/tm2/abci.js';
+import { Provider } from '../provider.js';
+import { ABCIAccount, ABCIErrorKey, ABCIResponse, BlockInfo } from '../types/index.js';
+import { constructRequestError } from './errors.utility.js';
 import {
   base64ToUint8Array,
   parseABCI,
   parseProto,
   uint8ArrayToBase64,
-} from './requests.utility';
+} from './requests.utility.js';
 
 /**
  * Extracts the specific balance denomination from the ABCI response

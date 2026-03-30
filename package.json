@@ -1,8 +1,7 @@
 {
   "name": "@gnolang/tm2-js-client",
-  "version": "1.3.3",
+  "version": "2.0.0",
   "description": "Tendermint2 JS / TS Client",
-  "main": "./bin/index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/gnolang/tm2-js-client.git"
@@ -18,52 +17,70 @@
   "license": "Apache-2.0",
   "homepage": "https://gno.land/",
   "files": [
-    "bin/**/*"
+    "dist/",
+    "*.md",
+    "!*.spec.*",
+    "!**/testdata/"
   ],
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
+  "type": "module",
   "devDependencies": {
-    "@eslint/js": "^9.33.0",
-    "@types/jest": "^30.0.0",
-    "@types/long": "^5.0.0",
-    "@types/node": "^25.0.9",
-    "@types/ws": "^8.5.11",
-    "@typescript-eslint/eslint-plugin": "^8.54.0",
-    "@typescript-eslint/parser": "^8.54.0",
-    "@typescript-eslint/typescript-estree": "^8.54.0",
-    "eslint": "^9.39.2",
-    "eslint-config-prettier": "^10.1.5",
-    "eslint-plugin-prettier": "5.5.1",
-    "globals": "^16.3.0",
-    "jest": "^30.0.4",
-    "jest-mock-extended": "^4.0.0",
-    "jest-websocket-mock": "^2.4.0",
-    "prettier": "^3.8.1",
-    "ts-jest": "^29.4.0",
-    "ts-proto": "^2.7.5",
-    "typescript": "^5.9.2",
-    "typescript-eslint": "^8.39.1"
+    "@arethetypeswrong/core": "^0.18.2",
+    "@stylistic/eslint-plugin": "^5.10.0",
+    "@types/node": "^25.5.0",
+    "@types/ws": "^8.18.1",
+    "@vitest/coverage-istanbul": "^4.1.2",
+    "eslint": "^10.1.0",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "globals": "^17.4.0",
+    "ts-proto": "^2.11.6",
+    "tsdown": "^0.21.7",
+    "typescript": "^6.0.2",
+    "typescript-eslint": "^8.57.2",
+    "vitest": "^4.1.2",
+    "vitest-websocket-mock": "^0.5.0"
   },
   "dependencies": {
-    "@cosmjs/amino": "^0.36.0",
-    "@cosmjs/crypto": "^0.36.0",
-    "@cosmjs/ledger-amino": "^0.36.0",
-    "@types/uuid": "^10.0.0",
-    "axios": "^1.11.0",
-    "long": "^5.3.2",
-    "protobufjs": "^7.5.3",
-    "uuid": "^11.1.0",
-    "ws": "^8.18.0"
+    "@bufbuild/protobuf": "^2.11.0",
+    "@cosmjs/amino": "^0.38.1",
+    "@cosmjs/crypto": "^0.38.1",
+    "@cosmjs/ledger-amino": "^0.38.1",
+    "@gnolang/tm2-rpc": "^0.0.10",
+    "@noble/hashes": "^2.0.1",
+    "axios": "^1.14.0",
+    "protobufjs": "^8.0.0",
+    "uuid": "^13.0.0",
+    "ws": "^8.20.0"
   },
   "scripts": {
     "tsc": "tsc",
-    "lint": "eslint '**/*.ts' --fix",
-    "prettier": "prettier --write .",
-    "build": "yarn tsc",
-    "test": "jest",
-    "prepare": "yarn build",
-    "prepublishOnly": "yarn lint && yarn prettier"
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "build": "tsc --noEmit && tsdown",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "prepare": "pnpm build",
+    "prepublishOnly": "pnpm lint"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.mts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
   }
 }

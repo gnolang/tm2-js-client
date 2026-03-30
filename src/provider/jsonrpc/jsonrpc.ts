@@ -1,13 +1,7 @@
-import { Tx } from '../../proto';
-import { RestService } from '../../services';
-import {
-  ABCIEndpoint,
-  BlockEndpoint,
-  CommonEndpoint,
-  ConsensusEndpoint,
-  TransactionEndpoint,
-} from '../endpoints';
-import { Provider } from '../provider';
+import { Tm2Client } from '@gnolang/tm2-rpc';
+import { Tx } from '../../proto/index.js';
+import { TransactionEndpoint } from '../endpoints.js';
+import { Provider } from '../provider.js';
 import {
   ABCIAccount,
   ABCIErrorKey,
@@ -19,53 +13,61 @@ import {
   BroadcastTxSyncResult,
   ConsensusParams,
   NetworkInfo,
-  RPCRequest,
   Status,
   TxResult,
-} from '../types';
+} from '../types/index.js';
 import {
+  adaptAbciQueryResponse,
+  adaptBlockResponse,
+  adaptBlockResultsResponse,
+  adaptBroadcastTxCommitResponse,
+  adaptBroadcastTxSyncResponse,
+  adaptConsensusParamsResponse,
+  adaptNetInfoResponse,
+  adaptStatusResponse,
+  adaptTxResponse,
   extractAccountFromResponse,
   extractAccountNumberFromResponse,
   extractBalanceFromResponse,
   extractSequenceFromResponse,
   extractSimulateFromResponse,
-  newRequest,
   uint8ArrayToBase64,
   waitForTransaction,
-} from '../utility';
-import { constructRequestError } from '../utility/errors.utility';
+} from '../utility/index.js';
+import { constructRequestError } from '../utility/errors.utility.js';
 
 /**
  * Provider based on JSON-RPC HTTP requests
  */
 export class JSONRPCProvider implements Provider {
-  protected readonly baseURL: string;
+  private readonly client: Tm2Client;
+
+  private constructor(client: Tm2Client) {
+    this.client = client;
+  }
 
   /**
    * Creates a new instance of the JSON-RPC Provider
    * @param {string} baseURL the JSON-RPC URL of the node
    */
-  constructor(baseURL: string) {
-    this.baseURL = baseURL;
+  static async create(baseURL: string): Promise<JSONRPCProvider> {
+    const client = await Tm2Client.connect(baseURL);
+    return new JSONRPCProvider(client);
   }
 
-  async estimateGas(tx: Tx): Promise<number> {
+  async estimateGas(tx: Tx): Promise<bigint> {
     const encodedTx = uint8ArrayToBase64(Tx.encode(tx).finish());
-    const abciResponse: ABCIResponse = await RestService.post<ABCIResponse>(
-      this.baseURL,
-      {
-        request: newRequest(ABCIEndpoint.ABCI_QUERY, [
-          `.app/simulate`,
-          `${encodedTx}`,
-          '0', // Height; not supported > 0 for now
-          false,
-        ]),
-      }
-    );
+    const rpcResponse = await this.client.abciQuery({
+      path: `.app/simulate`,
+      data: new TextEncoder().encode(encodedTx),
+      height: 0,
+      prove: false,
+    });
 
+    const abciResponse: ABCIResponse = adaptAbciQueryResponse(rpcResponse);
     const simulateResult = extractSimulateFromResponse(abciResponse);
 
-    return simulateResult.gas_used.toInt();
+    return simulateResult.gas_used;
   }
 
   async getBalance(
@@ -73,17 +75,14 @@ export class JSONRPCProvider implements Provider {
     denomination?: string,
     height?: number
   ): Promise<number> {
-    const abciResponse: ABCIResponse = await RestService.post<ABCIResponse>(
-      this.baseURL,
-      {
-        request: newRequest(ABCIEndpoint.ABCI_QUERY, [
-          `bank/balances/${address}`,
-          '',
-          '0', // Height; not supported > 0 for now
-          false,
-        ]),
-      }
-    );
+    const rpcResponse = await this.client.abciQuery({
+      path: `bank/balances/${address}`,
+      data: new Uint8Array(),
+      height: 0,
+      prove: false,
+    });
+
+    const abciResponse: ABCIResponse = adaptAbciQueryResponse(rpcResponse);
 
     return extractBalanceFromResponse(
       abciResponse.response.ResponseBase.Data,
@@ -92,30 +91,23 @@ export class JSONRPCProvider implements Provider {
   }
 
   async getBlock(height: number): Promise<BlockInfo> {
-    return await RestService.post<BlockInfo>(this.baseURL, {
-      request: newRequest(BlockEndpoint.BLOCK, [height.toString()]),
-    });
+    const rpcResponse = await this.client.block(height);
+    return adaptBlockResponse(rpcResponse);
   }
 
   async getBlockResult(height: number): Promise<BlockResult> {
-    return await RestService.post<BlockResult>(this.baseURL, {
-      request: newRequest(BlockEndpoint.BLOCK_RESULTS, [height.toString()]),
-    });
+    const rpcResponse = await this.client.blockResults(height);
+    return adaptBlockResultsResponse(rpcResponse);
   }
 
   async getBlockNumber(): Promise<number> {
-    // Fetch the status for the latest info
     const status = await this.getStatus();
-
     return parseInt(status.sync_info.latest_block_height);
   }
 
   async getConsensusParams(height: number): Promise<ConsensusParams> {
-    return await RestService.post<ConsensusParams>(this.baseURL, {
-      request: newRequest(ConsensusEndpoint.CONSENSUS_PARAMS, [
-        height.toString(),
-      ]),
-    });
+    const rpcResponse = await this.client.consensusParams(height);
+    return adaptConsensusParamsResponse(rpcResponse);
   }
 
   getGasPrice(): Promise<number> {
@@ -123,100 +115,82 @@ export class JSONRPCProvider implements Provider {
   }
 
   async getNetwork(): Promise<NetworkInfo> {
-    return await RestService.post<NetworkInfo>(this.baseURL, {
-      request: newRequest(ConsensusEndpoint.NET_INFO),
-    });
+    const rpcResponse = await this.client.netInfo();
+    return adaptNetInfoResponse(rpcResponse);
   }
 
   async getAccountSequence(address: string, height?: number): Promise<number> {
-    const abciResponse: ABCIResponse = await RestService.post<ABCIResponse>(
-      this.baseURL,
-      {
-        request: newRequest(ABCIEndpoint.ABCI_QUERY, [
-          `auth/accounts/${address}`,
-          '',
-          '0', // Height; not supported > 0 for now
-          false,
-        ]),
-      }
-    );
+    const rpcResponse = await this.client.abciQuery({
+      path: `auth/accounts/${address}`,
+      data: new Uint8Array(),
+      height: 0,
+      prove: false,
+    });
 
+    const abciResponse: ABCIResponse = adaptAbciQueryResponse(rpcResponse);
     return extractSequenceFromResponse(abciResponse.response.ResponseBase.Data);
   }
 
   async getAccountNumber(address: string, height?: number): Promise<number> {
-    const abciResponse: ABCIResponse = await RestService.post<ABCIResponse>(
-      this.baseURL,
-      {
-        request: newRequest(ABCIEndpoint.ABCI_QUERY, [
-          `auth/accounts/${address}`,
-          '',
-          '0', // Height; not supported > 0 for now
-          false,
-        ]),
-      }
-    );
+    const rpcResponse = await this.client.abciQuery({
+      path: `auth/accounts/${address}`,
+      data: new Uint8Array(),
+      height: 0,
+      prove: false,
+    });
 
+    const abciResponse: ABCIResponse = adaptAbciQueryResponse(rpcResponse);
     return extractAccountNumberFromResponse(
       abciResponse.response.ResponseBase.Data
     );
   }
 
   async getAccount(address: string, height?: number): Promise<ABCIAccount> {
-    const abciResponse: ABCIResponse = await RestService.post<ABCIResponse>(
-      this.baseURL,
-      {
-        request: newRequest(ABCIEndpoint.ABCI_QUERY, [
-          `auth/accounts/${address}`,
-          '',
-          '0', // Height; not supported > 0 for now
-          false,
-        ]),
-      }
-    );
+    const rpcResponse = await this.client.abciQuery({
+      path: `auth/accounts/${address}`,
+      data: new Uint8Array(),
+      height: 0,
+      prove: false,
+    });
 
+    const abciResponse: ABCIResponse = adaptAbciQueryResponse(rpcResponse);
     return extractAccountFromResponse(abciResponse.response.ResponseBase.Data);
   }
 
   async getStatus(): Promise<Status> {
-    return await RestService.post<Status>(this.baseURL, {
-      request: newRequest(CommonEndpoint.STATUS, [null]),
-    });
+    const rpcResponse = await this.client.status();
+    return adaptStatusResponse(rpcResponse);
   }
 
   async getTransaction(hash: string): Promise<TxResult> {
-    return await RestService.post<TxResult>(this.baseURL, {
-      request: newRequest(TransactionEndpoint.TX, [hash]),
-    });
+    const hashBytes = Uint8Array.from(
+      (hash.match(/.{1,2}/g) ?? []).map((byte) => parseInt(byte, 16))
+    );
+    const rpcResponse = await this.client.tx({ hash: hashBytes });
+    return adaptTxResponse(rpcResponse);
   }
 
   async sendTransaction<K extends keyof BroadcastTransactionMap>(
     tx: string,
     endpoint: K
   ): Promise<BroadcastTransactionMap[K]['result']> {
-    const request: RPCRequest = newRequest(endpoint, [tx]);
+    const txBytes = Uint8Array.from(Buffer.from(tx, 'base64'));
 
     switch (endpoint) {
       case TransactionEndpoint.BROADCAST_TX_COMMIT:
-        // The endpoint is a commit broadcast
-        // (it waits for the transaction to be committed) to the chain before returning
-        return this.broadcastTxCommit(request);
+        return this.broadcastTxCommit(txBytes);
       case TransactionEndpoint.BROADCAST_TX_SYNC:
       default:
-        return this.broadcastTxSync(request);
+        return this.broadcastTxSync(txBytes);
     }
   }
 
   private async broadcastTxSync(
-    request: RPCRequest
+    txBytes: Uint8Array
   ): Promise<BroadcastTxSyncResult> {
-    const response: BroadcastTxSyncResult =
-      await RestService.post<BroadcastTxSyncResult>(this.baseURL, {
-        request,
-      });
+    const rpcResponse = await this.client.broadcastTxSync({ tx: txBytes });
+    const response = adaptBroadcastTxSyncResponse(rpcResponse);
 
-    // Check if there is an immediate tx-broadcast error
-    // (originating from basic transaction checks like CheckTx)
     if (response.error) {
       const errType: string = response.error[ABCIErrorKey];
       const log: string = response.Log;
@@ -228,16 +202,13 @@ export class JSONRPCProvider implements Provider {
   }
 
   private async broadcastTxCommit(
-    request: RPCRequest
+    txBytes: Uint8Array
   ): Promise<BroadcastTxCommitResult> {
-    const response: BroadcastTxCommitResult =
-      await RestService.post<BroadcastTxCommitResult>(this.baseURL, {
-        request,
-      });
+    const rpcResponse = await this.client.broadcastTxCommit({ tx: txBytes });
+    const response = adaptBroadcastTxCommitResponse(rpcResponse);
 
     const { check_tx, deliver_tx } = response;
 
-    // Check if there is an immediate tx-broadcast error (in CheckTx)
     if (check_tx.ResponseBase.Error) {
       const errType: string = check_tx.ResponseBase.Error[ABCIErrorKey];
       const log: string = check_tx.ResponseBase.Log;
@@ -245,7 +216,6 @@ export class JSONRPCProvider implements Provider {
       throw constructRequestError(errType, log);
     }
 
-    // Check if there is a parsing error with the transaction (in DeliverTx)
     if (deliver_tx.ResponseBase.Error) {
       const errType: string = deliver_tx.ResponseBase.Error[ABCIErrorKey];
       const log: string = deliver_tx.ResponseBase.Log;

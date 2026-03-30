@@ -1,80 +1,74 @@
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { sha256 } from '@cosmjs/crypto';
-import WS from 'jest-websocket-mock';
-import Long from 'long';
-import { Tx } from '../../proto';
-import { CommonEndpoint, TransactionEndpoint } from '../endpoints';
-import { TM2Error } from '../errors';
-import { UnauthorizedErrorMessage } from '../errors/messages';
+import type {
+  AbciQueryResponse,
+  BlockResultsResponse,
+  BlockResponse,
+  BroadcastTxSyncResponse,
+  ConsensusParamsResponse as RpcConsensusParamsResponse,
+  NetInfoResponse as RpcNetInfoResponse,
+  ResponseBase,
+  StatusResponse,
+} from '@gnolang/tm2-rpc';
+import { Tx } from '../../proto/index.js';
+import { TransactionEndpoint } from '../endpoints.js';
+import { TM2Error } from '../errors/index.js';
+import { UnauthorizedErrorMessage } from '../errors/messages.js';
 import {
   ABCIAccount,
-  ABCIErrorKey,
-  ABCIResponse,
-  ABCIResponseBase,
-  BeginBlock,
-  BlockInfo,
-  BlockResult,
   BroadcastTxSyncResult,
   ConsensusParams,
-  EndBlock,
   NetworkInfo,
   Status,
-} from '../types';
-import { newResponse, stringToBase64, uint8ArrayToBase64 } from '../utility';
-import { WSProvider } from './ws';
+} from '../types/index.js';
+import { stringToBase64, uint8ArrayToBase64 } from '../utility/index.js';
+import { WSProvider } from './ws.js';
+
+// Helper to create an empty ResponseBase
+const emptyResponseBase = (overrides?: Partial<ResponseBase>): ResponseBase => ({
+  error: { '@type': '', value: '' },
+  data: new Uint8Array(),
+  events: [],
+  log: '',
+  info: '',
+  ...overrides,
+});
+
+// Mock Tm2Client - use vi.hoisted so it's available in the hoisted vi.mock factory
+const { mockClient } = vi.hoisted(() => {
+  const mockClient = {
+    abciQuery: vi.fn(),
+    block: vi.fn(),
+    blockResults: vi.fn(),
+    broadcastTxSync: vi.fn(),
+    broadcastTxCommit: vi.fn(),
+    status: vi.fn(),
+    netInfo: vi.fn(),
+    consensusParams: vi.fn(),
+    tx: vi.fn(),
+    disconnect: vi.fn(),
+  };
+  return { mockClient };
+});
+
+vi.mock('@gnolang/tm2-rpc', () => ({
+  Tm2Client: {
+    connect: vi.fn().mockResolvedValue(mockClient),
+  },
+}));
+
+const mockURL = 'ws://localhost:8545';
 
 describe('WS Provider', () => {
-  const wsPort = 8545;
-  const wsHost = 'localhost';
-  const wsURL = `ws://${wsHost}:${wsPort}`;
-
-  let server: WS;
   let wsProvider: WSProvider;
 
-  const mockABCIResponse = (response: string): ABCIResponse => {
-    return {
-      response: {
-        ResponseBase: {
-          Log: '',
-          Info: '',
-          Data: stringToBase64(response),
-          Error: null,
-          Events: null,
-        },
-        Key: null,
-        Value: null,
-        Proof: null,
-        Height: '',
-      },
-    };
-  };
-
-  /**
-   * Sets up the test response handler (single-response)
-   * @param {WebSocketServer} wss the websocket server returning data
-   * @param {Type} testData the test data being returned to the client
-   */
-  const setHandler = async <Type>(testData: Type) => {
-    server.on('connection', (socket) => {
-      socket.on('message', (data) => {
-        const request = JSON.parse(data.toString());
-        const response = newResponse<Type>(testData);
-        response.id = request.id;
-
-        socket.send(JSON.stringify(response));
-      });
-    });
-
-    await server.connected;
-  };
-
-  beforeEach(() => {
-    server = new WS(wsURL);
-    wsProvider = new WSProvider(wsURL);
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    wsProvider = await WSProvider.create(mockURL);
   });
 
   afterEach(() => {
     wsProvider.closeConnection();
-    WS.clean();
   });
 
   test('estimateGas', async () => {
@@ -82,121 +76,96 @@ describe('WS Provider', () => {
       signatures: [],
       fee: {
         gasFee: '',
-        gasWanted: new Long(0),
+        gasWanted: 0n,
       },
       messages: [],
       memo: '',
     });
-    const expectedEstimation = 44900;
+    const expectedEstimation = 44900n;
 
-    const mockSimulateResponseVale =
-      'CiMiIW1zZzowLHN1Y2Nlc3M6dHJ1ZSxsb2c6LGV2ZW50czpbXRCAiXoYyL0F';
-
-    const mockABCIResponse: ABCIResponse = {
-      response: {
-        Height: '',
-        Key: '',
-        Proof: null,
-        Value: mockSimulateResponseVale,
-        ResponseBase: {
-          Log: '',
-          Info: '',
-          Error: null,
-          Events: null,
-          Data: '',
-        },
-      },
+    const mockAbciResponse: AbciQueryResponse = {
+      responseBase: emptyResponseBase(),
+      key: new Uint8Array(),
+      value: Buffer.from(
+        'CiMiIW1zZzowLHN1Y2Nlc3M6dHJ1ZSxsb2c6LGV2ZW50czpbXRCAiXoYyL0F',
+        'base64'
+      ),
+      height: 0,
     };
 
-    // Set the response
-    await setHandler<ABCIResponse>(mockABCIResponse);
+    vi.mocked(mockClient.abciQuery).mockResolvedValue(mockAbciResponse);
 
     const estimation = await wsProvider.estimateGas(tx);
-
     expect(estimation).toEqual(expectedEstimation);
   });
 
   test('getNetwork', async () => {
-    const mockInfo: NetworkInfo = {
+    const mockRpcInfo: RpcNetInfoResponse = {
       listening: false,
       listeners: [],
-      n_peers: '0',
+      nPeers: 0,
       peers: [],
     };
 
-    // Set the response
-    await setHandler<NetworkInfo>(mockInfo);
+    vi.mocked(mockClient.netInfo).mockResolvedValue(mockRpcInfo);
 
     const info: NetworkInfo = await wsProvider.getNetwork();
-    expect(info).toEqual(mockInfo);
+    expect(info.listening).toBe(false);
+    expect(info.n_peers).toBe('0');
   });
 
-  const getEmptyStatus = (): Status => {
-    return {
-      node_info: {
-        version_set: [],
-        net_address: '',
+  test('getStatus', async () => {
+    const mockRpcResponse: StatusResponse = {
+      nodeInfo: {
+        listenAddr: '',
         network: '',
-        software: '',
         version: '',
-        channels: '',
-        monkier: '',
-        other: {
-          tx_index: '',
-          rpc_address: '',
-        },
+        software: '',
+        channels: [],
+        moniker: '',
+        other: new Map(),
+        versionSet: [],
       },
-      sync_info: {
-        latest_block_hash: '',
-        latest_app_hash: '',
-        latest_block_height: '',
-        latest_block_time: '',
-        catching_up: false,
+      syncInfo: {
+        latestBlockHash: new Uint8Array(),
+        latestAppHash: new Uint8Array(),
+        latestBlockHeight: 0,
+        latestBlockTime: new Date(),
+        catchingUp: false,
       },
-      validator_info: {
-        address: '',
-        pub_key: {
-          type: '',
-          value: '',
-        },
-        voting_power: '',
+      validatorInfo: {
+        address: new Uint8Array([0x01, 0x02]),
+        votingPower: 0n,
       },
     };
-  };
 
-  test('getStatus', async () => {
-    const mockStatus: Status = getEmptyStatus();
-    mockStatus.validator_info.address = 'address';
-
-    // Set the response
-    await setHandler<Status>(mockStatus);
+    vi.mocked(mockClient.status).mockResolvedValue(mockRpcResponse);
 
     const status: Status = await wsProvider.getStatus();
-    expect(status).toEqual(status);
+    expect(status.validator_info.address).toBe('0102');
   });
 
   test('getConsensusParams', async () => {
-    const mockParams: ConsensusParams = {
-      block_height: '',
-      consensus_params: {
-        Block: {
-          MaxTxBytes: '',
-          MaxDataBytes: '',
-          MaxBlockBytes: '',
-          MaxGas: '',
-          TimeIotaMS: '',
+    const mockRpcResponse: RpcConsensusParamsResponse = {
+      blockHeight: 1,
+      consensusParams: {
+        block: {
+          maxTxBytes: 1000,
+          maxDataBytes: 2000,
+          maxBlockBytes: 3000,
+          maxGas: 4000,
+          timeIotaMs: 100,
         },
-        Validator: {
-          PubKeyTypeURLs: [],
+        validator: {
+          pubKeyTypeUrls: [],
         },
       },
     };
 
-    // Set the response
-    await setHandler<ConsensusParams>(mockParams);
+    vi.mocked(mockClient.consensusParams).mockResolvedValue(mockRpcResponse);
 
     const params: ConsensusParams = await wsProvider.getConsensusParams(1);
-    expect(params).toEqual(mockParams);
+    expect(params.block_height).toBe('1');
   });
 
   describe('getSequence', () => {
@@ -214,13 +183,19 @@ describe('WS Provider', () => {
       [
         JSON.stringify(validAccount),
         parseInt(validAccount.BaseAccount.sequence, 10),
-      ], // account exists
-      ['null', 0], // account doesn't exist
+      ],
+      ['null', 0],
     ])('case %#', async (response, expected) => {
-      const mockResponse: ABCIResponse = mockABCIResponse(response);
+      const dataBytes = Buffer.from(stringToBase64(response as string), 'base64');
 
-      // Set the response
-      await setHandler<ABCIResponse>(mockResponse);
+      const mockRpcResponse: AbciQueryResponse = {
+        responseBase: emptyResponseBase({ data: dataBytes }),
+        key: new Uint8Array(),
+        value: new Uint8Array(),
+        height: 0,
+      };
+
+      vi.mocked(mockClient.abciQuery).mockResolvedValue(mockRpcResponse);
 
       const sequence: number = await wsProvider.getAccountSequence('address');
       expect(sequence).toBe(expected);
@@ -242,13 +217,19 @@ describe('WS Provider', () => {
       [
         JSON.stringify(validAccount),
         parseInt(validAccount.BaseAccount.account_number, 10),
-      ], // account exists
-      ['null', 0], // account doesn't exist
+      ],
+      ['null', 0],
     ])('case %#', async (response, expected) => {
-      const mockResponse: ABCIResponse = mockABCIResponse(response);
+      const dataBytes = Buffer.from(stringToBase64(response as string), 'base64');
 
-      // Set the response
-      await setHandler<ABCIResponse>(mockResponse);
+      const mockRpcResponse: AbciQueryResponse = {
+        responseBase: emptyResponseBase({ data: dataBytes }),
+        key: new Uint8Array(),
+        value: new Uint8Array(),
+        height: 0,
+      };
+
+      vi.mocked(mockClient.abciQuery).mockResolvedValue(mockRpcResponse);
 
       try {
         const accountNumber: number =
@@ -272,13 +253,22 @@ describe('WS Provider', () => {
     };
 
     test.each([
-      [JSON.stringify(validAccount), validAccount], // account exists
-      ['null', null], // account doesn't exist
+      [JSON.stringify(validAccount), validAccount],
+      ['null', null],
     ])('case %#', async (response, expected) => {
-      const mockResponse: ABCIResponse = mockABCIResponse(response);
+      const dataBytes = Buffer.from(
+        stringToBase64(response as string),
+        'base64'
+      );
 
-      // Set the response
-      await setHandler<ABCIResponse>(mockResponse);
+      const mockRpcResponse: AbciQueryResponse = {
+        responseBase: emptyResponseBase({ data: dataBytes }),
+        key: new Uint8Array(),
+        value: new Uint8Array(),
+        height: 0,
+      };
+
+      vi.mocked(mockClient.abciQuery).mockResolvedValue(mockRpcResponse);
 
       try {
         const account: ABCIAccount = await wsProvider.getAccount('address');
@@ -292,14 +282,20 @@ describe('WS Provider', () => {
   describe('getBalance', () => {
     const denomination = 'atom';
     test.each([
-      ['"5gnot,100atom"', 100], // balance found
-      ['"5universe"', 0], // balance not found
-      ['""', 0], // account doesn't exist
+      ['"5gnot,100atom"', 100],
+      ['"5universe"', 0],
+      ['""', 0],
     ])('case %#', async (existing, expected) => {
-      const mockResponse: ABCIResponse = mockABCIResponse(existing);
+      const dataBytes = Buffer.from(stringToBase64(existing as string), 'base64');
 
-      // Set the response
-      await setHandler<ABCIResponse>(mockResponse);
+      const mockRpcResponse: AbciQueryResponse = {
+        responseBase: emptyResponseBase({ data: dataBytes }),
+        key: new Uint8Array(),
+        value: new Uint8Array(),
+        height: 0,
+      };
+
+      vi.mocked(mockClient.abciQuery).mockResolvedValue(mockRpcResponse);
 
       const balance: number = await wsProvider.getBalance(
         'address',
@@ -311,166 +307,142 @@ describe('WS Provider', () => {
 
   test('getBlockNumber', async () => {
     const expectedBlockNumber = 10;
-    const mockStatus: Status = getEmptyStatus();
-    mockStatus.sync_info.latest_block_height = `${expectedBlockNumber}`;
+    const mockRpcResponse: StatusResponse = {
+      nodeInfo: {
+        listenAddr: '',
+        network: '',
+        version: '',
+        software: '',
+        channels: [],
+        moniker: '',
+        other: new Map(),
+        versionSet: [],
+      },
+      syncInfo: {
+        latestBlockHash: new Uint8Array(),
+        latestAppHash: new Uint8Array(),
+        latestBlockHeight: expectedBlockNumber,
+        latestBlockTime: new Date(),
+        catchingUp: false,
+      },
+      validatorInfo: {
+        address: new Uint8Array(),
+        votingPower: 0n,
+      },
+    };
 
-    // Set the response
-    await setHandler<Status>(mockStatus);
+    vi.mocked(mockClient.status).mockResolvedValue(mockRpcResponse);
 
     const blockNumber: number = await wsProvider.getBlockNumber();
     expect(blockNumber).toBe(expectedBlockNumber);
   });
 
   describe('sendTransaction', () => {
-    const validResult: BroadcastTxSyncResult = {
-      error: null,
-      data: null,
-      Log: '',
-      hash: 'hash123',
-    };
-
     const mockError = '/std.UnauthorizedError';
     const mockLog = 'random error message';
-    const invalidResult: BroadcastTxSyncResult = {
-      error: {
-        [ABCIErrorKey]: mockError,
-      },
-      data: null,
-      Log: mockLog,
-      hash: '',
-    };
 
-    test.each([
-      [validResult, validResult.hash, '', ''], // no error
-      [invalidResult, invalidResult.hash, UnauthorizedErrorMessage, mockLog], // error out
-    ])('case %#', async (response, expectedHash, expectedErr, expectedLog) => {
-      await setHandler<BroadcastTxSyncResult>(response);
+    test('broadcastTxSync - success', async () => {
+      const mockRpcResponse: BroadcastTxSyncResponse = {
+        hash: new Uint8Array([0x68, 0x61, 0x73, 0x68]),
+        responseBase: emptyResponseBase(),
+        gasWanted: 0n,
+        gasUsed: 0n,
+      };
+
+      vi.mocked(mockClient.broadcastTxSync).mockResolvedValue(mockRpcResponse);
+
+      const result: BroadcastTxSyncResult = await wsProvider.sendTransaction(
+        'encoded tx',
+        TransactionEndpoint.BROADCAST_TX_SYNC
+      );
+
+      expect(result.error).toBeNull();
+    });
+
+    test('broadcastTxSync - error', async () => {
+      const mockRpcResponse: BroadcastTxSyncResponse = {
+        hash: new Uint8Array(),
+        responseBase: emptyResponseBase({
+          error: { '@type': mockError, value: '' },
+          log: mockLog,
+        }),
+        gasWanted: 0n,
+        gasUsed: 0n,
+      };
+
+      vi.mocked(mockClient.broadcastTxSync).mockResolvedValue(mockRpcResponse);
 
       try {
-        const tx = await wsProvider.sendTransaction(
+        await wsProvider.sendTransaction(
           'encoded tx',
           TransactionEndpoint.BROADCAST_TX_SYNC
         );
-
-        expect(tx.hash).toEqual(expectedHash);
-
-        if (expectedErr != '') {
-          fail('expected error');
-        }
+        throw new Error('expected error');
       } catch (e) {
-        expect((e as Error).message).toBe(expectedErr);
-        expect((e as TM2Error).log).toBe(expectedLog);
+        expect((e as Error).message).toBe(UnauthorizedErrorMessage);
+        expect((e as TM2Error).log).toBe(mockLog);
       }
     });
   });
 
-  const getEmptyBlockInfo = (): BlockInfo => {
-    const emptyHeader = {
-      version: '',
-      chain_id: '',
-      height: '',
-      time: '',
-      num_txs: '',
-      total_txs: '',
-      app_version: '',
-      last_block_id: {
-        hash: null,
-        parts: {
-          total: '',
-          hash: null,
+  test('getBlock', async () => {
+    const makeEmptyBlock = (height: number): BlockResponse => ({
+      blockMeta: {
+        blockId: { hash: new Uint8Array(), parts: { total: 0n, hash: new Uint8Array() } },
+        header: {
+          version: '', chainId: '', height, time: new Date() as any,
+          numTxs: 0n, totalTxs: 0n, appVersion: '',
+          lastBlockId: null, lastCommitHash: new Uint8Array(),
+          dataHash: new Uint8Array(), validatorsHash: new Uint8Array(),
+          consensusHash: new Uint8Array(), appHash: new Uint8Array(),
+          lastResultsHash: new Uint8Array(), proposerAddress: '',
+          nextValidatorsHash: new Uint8Array(),
         },
-      },
-      last_commit_hash: '',
-      data_hash: '',
-      validators_hash: '',
-      consensus_hash: '',
-      app_hash: '',
-      last_results_hash: '',
-      proposer_address: '',
-    };
-
-    const emptyBlockID = {
-      hash: null,
-      parts: {
-        total: '',
-        hash: null,
-      },
-    };
-
-    return {
-      block_meta: {
-        block_id: emptyBlockID,
-        header: emptyHeader,
       },
       block: {
-        header: emptyHeader,
-        data: {
-          txs: null,
+        header: {
+          version: '', chainId: '', height, time: new Date() as any,
+          numTxs: 0n, totalTxs: 0n, appVersion: '',
+          lastBlockId: null, lastCommitHash: new Uint8Array(),
+          dataHash: new Uint8Array(), validatorsHash: new Uint8Array(),
+          consensusHash: new Uint8Array(), appHash: new Uint8Array(),
+          lastResultsHash: new Uint8Array(), proposerAddress: '',
+          nextValidatorsHash: new Uint8Array(),
         },
-        last_commit: {
-          block_id: emptyBlockID,
-          precommits: null,
-        },
+        txs: [],
+        lastCommit: null,
+        evidence: [],
       },
-    };
-  };
+    });
 
-  test('getBlock', async () => {
-    const mockInfo: BlockInfo = getEmptyBlockInfo();
+    vi.mocked(mockClient.block).mockResolvedValue(makeEmptyBlock(0));
 
-    // Set the response
-    await setHandler<BlockInfo>(mockInfo);
-
-    const result: BlockInfo = await wsProvider.getBlock(0);
-    expect(result).toEqual(mockInfo);
+    const result = await wsProvider.getBlock(0);
+    expect(result.block.header.height).toBe('0');
   });
 
-  const getEmptyBlockResult = (): BlockResult => {
-    const emptyResponseBase: ABCIResponseBase = {
-      Error: null,
-      Data: null,
-      Events: null,
-      Log: '',
-      Info: '',
-    };
-
-    const emptyEndBlock: EndBlock = {
-      ResponseBase: emptyResponseBase,
-      ValidatorUpdates: null,
-      ConsensusParams: null,
-      Events: null,
-    };
-
-    const emptyStartBlock: BeginBlock = {
-      ResponseBase: emptyResponseBase,
-    };
-
-    return {
-      height: '',
+  test('getBlockResult', async () => {
+    const mockRpcResult: BlockResultsResponse = {
+      height: 1,
       results: {
-        deliver_tx: null,
-        end_block: emptyEndBlock,
-        begin_block: emptyStartBlock,
+        deliverTx: [],
+        beginBlock: { responseBase: emptyResponseBase() },
+        endBlock: {
+          responseBase: emptyResponseBase(),
+          validatorUpdates: null,
+          consensusParams: null,
+          events: null,
+        },
       },
     };
-  };
 
-  test('getBlockResult', async () => {
-    const mockResult: BlockResult = getEmptyBlockResult();
+    vi.mocked(mockClient.blockResults).mockResolvedValue(mockRpcResult);
 
-    // Set the response
-    await setHandler<BlockResult>(mockResult);
-
-    const result: BlockResult = await wsProvider.getBlockResult(0);
-    expect(result).toEqual(mockResult);
+    const result = await wsProvider.getBlockResult(0);
+    expect(result.height).toBe('1');
   });
 
   test('waitForTransaction', async () => {
-    const emptyBlock: BlockInfo = getEmptyBlockInfo();
-    emptyBlock.block.data = {
-      txs: [],
-    };
-
     const tx: Tx = {
       messages: [],
       signatures: [],
@@ -480,52 +452,71 @@ describe('WS Provider', () => {
     const encodedTx = Tx.encode(tx).finish();
     const txHash = sha256(encodedTx);
 
-    const filledBlock: BlockInfo = getEmptyBlockInfo();
-    filledBlock.block.data = {
-      txs: [uint8ArrayToBase64(encodedTx)],
-    };
-
     const latestBlock = 5;
     const startBlock = latestBlock - 2;
 
-    const mockStatus: Status = getEmptyStatus();
-    mockStatus.sync_info.latest_block_height = `${latestBlock}`;
+    const mockStatusResponse: StatusResponse = {
+      nodeInfo: {
+        listenAddr: '',
+        network: '',
+        version: '',
+        software: '',
+        channels: [],
+        moniker: '',
+        other: new Map(),
+        versionSet: [],
+      },
+      syncInfo: {
+        latestBlockHash: new Uint8Array(),
+        latestAppHash: new Uint8Array(),
+        latestBlockHeight: latestBlock,
+        latestBlockTime: new Date(),
+        catchingUp: false,
+      },
+      validatorInfo: {
+        address: new Uint8Array(),
+        votingPower: 0n,
+      },
+    };
 
-    const responseMap: Map<number, BlockInfo> = new Map<number, BlockInfo>([
-      [latestBlock, filledBlock],
-      [latestBlock - 1, emptyBlock],
-      [startBlock, emptyBlock],
-    ]);
+    vi.mocked(mockClient.status).mockResolvedValue(mockStatusResponse);
 
-    // Set the response
-    server.on('connection', (socket) => {
-      socket.on('message', (data) => {
-        const request = JSON.parse(data.toString());
-
-        if (request.method == CommonEndpoint.STATUS) {
-          const response = newResponse<Status>(mockStatus);
-          response.id = request.id;
-
-          socket.send(JSON.stringify(response));
-
-          return;
-        }
-
-        if (!request.params) {
-          return;
-        }
-
-        const blockNum: number = +(request.params[0] as string[]);
-        const info = responseMap.get(blockNum);
-
-        const response = newResponse<BlockInfo>(info);
-        response.id = request.id;
-
-        socket.send(JSON.stringify(response));
-      });
+    const makeEmptyBlock = (height: number): BlockResponse => ({
+      blockMeta: {
+        blockId: { hash: new Uint8Array(), parts: { total: 0n, hash: new Uint8Array() } },
+        header: {
+          version: '', chainId: '', height, time: new Date() as any,
+          numTxs: 0n, totalTxs: 0n, appVersion: '',
+          lastBlockId: null, lastCommitHash: new Uint8Array(),
+          dataHash: new Uint8Array(), validatorsHash: new Uint8Array(),
+          consensusHash: new Uint8Array(), appHash: new Uint8Array(),
+          lastResultsHash: new Uint8Array(), proposerAddress: '',
+          nextValidatorsHash: new Uint8Array(),
+        },
+      },
+      block: {
+        header: {
+          version: '', chainId: '', height, time: new Date() as any,
+          numTxs: 0n, totalTxs: 0n, appVersion: '',
+          lastBlockId: null, lastCommitHash: new Uint8Array(),
+          dataHash: new Uint8Array(), validatorsHash: new Uint8Array(),
+          consensusHash: new Uint8Array(), appHash: new Uint8Array(),
+          lastResultsHash: new Uint8Array(), proposerAddress: '',
+          nextValidatorsHash: new Uint8Array(),
+        },
+        txs: [],
+        lastCommit: null,
+        evidence: [],
+      },
     });
 
-    await server.connected;
+    const filledBlock = makeEmptyBlock(latestBlock);
+    (filledBlock.block as any).txs = [encodedTx];
+
+    vi.mocked(mockClient.block).mockImplementation(async (height?: number) => {
+      if (height === latestBlock) return filledBlock;
+      return makeEmptyBlock(height ?? 0);
+    });
 
     const receivedTx: Tx = await wsProvider.waitForTransaction(
       uint8ArrayToBase64(txHash),

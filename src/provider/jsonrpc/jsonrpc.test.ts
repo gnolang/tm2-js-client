@@ -1,160 +1,248 @@
+import { describe, expect, test, vi, beforeEach } from 'vitest';
 import { sha256 } from '@cosmjs/crypto';
-import axios from 'axios';
-import { mock } from 'jest-mock-extended';
-import Long from 'long';
-import { Tx } from '../../proto';
-import { CommonEndpoint, TransactionEndpoint } from '../endpoints';
-import { TM2Error } from '../errors';
-import { UnauthorizedErrorMessage } from '../errors/messages';
+import type {
+  AbciQueryResponse,
+  BlockResponse,
+  BlockResultsResponse,
+  BroadcastTxSyncResponse,
+  ConsensusParamsResponse as RpcConsensusParamsResponse,
+  NetInfoResponse as RpcNetInfoResponse,
+  ResponseBase,
+  StatusResponse,
+} from '@gnolang/tm2-rpc';
+import { Tx } from '../../proto/index.js';
+import { TransactionEndpoint } from '../endpoints.js';
+import { TM2Error } from '../errors/index.js';
+import { UnauthorizedErrorMessage } from '../errors/messages.js';
 import {
   ABCIAccount,
-  ABCIErrorKey,
-  ABCIResponse,
-  BlockInfo,
-  BlockResult,
   BroadcastTxSyncResult,
   ConsensusParams,
   NetworkInfo,
-  RPCRequest,
   Status,
-} from '../types';
-import { newResponse, stringToBase64, uint8ArrayToBase64 } from '../utility';
-import { JSONRPCProvider } from './jsonrpc';
+} from '../types/index.js';
+import { stringToBase64, uint8ArrayToBase64 } from '../utility/index.js';
+import { JSONRPCProvider } from './jsonrpc.js';
 
-jest.mock('axios');
+// Helper to create an empty ResponseBase
+const emptyResponseBase = (overrides?: Partial<ResponseBase>): ResponseBase => ({
+  error: { '@type': '', value: '' },
+  data: new Uint8Array(),
+  events: [],
+  log: '',
+  info: '',
+  ...overrides,
+});
 
-const mockedAxios = axios as jest.Mocked<typeof axios>;
-const mockURL = '127.0.0.1:26657';
+// Mock Tm2Client - use vi.hoisted so it's available in the hoisted vi.mock factory
+const { mockClient } = vi.hoisted(() => {
+  const mockClient = {
+    abciQuery: vi.fn(),
+    block: vi.fn(),
+    blockResults: vi.fn(),
+    broadcastTxSync: vi.fn(),
+    broadcastTxCommit: vi.fn(),
+    status: vi.fn(),
+    netInfo: vi.fn(),
+    consensusParams: vi.fn(),
+    tx: vi.fn(),
+    disconnect: vi.fn(),
+  };
+  return { mockClient };
+});
+
+vi.mock('@gnolang/tm2-rpc', () => ({
+  Tm2Client: {
+    connect: vi.fn().mockResolvedValue(mockClient),
+  },
+}));
+
+const mockURL = 'http://127.0.0.1:26657';
 
 describe('JSON-RPC Provider', () => {
+  let provider: JSONRPCProvider;
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    provider = await JSONRPCProvider.create(mockURL);
+  });
+
   test('estimateGas', async () => {
     const tx = Tx.fromJSON({
       signatures: [],
       fee: {
         gasFee: '',
-        gasWanted: new Long(0),
+        gasWanted: 0n,
       },
       messages: [],
       memo: '',
     });
-    const expectedEstimation = 44900;
+    const expectedEstimation = 44900n;
 
-    const mockABCIResponse: ABCIResponse = mock<ABCIResponse>();
-    mockABCIResponse.response.Value =
-      'CiMiIW1zZzowLHN1Y2Nlc3M6dHJ1ZSxsb2c6LGV2ZW50czpbXRCAiXoYyL0F';
+    const mockAbciResponse: AbciQueryResponse = {
+      responseBase: emptyResponseBase(),
+      key: new Uint8Array(),
+      value: Buffer.from(
+        'CiMiIW1zZzowLHN1Y2Nlc3M6dHJ1ZSxsb2c6LGV2ZW50czpbXRCAiXoYyL0F',
+        'base64'
+      ),
+      height: 0,
+    };
 
-    mockedAxios.post.mockResolvedValue({
-      data: newResponse<ABCIResponse>(mockABCIResponse),
-    });
+    vi.mocked(mockClient.abciQuery).mockResolvedValue(mockAbciResponse);
 
-    // Create the provider
-    const provider = new JSONRPCProvider(mockURL);
     const estimation = await provider.estimateGas(tx);
 
-    expect(axios.post).toHaveBeenCalled();
+    expect(mockClient.abciQuery).toHaveBeenCalled();
     expect(estimation).toEqual(expectedEstimation);
   });
 
   test('getNetwork', async () => {
-    const mockInfo: NetworkInfo = mock<NetworkInfo>();
-    mockInfo.listening = false;
+    const mockRpcInfo: RpcNetInfoResponse = {
+      listening: false,
+      listeners: [],
+      nPeers: 0,
+      peers: [],
+    };
 
-    mockedAxios.post.mockResolvedValue({
-      data: newResponse<NetworkInfo>(mockInfo),
-    });
+    vi.mocked(mockClient.netInfo).mockResolvedValue(mockRpcInfo);
 
-    // Create the provider
-    const provider = new JSONRPCProvider(mockURL);
-    const info = await provider.getNetwork();
+    const info: NetworkInfo = await provider.getNetwork();
 
-    expect(axios.post).toHaveBeenCalled();
-    expect(info).toEqual(mockInfo);
+    expect(mockClient.netInfo).toHaveBeenCalled();
+    expect(info.listening).toBe(false);
+    expect(info.n_peers).toBe('0');
   });
 
   test('getBlock', async () => {
-    const mockInfo: BlockInfo = mock<BlockInfo>();
+    const mockRpcBlock: BlockResponse = {
+      blockMeta: {
+        blockId: { hash: new Uint8Array(), parts: { total: 0n, hash: new Uint8Array() } },
+        header: {
+          version: '1',
+          chainId: 'test',
+          height: 1,
+          time: new Date('2023-01-01T00:00:00Z') as any,
+          numTxs: 0n,
+          totalTxs: 0n,
+          appVersion: '1',
+          lastBlockId: null,
+          lastCommitHash: new Uint8Array(),
+          dataHash: new Uint8Array(),
+          validatorsHash: new Uint8Array(),
+          consensusHash: new Uint8Array(),
+          appHash: new Uint8Array(),
+          lastResultsHash: new Uint8Array(),
+          proposerAddress: '',
+          nextValidatorsHash: new Uint8Array(),
+        },
+      },
+      block: {
+        header: {
+          version: '1',
+          chainId: 'test',
+          height: 1,
+          time: new Date('2023-01-01T00:00:00Z') as any,
+          numTxs: 0n,
+          totalTxs: 0n,
+          appVersion: '1',
+          lastBlockId: null,
+          lastCommitHash: new Uint8Array(),
+          dataHash: new Uint8Array(),
+          validatorsHash: new Uint8Array(),
+          consensusHash: new Uint8Array(),
+          appHash: new Uint8Array(),
+          lastResultsHash: new Uint8Array(),
+          proposerAddress: '',
+          nextValidatorsHash: new Uint8Array(),
+        },
+        txs: [],
+        lastCommit: null,
+        evidence: [],
+      },
+    };
 
-    mockedAxios.post.mockResolvedValue({
-      data: newResponse<BlockInfo>(mockInfo),
-    });
+    vi.mocked(mockClient.block).mockResolvedValue(mockRpcBlock);
 
-    // Create the provider
-    const provider = new JSONRPCProvider(mockURL);
-    const info = await provider.getBlock(0);
+    const info = await provider.getBlock(1);
 
-    expect(axios.post).toHaveBeenCalled();
-    expect(info).toEqual(mockInfo);
+    expect(mockClient.block).toHaveBeenCalledWith(1);
+    expect(info.block.header.height).toBe('1');
   });
 
   test('getBlockResult', async () => {
-    const mockResult: BlockResult = mock<BlockResult>();
+    const mockRpcResult: BlockResultsResponse = {
+      height: 1,
+      results: {
+        deliverTx: [],
+        beginBlock: { responseBase: emptyResponseBase() },
+        endBlock: {
+          responseBase: emptyResponseBase(),
+          validatorUpdates: null,
+          consensusParams: null,
+          events: null,
+        },
+      },
+    };
 
-    mockedAxios.post.mockResolvedValue({
-      data: newResponse<BlockResult>(mockResult),
-    });
+    vi.mocked(mockClient.blockResults).mockResolvedValue(mockRpcResult);
 
-    // Create the provider
-    const provider = new JSONRPCProvider(mockURL);
-    const result = await provider.getBlockResult(0);
+    const result = await provider.getBlockResult(1);
 
-    expect(axios.post).toHaveBeenCalled();
-    expect(result).toEqual(mockResult);
+    expect(mockClient.blockResults).toHaveBeenCalledWith(1);
+    expect(result.height).toBe('1');
   });
 
   describe('sendTransaction', () => {
-    const validResult: BroadcastTxSyncResult = {
-      error: null,
-      data: null,
-      Log: '',
-      hash: 'hash123',
-    };
-
     const mockError = '/std.UnauthorizedError';
     const mockLog = 'random error message';
-    const invalidResult: BroadcastTxSyncResult = {
-      error: {
-        [ABCIErrorKey]: mockError,
-      },
-      data: null,
-      Log: mockLog,
-      hash: '',
-    };
 
-    test.each([
-      [validResult, validResult.hash, '', ''], // no error
-      [invalidResult, invalidResult.hash, UnauthorizedErrorMessage, mockLog], // error out
-    ])('case %#', async (response, expectedHash, expectedErr, expectedLog) => {
-      mockedAxios.post.mockResolvedValue({
-        data: newResponse<BroadcastTxSyncResult>(response),
-      });
+    test('broadcastTxSync - success', async () => {
+      const mockRpcResponse: BroadcastTxSyncResponse = {
+        hash: new Uint8Array([0x68, 0x61, 0x73, 0x68]),
+        responseBase: emptyResponseBase(),
+        gasWanted: 0n,
+        gasUsed: 0n,
+      };
+
+      vi.mocked(mockClient.broadcastTxSync).mockResolvedValue(mockRpcResponse);
+
+      const result: BroadcastTxSyncResult = await provider.sendTransaction(
+        'encoded tx',
+        TransactionEndpoint.BROADCAST_TX_SYNC
+      );
+
+      expect(mockClient.broadcastTxSync).toHaveBeenCalled();
+      expect(result.error).toBeNull();
+    });
+
+    test('broadcastTxSync - error', async () => {
+      const mockRpcResponse: BroadcastTxSyncResponse = {
+        hash: new Uint8Array(),
+        responseBase: emptyResponseBase({
+          error: { '@type': mockError, value: '' },
+          log: mockLog,
+        }),
+        gasWanted: 0n,
+        gasUsed: 0n,
+      };
+
+      vi.mocked(mockClient.broadcastTxSync).mockResolvedValue(mockRpcResponse);
 
       try {
-        // Create the provider
-        const provider = new JSONRPCProvider(mockURL);
-        const tx = await provider.sendTransaction(
+        await provider.sendTransaction(
           'encoded tx',
           TransactionEndpoint.BROADCAST_TX_SYNC
         );
-
-        expect(axios.post).toHaveBeenCalled();
-        expect(tx.hash).toEqual(expectedHash);
-
-        if (expectedErr != '') {
-          fail('expected error');
-        }
+        throw new Error('expected error');
       } catch (e) {
-        expect((e as Error).message).toBe(expectedErr);
-        expect((e as TM2Error).log).toBe(expectedLog);
+        expect((e as Error).message).toBe(UnauthorizedErrorMessage);
+        expect((e as TM2Error).log).toBe(mockLog);
       }
     });
   });
 
   test('waitForTransaction', async () => {
-    const emptyBlock: BlockInfo = mock<BlockInfo>();
-    emptyBlock.block.data = {
-      txs: [],
-    };
-
     const tx: Tx = {
       messages: [],
       signatures: [],
@@ -164,129 +252,197 @@ describe('JSON-RPC Provider', () => {
     const encodedTx = Tx.encode(tx).finish();
     const txHash = sha256(encodedTx);
 
-    const filledBlock: BlockInfo = mock<BlockInfo>();
-    filledBlock.block.data = {
-      txs: [uint8ArrayToBase64(encodedTx)],
-    };
-
     const latestBlock = 5;
     const startBlock = latestBlock - 2;
 
-    const mockStatus: Status = mock<Status>();
-    mockStatus.sync_info.latest_block_height = `${latestBlock}`;
+    // Mock status
+    const mockStatusResponse: StatusResponse = {
+      nodeInfo: {
+        listenAddr: '',
+        network: '',
+        version: '',
+        software: '',
+        channels: [],
+        moniker: '',
+        other: new Map(),
+        versionSet: [],
+      },
+      syncInfo: {
+        latestBlockHash: new Uint8Array(),
+        latestAppHash: new Uint8Array(),
+        latestBlockHeight: latestBlock,
+        latestBlockTime: new Date(),
+        catchingUp: false,
+      },
+      validatorInfo: {
+        address: new Uint8Array(),
+        votingPower: 0n,
+      },
+    };
 
-    const responseMap: Map<number, BlockInfo> = new Map<number, BlockInfo>([
-      [latestBlock, filledBlock],
-      [latestBlock - 1, emptyBlock],
-      [startBlock, emptyBlock],
-    ]);
+    vi.mocked(mockClient.status).mockResolvedValue(mockStatusResponse);
 
-    mockedAxios.post.mockImplementation((url, params, config): Promise<any> => {
-      const request = params as RPCRequest;
-
-      if (request.method == CommonEndpoint.STATUS) {
-        return Promise.resolve({
-          data: newResponse<Status>(mockStatus),
-        });
-      }
-
-      if (!request.params) {
-        return Promise.reject('invalid params');
-      }
-
-      const blockNum: number = +(request.params[0] as string[]);
-      const info = responseMap.get(blockNum);
-
-      return Promise.resolve({
-        data: newResponse<BlockInfo>(info),
-      });
+    // Mock block responses
+    const makeEmptyBlock = (height: number): BlockResponse => ({
+      blockMeta: {
+        blockId: { hash: new Uint8Array(), parts: { total: 0n, hash: new Uint8Array() } },
+        header: {
+          version: '', chainId: '', height, time: new Date() as any,
+          numTxs: 0n, totalTxs: 0n, appVersion: '',
+          lastBlockId: null, lastCommitHash: new Uint8Array(),
+          dataHash: new Uint8Array(), validatorsHash: new Uint8Array(),
+          consensusHash: new Uint8Array(), appHash: new Uint8Array(),
+          lastResultsHash: new Uint8Array(), proposerAddress: '',
+          nextValidatorsHash: new Uint8Array(),
+        },
+      },
+      block: {
+        header: {
+          version: '', chainId: '', height, time: new Date() as any,
+          numTxs: 0n, totalTxs: 0n, appVersion: '',
+          lastBlockId: null, lastCommitHash: new Uint8Array(),
+          dataHash: new Uint8Array(), validatorsHash: new Uint8Array(),
+          consensusHash: new Uint8Array(), appHash: new Uint8Array(),
+          lastResultsHash: new Uint8Array(), proposerAddress: '',
+          nextValidatorsHash: new Uint8Array(),
+        },
+        txs: [],
+        lastCommit: null,
+        evidence: [],
+      },
     });
 
-    // Create the provider
-    const provider = new JSONRPCProvider(mockURL);
+    const filledBlock = makeEmptyBlock(latestBlock);
+    // Override txs with the encoded tx
+    (filledBlock.block as any).txs = [encodedTx];
+
+    vi.mocked(mockClient.block).mockImplementation(async (height?: number) => {
+      if (height === latestBlock) return filledBlock;
+      return makeEmptyBlock(height ?? 0);
+    });
+
     const receivedTx = await provider.waitForTransaction(
       uint8ArrayToBase64(txHash),
       startBlock
     );
 
-    expect(axios.post).toHaveBeenCalled();
+    expect(mockClient.status).toHaveBeenCalled();
     expect(receivedTx).toEqual(tx);
   });
 
   test('getConsensusParams', async () => {
-    const mockParams: ConsensusParams = mock<ConsensusParams>();
-    mockParams.block_height = '1';
+    const mockRpcResponse: RpcConsensusParamsResponse = {
+      blockHeight: 1,
+      consensusParams: {
+        block: {
+          maxTxBytes: 1000,
+          maxDataBytes: 2000,
+          maxBlockBytes: 3000,
+          maxGas: 4000,
+          timeIotaMs: 100,
+        },
+        validator: {
+          pubKeyTypeUrls: [],
+        },
+      },
+    };
 
-    mockedAxios.post.mockResolvedValue({
-      data: newResponse<ConsensusParams>(mockParams),
-    });
+    vi.mocked(mockClient.consensusParams).mockResolvedValue(mockRpcResponse);
 
-    // Create the provider
-    const provider = new JSONRPCProvider(mockURL);
-    const params = await provider.getConsensusParams(1);
+    const params: ConsensusParams = await provider.getConsensusParams(1);
 
-    expect(axios.post).toHaveBeenCalled();
-    expect(params).toEqual(mockParams);
+    expect(mockClient.consensusParams).toHaveBeenCalledWith(1);
+    expect(params.block_height).toBe('1');
   });
 
   test('getStatus', async () => {
-    const mockStatus: Status = mock<Status>();
-    mockStatus.validator_info.address = 'address';
+    const mockRpcResponse: StatusResponse = {
+      nodeInfo: {
+        listenAddr: '',
+        network: '',
+        version: '',
+        software: '',
+        channels: [],
+        moniker: '',
+        other: new Map(),
+        versionSet: [],
+      },
+      syncInfo: {
+        latestBlockHash: new Uint8Array(),
+        latestAppHash: new Uint8Array(),
+        latestBlockHeight: 10,
+        latestBlockTime: new Date(),
+        catchingUp: false,
+      },
+      validatorInfo: {
+        address: new Uint8Array([0x01, 0x02]),
+        votingPower: 0n,
+      },
+    };
 
-    mockedAxios.post.mockResolvedValue({
-      data: newResponse<Status>(mockStatus),
-    });
+    vi.mocked(mockClient.status).mockResolvedValue(mockRpcResponse);
 
-    // Create the provider
-    const provider = new JSONRPCProvider(mockURL);
-    const status = await provider.getStatus();
+    const status: Status = await provider.getStatus();
 
-    expect(axios.post).toHaveBeenCalled();
-    expect(status).toEqual(mockStatus);
+    expect(mockClient.status).toHaveBeenCalled();
+    expect(status.validator_info.address).toBe('0102');
   });
 
   test('getBlockNumber', async () => {
     const expectedBlockNumber = 10;
-    const mockStatus: Status = mock<Status>();
-    mockStatus.sync_info.latest_block_height = `${expectedBlockNumber}`;
+    const mockRpcResponse: StatusResponse = {
+      nodeInfo: {
+        listenAddr: '',
+        network: '',
+        version: '',
+        software: '',
+        channels: [],
+        moniker: '',
+        other: new Map(),
+        versionSet: [],
+      },
+      syncInfo: {
+        latestBlockHash: new Uint8Array(),
+        latestAppHash: new Uint8Array(),
+        latestBlockHeight: expectedBlockNumber,
+        latestBlockTime: new Date(),
+        catchingUp: false,
+      },
+      validatorInfo: {
+        address: new Uint8Array(),
+        votingPower: 0n,
+      },
+    };
 
-    mockedAxios.post.mockResolvedValue({
-      data: newResponse<Status>(mockStatus),
-    });
+    vi.mocked(mockClient.status).mockResolvedValue(mockRpcResponse);
 
-    // Create the provider
-    const provider = new JSONRPCProvider(mockURL);
     const blockNumber = await provider.getBlockNumber();
 
-    expect(axios.post).toHaveBeenCalled();
+    expect(mockClient.status).toHaveBeenCalled();
     expect(blockNumber).toEqual(expectedBlockNumber);
   });
 
   describe('getBalance', () => {
     const denomination = 'atom';
     test.each([
-      ['"5gnot,100atom"', 100], // balance found
-      ['"5universe"', 0], // balance not found
-      ['""', 0], // account doesn't exist
+      ['"5gnot,100atom"', 100],
+      ['"5universe"', 0],
+      ['""', 0],
     ])('case %#', async (existing, expected) => {
-      const mockABCIResponse: ABCIResponse = mock<ABCIResponse>();
-      mockABCIResponse.response.ResponseBase = {
-        Log: '',
-        Info: '',
-        Data: stringToBase64(existing),
-        Error: null,
-        Events: null,
+      const dataBytes = Buffer.from(stringToBase64(existing), 'base64');
+
+      const mockRpcResponse: AbciQueryResponse = {
+        responseBase: emptyResponseBase({ data: dataBytes }),
+        key: new Uint8Array(),
+        value: new Uint8Array(),
+        height: 0,
       };
 
-      mockedAxios.post.mockResolvedValue({
-        data: newResponse<ABCIResponse>(mockABCIResponse),
-      });
+      vi.mocked(mockClient.abciQuery).mockResolvedValue(mockRpcResponse);
 
-      // Create the provider
-      const provider = new JSONRPCProvider(mockURL);
       const balance = await provider.getBalance('address', denomination);
 
-      expect(axios.post).toHaveBeenCalled();
+      expect(mockClient.abciQuery).toHaveBeenCalled();
       expect(balance).toBe(expected);
     });
   });
@@ -306,27 +462,23 @@ describe('JSON-RPC Provider', () => {
       [
         JSON.stringify(validAccount),
         parseInt(validAccount.BaseAccount.sequence, 10),
-      ], // account exists
-      ['null', 0], // account doesn't exist
+      ],
+      ['null', 0],
     ])('case %#', async (response, expected) => {
-      const mockABCIResponse: ABCIResponse = mock<ABCIResponse>();
-      mockABCIResponse.response.ResponseBase = {
-        Log: '',
-        Info: '',
-        Data: stringToBase64(response),
-        Error: null,
-        Events: null,
+      const dataBytes = Buffer.from(stringToBase64(response), 'base64');
+
+      const mockRpcResponse: AbciQueryResponse = {
+        responseBase: emptyResponseBase({ data: dataBytes }),
+        key: new Uint8Array(),
+        value: new Uint8Array(),
+        height: 0,
       };
 
-      mockedAxios.post.mockResolvedValue({
-        data: newResponse<ABCIResponse>(mockABCIResponse),
-      });
+      vi.mocked(mockClient.abciQuery).mockResolvedValue(mockRpcResponse);
 
-      // Create the provider
-      const provider = new JSONRPCProvider(mockURL);
       const sequence = await provider.getAccountSequence('address');
 
-      expect(axios.post).toHaveBeenCalled();
+      expect(mockClient.abciQuery).toHaveBeenCalled();
       expect(sequence).toBe(expected);
     });
   });
@@ -346,28 +498,24 @@ describe('JSON-RPC Provider', () => {
       [
         JSON.stringify(validAccount),
         parseInt(validAccount.BaseAccount.account_number, 10),
-      ], // account exists
-      ['null', 0], // account doesn't exist
+      ],
+      ['null', 0],
     ])('case %#', async (response, expected) => {
-      const mockABCIResponse: ABCIResponse = mock<ABCIResponse>();
-      mockABCIResponse.response.ResponseBase = {
-        Log: '',
-        Info: '',
-        Data: stringToBase64(response),
-        Error: null,
-        Events: null,
+      const dataBytes = Buffer.from(stringToBase64(response), 'base64');
+
+      const mockRpcResponse: AbciQueryResponse = {
+        responseBase: emptyResponseBase({ data: dataBytes }),
+        key: new Uint8Array(),
+        value: new Uint8Array(),
+        height: 0,
       };
 
-      mockedAxios.post.mockResolvedValue({
-        data: newResponse<ABCIResponse>(mockABCIResponse),
-      });
+      vi.mocked(mockClient.abciQuery).mockResolvedValue(mockRpcResponse);
 
       try {
-        // Create the provider
-        const provider = new JSONRPCProvider(mockURL);
         const accountNumber = await provider.getAccountNumber('address');
 
-        expect(axios.post).toHaveBeenCalled();
+        expect(mockClient.abciQuery).toHaveBeenCalled();
         expect(accountNumber).toBe(expected);
       } catch (e) {
         expect((e as Error).message).toContain('account is not initialized');
@@ -387,28 +535,27 @@ describe('JSON-RPC Provider', () => {
     };
 
     test.each([
-      [JSON.stringify(validAccount), validAccount], // account exists
-      ['null', null], // account doesn't exist
+      [JSON.stringify(validAccount), validAccount],
+      ['null', null],
     ])('case %#', async (response, expected) => {
-      const mockABCIResponse: ABCIResponse = mock<ABCIResponse>();
-      mockABCIResponse.response.ResponseBase = {
-        Log: '',
-        Info: '',
-        Data: stringToBase64(response),
-        Error: null,
-        Events: null,
+      const dataBytes = Buffer.from(
+        stringToBase64(response as string),
+        'base64'
+      );
+
+      const mockRpcResponse: AbciQueryResponse = {
+        responseBase: emptyResponseBase({ data: dataBytes }),
+        key: new Uint8Array(),
+        value: new Uint8Array(),
+        height: 0,
       };
 
-      mockedAxios.post.mockResolvedValue({
-        data: newResponse<ABCIResponse>(mockABCIResponse),
-      });
+      vi.mocked(mockClient.abciQuery).mockResolvedValue(mockRpcResponse);
 
       try {
-        // Create the provider
-        const provider = new JSONRPCProvider(mockURL);
         const account = await provider.getAccount('address');
 
-        expect(axios.post).toHaveBeenCalled();
+        expect(mockClient.abciQuery).toHaveBeenCalled();
         expect(account).toStrictEqual(expected);
       } catch (e) {
         expect((e as Error).message).toContain('account is not initialized');

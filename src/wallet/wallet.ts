@@ -3,28 +3,26 @@ import {
   Provider,
   Status,
   uint8ArrayToBase64,
-} from '../provider';
-import { Signer } from './signer';
-import { LedgerSigner } from './ledger';
-import { KeySigner } from './key';
-import { Secp256k1 } from '@cosmjs/crypto';
+} from '../provider/index.js';
+import { Signer } from './signer.js';
+import { LedgerSigner } from './ledger/index.js';
+import { KeySigner } from './key/index.js';
+import { Bip39, Secp256k1 } from '@cosmjs/crypto';
 import {
   encodeCharacterSet,
   generateEntropy,
   generateKeyPair,
   stringToUTF8,
-} from './utility';
+} from './utility/index.js';
 import { LedgerConnector } from '@cosmjs/ledger-amino';
-import { entropyToMnemonic } from '@cosmjs/crypto/build/bip39';
-import { Any, PubKeySecp256k1, Tx, TxSignature } from '../proto';
+import { Any, PubKeySecp256k1, Tx, TxSignature } from '../proto/index.js';
 import {
   AccountWalletOption,
   CreateWalletOptions,
   Secp256k1PubKeyType,
   TxSignPayload,
-} from './types';
-import { sortedJsonStringify } from '@cosmjs/amino/build/signdoc';
-
+} from './types/index.js';
+import { sortedJsonStringify } from './utility/index.js';
 export interface SignTransactionOptions {
   accountNumber?: string;
   sequence?: string;
@@ -35,8 +33,8 @@ export interface SignTransactionOptions {
  * that can interact with the blockchain
  */
 export class Wallet {
-  protected provider: Provider;
-  protected signer: Signer;
+  protected declare provider: Provider;
+  protected declare signer: Signer;
 
   /**
    * Connects the wallet to the specified {@link Provider}
@@ -56,7 +54,7 @@ export class Wallet {
     options?: AccountWalletOption
   ): Promise<Wallet> => {
     const { publicKey, privateKey } = await generateKeyPair(
-      entropyToMnemonic(generateEntropy()),
+      Bip39.encode(generateEntropy()).toString(),
       0
     );
 
@@ -225,7 +223,7 @@ export class Wallet {
    * Estimates the gas limit for the transaction
    * @param {Tx} tx the transaction that needs estimating
    */
-  estimateGas = async (tx: Tx): Promise<number> => {
+  estimateGas = async (tx: Tx): Promise<bigint> => {
     if (!this.provider) {
       throw new Error('provider not connected');
     }

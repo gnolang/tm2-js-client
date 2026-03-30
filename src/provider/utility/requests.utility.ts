@@ -1,6 +1,6 @@
 import { BinaryReader } from '@bufbuild/protobuf/wire';
 import { v4 as uuidv4 } from 'uuid';
-import { RPCError, RPCRequest, RPCResponse } from '../types';
+import { RPCError, RPCRequest, RPCResponse } from '../types/index.js';
 
 // The version of the supported JSON-RPC protocol
 const standardVersion = '2.0';

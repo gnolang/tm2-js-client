@@ -18,7 +18,7 @@ import {
   UnauthorizedError,
   UnknownAddressError,
   UnknownRequestError,
-} from '../errors';
+} from '../errors/index.js';
 
 /**
  * Constructs the appropriate Tendermint2

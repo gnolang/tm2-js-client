@@ -1,7 +1,7 @@
-import { Signer } from '../signer';
+import { Signer } from '../signer.js';
 import { encodeSecp256k1Pubkey, pubkeyToAddress } from '@cosmjs/amino';
 import { Secp256k1, Secp256k1Signature, sha256 } from '@cosmjs/crypto';
-import { defaultAddressPrefix } from '../utility';
+import { defaultAddressPrefix } from '../utility/index.js';
 
 /**
  * KeySigner implements the logic for the private key signer
