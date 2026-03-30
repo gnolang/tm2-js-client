@@ -1,12 +1,7 @@
-import { Tx } from '../../proto';
-import {
-  ABCIEndpoint,
-  BlockEndpoint,
-  CommonEndpoint,
-  ConsensusEndpoint,
-  TransactionEndpoint,
-} from '../endpoints';
-import { Provider } from '../provider';
+import { Tm2Client } from '@gnolang/tm2-rpc';
+import { Tx } from '../../proto/index.js';
+import { TransactionEndpoint } from '../endpoints.js';
+import { Provider } from '../provider.js';
 import {
   ABCIAccount,
   ABCIErrorKey,
@@ -18,59 +13,46 @@ import {
   BroadcastTxSyncResult,
   ConsensusParams,
   NetworkInfo,
-  RPCRequest,
-  RPCResponse,
   Status,
   TxResult,
-} from '../types';
+} from '../types/index.js';
 import {
+  adaptAbciQueryResponse,
+  adaptBlockResponse,
+  adaptBlockResultsResponse,
+  adaptBroadcastTxCommitResponse,
+  adaptBroadcastTxSyncResponse,
+  adaptConsensusParamsResponse,
+  adaptNetInfoResponse,
+  adaptStatusResponse,
+  adaptTxResponse,
   extractAccountFromResponse,
   extractAccountNumberFromResponse,
   extractBalanceFromResponse,
   extractSequenceFromResponse,
   extractSimulateFromResponse,
-  newRequest,
   uint8ArrayToBase64,
   waitForTransaction,
-} from '../utility';
-import { constructRequestError } from '../utility/errors.utility';
+} from '../utility/index.js';
+import { constructRequestError } from '../utility/errors.utility.js';
 
 /**
- * Provider based on WS JSON-RPC HTTP requests
+ * Provider based on WS JSON-RPC requests
  */
 export class WSProvider implements Provider {
-  protected ws: WebSocket; // the persistent WS connection
-  protected readonly requestMap: Map<
-    number | string,
-    {
-      resolve: (response: RPCResponse<any>) => void;
-      reject: (reason: Error) => void;
-      timeout: NodeJS.Timeout;
-    }
-  > = new Map(); // callback method map for the individual endpoints
-  protected requestTimeout = 15000; // 15s
+  private readonly client: Tm2Client;
+
+  private constructor(client: Tm2Client) {
+    this.client = client;
+  }
 
   /**
    * Creates a new instance of the {@link WSProvider}
    * @param {string} baseURL the WS URL of the node
-   * @param {number} requestTimeout the timeout for the WS request (in MS)
    */
-  constructor(baseURL: string, requestTimeout?: number) {
-    this.ws = new WebSocket(baseURL);
-
-    this.ws.addEventListener('message', (event) => {
-      const response = JSON.parse(event.data as string) as RPCResponse<any>;
-      const request = this.requestMap.get(response.id);
-      if (request) {
-        this.requestMap.delete(response.id);
-        clearTimeout(request.timeout);
-
-        request.resolve(response);
-      }
-
-      // Set the default timeout
-      this.requestTimeout = requestTimeout ? requestTimeout : 15000;
-    });
+  static async create(baseURL: string): Promise<WSProvider> {
+    const client = await Tm2Client.connect(baseURL);
+    return new WSProvider(client);
   }
 
   /**
@@ -78,94 +60,19 @@ export class WSProvider implements Provider {
    * with the WS provider
    */
   closeConnection() {
-    this.ws.close();
+    this.client.disconnect();
   }
 
-  /**
-   * Sends a request to the WS connection, and resolves
-   * upon receiving the response
-   * @param {RPCRequest} request the RPC request
-   */
-  async sendRequest<Result>(request: RPCRequest): Promise<RPCResponse<Result>> {
-    // Make sure the connection is open
-    if (this.ws.readyState != WebSocket.OPEN) {
-      await this.waitForOpenConnection();
-    }
-
-    // The promise will resolve as soon as the response is received
-    const promise = new Promise<RPCResponse<Result>>((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        this.requestMap.delete(request.id);
-
-        reject(new Error('Request timed out'));
-      }, this.requestTimeout);
-
-      this.requestMap.set(request.id, { resolve, reject, timeout });
-    });
-
-    this.ws.send(JSON.stringify(request));
-
-    return promise;
-  }
-
-  /**
-   * Parses the result from the response
-   * @param {RPCResponse<Result>} response the response to be parsed
-   */
-  parseResponse<Result>(response: RPCResponse<Result>): Result {
-    if (!response) {
-      throw new Error('invalid response');
-    }
-
-    if (response.error) {
-      throw new Error(response.error?.message);
-    }
-
-    if (!response.result) {
-      throw new Error('invalid response returned');
-    }
-
-    return response.result;
-  }
-
-  /**
-   * Waits for the WS connection to be established
-   */
-  waitForOpenConnection = (): Promise<null> => {
-    return new Promise((resolve, reject) => {
-      const maxNumberOfAttempts = 20;
-      const intervalTime = 500; // ms
-
-      let currentAttempt = 0;
-      const interval = setInterval(() => {
-        if (this.ws.readyState === WebSocket.OPEN) {
-          clearInterval(interval);
-          resolve(null);
-        }
-
-        currentAttempt++;
-        if (currentAttempt >= maxNumberOfAttempts) {
-          clearInterval(interval);
-          reject(new Error('Unable to establish WS connection'));
-        }
-      }, intervalTime);
-    });
-  };
-
-  async estimateGas(tx: Tx): Promise<number> {
+  async estimateGas(tx: Tx): Promise<bigint> {
     const encodedTx = uint8ArrayToBase64(Tx.encode(tx).finish());
-    const response = await this.sendRequest<ABCIResponse>(
-      newRequest(ABCIEndpoint.ABCI_QUERY, [
-        `.app/simulate`,
-        `${encodedTx}`,
-        '0', // Height; not supported > 0 for now
-        false,
-      ])
-    );
+    const rpcResponse = await this.client.abciQuery({
+      path: `.app/simulate`,
+      data: new TextEncoder().encode(encodedTx),
+      height: 0,
+      prove: false,
+    });
 
-    // Parse the response
-    const abciResponse = this.parseResponse<ABCIResponse>(response);
-
+    const abciResponse: ABCIResponse = adaptAbciQueryResponse(rpcResponse);
     const simulateResult = extractSimulateFromResponse(abciResponse);
 
     const resultErrorKey = simulateResult.response_base?.error?.type_url;
@@ -173,7 +80,7 @@ export class WSProvider implements Provider {
       throw constructRequestError(resultErrorKey);
     }
 
-    return simulateResult.gas_used.toInt();
+    return simulateResult.gas_used;
   }
 
   async getBalance(
@@ -181,17 +88,14 @@ export class WSProvider implements Provider {
     denomination?: string,
     height?: number
   ): Promise<number> {
-    const response = await this.sendRequest<ABCIResponse>(
-      newRequest(ABCIEndpoint.ABCI_QUERY, [
-        `bank/balances/${address}`,
-        '',
-        '0', // Height; not supported > 0 for now
-        false,
-      ])
-    );
+    const rpcResponse = await this.client.abciQuery({
+      path: `bank/balances/${address}`,
+      data: new Uint8Array(),
+      height: 0,
+      prove: false,
+    });
 
-    // Parse the response
-    const abciResponse = this.parseResponse<ABCIResponse>(response);
+    const abciResponse: ABCIResponse = adaptAbciQueryResponse(rpcResponse);
 
     return extractBalanceFromResponse(
       abciResponse.response.ResponseBase.Data,
@@ -200,34 +104,23 @@ export class WSProvider implements Provider {
   }
 
   async getBlock(height: number): Promise<BlockInfo> {
-    const response = await this.sendRequest<BlockInfo>(
-      newRequest(BlockEndpoint.BLOCK, [height.toString()])
-    );
-
-    return this.parseResponse<BlockInfo>(response);
+    const rpcResponse = await this.client.block(height);
+    return adaptBlockResponse(rpcResponse);
   }
 
   async getBlockResult(height: number): Promise<BlockResult> {
-    const response = await this.sendRequest<BlockResult>(
-      newRequest(BlockEndpoint.BLOCK_RESULTS, [height.toString()])
-    );
-
-    return this.parseResponse<BlockResult>(response);
+    const rpcResponse = await this.client.blockResults(height);
+    return adaptBlockResultsResponse(rpcResponse);
   }
 
   async getBlockNumber(): Promise<number> {
-    // Fetch the status for the latest info
     const status = await this.getStatus();
-
     return parseInt(status.sync_info.latest_block_height);
   }
 
   async getConsensusParams(height: number): Promise<ConsensusParams> {
-    const response = await this.sendRequest<ConsensusParams>(
-      newRequest(ConsensusEndpoint.CONSENSUS_PARAMS, [height.toString()])
-    );
-
-    return this.parseResponse<ConsensusParams>(response);
+    const rpcResponse = await this.client.consensusParams(height);
+    return adaptConsensusParamsResponse(rpcResponse);
   }
 
   getGasPrice(): Promise<number> {
@@ -235,129 +128,100 @@ export class WSProvider implements Provider {
   }
 
   async getNetwork(): Promise<NetworkInfo> {
-    const response = await this.sendRequest<NetworkInfo>(
-      newRequest(ConsensusEndpoint.NET_INFO)
-    );
-
-    return this.parseResponse<NetworkInfo>(response);
+    const rpcResponse = await this.client.netInfo();
+    return adaptNetInfoResponse(rpcResponse);
   }
 
   async getAccountSequence(address: string, height?: number): Promise<number> {
-    const response = await this.sendRequest<ABCIResponse>(
-      newRequest(ABCIEndpoint.ABCI_QUERY, [
-        `auth/accounts/${address}`,
-        '',
-        '0', // Height; not supported > 0 for now
-        false,
-      ])
-    );
+    const rpcResponse = await this.client.abciQuery({
+      path: `auth/accounts/${address}`,
+      data: new Uint8Array(),
+      height: 0,
+      prove: false,
+    });
 
-    // Parse the response
-    const abciResponse = this.parseResponse<ABCIResponse>(response);
-
+    const abciResponse: ABCIResponse = adaptAbciQueryResponse(rpcResponse);
     return extractSequenceFromResponse(abciResponse.response.ResponseBase.Data);
   }
 
   async getAccountNumber(address: string, height?: number): Promise<number> {
-    const response = await this.sendRequest<ABCIResponse>(
-      newRequest(ABCIEndpoint.ABCI_QUERY, [
-        `auth/accounts/${address}`,
-        '',
-        '0', // Height; not supported > 0 for now
-        false,
-      ])
-    );
+    const rpcResponse = await this.client.abciQuery({
+      path: `auth/accounts/${address}`,
+      data: new Uint8Array(),
+      height: 0,
+      prove: false,
+    });
 
-    // Parse the response
-    const abciResponse = this.parseResponse<ABCIResponse>(response);
-
+    const abciResponse: ABCIResponse = adaptAbciQueryResponse(rpcResponse);
     return extractAccountNumberFromResponse(
       abciResponse.response.ResponseBase.Data
     );
   }
 
   async getAccount(address: string, height?: number): Promise<ABCIAccount> {
-    const response = await this.sendRequest<ABCIResponse>(
-      newRequest(ABCIEndpoint.ABCI_QUERY, [
-        `auth/accounts/${address}`,
-        '',
-        '0', // Height; not supported > 0 for now
-        false,
-      ])
-    );
+    const rpcResponse = await this.client.abciQuery({
+      path: `auth/accounts/${address}`,
+      data: new Uint8Array(),
+      height: 0,
+      prove: false,
+    });
 
-    // Parse the response
-    const abciResponse = this.parseResponse<ABCIResponse>(response);
-
+    const abciResponse: ABCIResponse = adaptAbciQueryResponse(rpcResponse);
     return extractAccountFromResponse(abciResponse.response.ResponseBase.Data);
   }
 
   async getStatus(): Promise<Status> {
-    const response = await this.sendRequest<Status>(
-      newRequest(CommonEndpoint.STATUS, [null])
-    );
-
-    return this.parseResponse<Status>(response);
+    const rpcResponse = await this.client.status();
+    return adaptStatusResponse(rpcResponse);
   }
 
   async getTransaction(hash: string): Promise<TxResult> {
-    const response = await this.sendRequest<TxResult>(
-      newRequest(TransactionEndpoint.TX, [hash])
+    const hashBytes = Uint8Array.from(
+      (hash.match(/.{1,2}/g) ?? []).map((byte) => parseInt(byte, 16))
     );
-
-    return this.parseResponse<TxResult>(response);
+    const rpcResponse = await this.client.tx({ hash: hashBytes });
+    return adaptTxResponse(rpcResponse);
   }
 
   async sendTransaction<K extends keyof BroadcastTransactionMap>(
     tx: string,
     endpoint: K
   ): Promise<BroadcastTransactionMap[K]['result']> {
-    const request: RPCRequest = newRequest(endpoint, [tx]);
+    const txBytes = Uint8Array.from(Buffer.from(tx, 'base64'));
 
     switch (endpoint) {
       case TransactionEndpoint.BROADCAST_TX_COMMIT:
-        // The endpoint is a commit broadcast
-        // (it waits for the transaction to be committed) to the chain before returning
-        return this.broadcastTxCommit(request);
+        return this.broadcastTxCommit(txBytes);
       case TransactionEndpoint.BROADCAST_TX_SYNC:
       default:
-        return this.broadcastTxSync(request);
+        return this.broadcastTxSync(txBytes);
     }
   }
 
   private async broadcastTxSync(
-    request: RPCRequest
+    txBytes: Uint8Array
   ): Promise<BroadcastTxSyncResult> {
-    const response: RPCResponse<BroadcastTxSyncResult> =
-      await this.sendRequest<BroadcastTxSyncResult>(request);
+    const rpcResponse = await this.client.broadcastTxSync({ tx: txBytes });
+    const response = adaptBroadcastTxSyncResponse(rpcResponse);
 
-    const broadcastResponse: BroadcastTxSyncResult =
-      this.parseResponse<BroadcastTxSyncResult>(response);
-
-    // Check if there is an immediate tx-broadcast error
-    // (originating from basic transaction checks like CheckTx)
-    if (broadcastResponse.error) {
-      const errType: string = broadcastResponse.error[ABCIErrorKey];
-      const log: string = broadcastResponse.Log;
+    if (response.error) {
+      const errType: string = response.error[ABCIErrorKey];
+      const log: string = response.Log;
 
       throw constructRequestError(errType, log);
     }
 
-    return broadcastResponse;
+    return response;
   }
 
   private async broadcastTxCommit(
-    request: RPCRequest
+    txBytes: Uint8Array
   ): Promise<BroadcastTxCommitResult> {
-    const response: RPCResponse<BroadcastTxCommitResult> =
-      await this.sendRequest<BroadcastTxCommitResult>(request);
+    const rpcResponse = await this.client.broadcastTxCommit({ tx: txBytes });
+    const response = adaptBroadcastTxCommitResponse(rpcResponse);
 
-    const broadcastResponse: BroadcastTxCommitResult =
-      this.parseResponse<BroadcastTxCommitResult>(response);
+    const { check_tx, deliver_tx } = response;
 
-    const { check_tx, deliver_tx } = broadcastResponse;
-
-    // Check if there is an immediate tx-broadcast error (in CheckTx)
     if (check_tx.ResponseBase.Error) {
       const errType: string = check_tx.ResponseBase.Error[ABCIErrorKey];
       const log: string = check_tx.ResponseBase.Log;
@@ -365,7 +229,6 @@ export class WSProvider implements Provider {
       throw constructRequestError(errType, log);
     }
 
-    // Check if there is a parsing error with the transaction (in DeliverTx)
     if (deliver_tx.ResponseBase.Error) {
       const errType: string = deliver_tx.ResponseBase.Error[ABCIErrorKey];
       const log: string = deliver_tx.ResponseBase.Log;
@@ -373,7 +236,7 @@ export class WSProvider implements Provider {
       throw constructRequestError(errType, log);
     }
 
-    return broadcastResponse;
+    return response;
   }
 
   waitForTransaction(

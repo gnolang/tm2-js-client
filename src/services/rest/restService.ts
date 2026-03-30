@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { RequestParams } from './restService.types';
-import { RPCResponse } from '../../provider';
+import { RequestParams } from './restService.types.js';
+import { RPCResponse } from '../../provider/index.js';
 
 export class RestService {
   static async post<TResult>(

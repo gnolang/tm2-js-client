@@ -7,8 +7,8 @@ import {
   ConsensusParams,
   NetworkInfo,
   Status,
-} from './types';
-import { Tx } from '../proto';
+} from './types/index.js';
+import { Tx } from '../proto/index.js';
 
 /**
  * Read-only abstraction for accessing blockchain data
@@ -101,7 +101,7 @@ export interface Provider {
    * Estimates the gas limit for the transaction
    * @param {Tx} tx the transaction that needs estimating
    */
-  estimateGas(tx: Tx): Promise<number>;
+  estimateGas(tx: Tx): Promise<bigint>;
 
   // Transaction specific methods //
 

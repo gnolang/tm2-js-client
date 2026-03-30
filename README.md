@@ -20,7 +20,7 @@ building their dApps.
 To install `@gnolang/tm2-js-client`, use your preferred package manager:
 
 ```bash
-yarn add @gnolang/tm2-js-client
+pnpm add @gnolang/tm2-js-client
 ```
 
 ```bash

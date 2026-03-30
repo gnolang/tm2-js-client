@@ -17,7 +17,7 @@ import {
   UnauthorizedErrorMessage,
   UnknownAddressErrorMessage,
   UnknownRequestErrorMessage,
-} from './messages';
+} from './messages.js';
 
 class TM2Error extends Error {
   public log?: string;

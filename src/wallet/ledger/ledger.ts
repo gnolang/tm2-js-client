@@ -1,6 +1,6 @@
-import { Signer } from '../signer';
+import { Signer } from '../signer.js';
 import { LedgerConnector } from '@cosmjs/ledger-amino';
-import { defaultAddressPrefix, generateHDPath } from '../utility';
+import { defaultAddressPrefix, generateHDPath } from '../utility/index.js';
 import { HdPath, Secp256k1, Secp256k1Signature, sha256 } from '@cosmjs/crypto';
 import { encodeSecp256k1Pubkey, pubkeyToAddress } from '@cosmjs/amino';
 

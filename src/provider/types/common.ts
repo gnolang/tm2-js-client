@@ -1,5 +1,5 @@
-import { ABCIResponseBase } from './abci';
-import { TransactionEndpoint } from '../endpoints';
+import { ABCIResponseBase } from './abci.js';
+import { TransactionEndpoint } from '../endpoints.js';
 
 export interface NetworkInfo {
   // flag indicating if networking is up

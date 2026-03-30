@@ -1,5 +1,6 @@
-import { bytesToHex } from '@noble/hashes/utils';
-import { CompactBitArray } from './multisig';
+import { describe, expect, test } from 'vitest';
+import { bytesToHex } from '@noble/hashes/utils.js';
+import { CompactBitArray } from './multisig.js';
 
 describe('TestMarshalCompactBitArrayAmino', () => {
   const testCases = [

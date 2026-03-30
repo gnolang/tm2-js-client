@@ -1,2 +1,2 @@
-export * from './tm2/tx';
-export { Any } from './google/protobuf/any';
+export * from './tm2/tx.js';
+export { Any } from './google/protobuf/any.js';
