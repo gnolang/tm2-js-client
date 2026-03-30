@@ -18,7 +18,7 @@ import {
   UnauthorizedError,
   UnknownAddressError,
   UnknownRequestError,
-} from '../errors';
+} from "../errors/index.js";
 
 /**
  * Constructs the appropriate Tendermint2
@@ -31,44 +31,44 @@ import {
  */
 export const constructRequestError = (
   errorID: string,
-  log?: string
+  log?: string,
 ): TM2Error => {
   switch (errorID) {
-    case '/std.InternalError':
+    case "/std.InternalError":
       return new InternalError(log);
-    case '/std.TxDecodeError':
+    case "/std.TxDecodeError":
       return new TxDecodeError(log);
-    case '/std.InvalidSequenceError':
+    case "/std.InvalidSequenceError":
       return new InvalidSequenceError(log);
-    case '/std.UnauthorizedError':
+    case "/std.UnauthorizedError":
       return new UnauthorizedError(log);
-    case '/std.InsufficientFundsError':
+    case "/std.InsufficientFundsError":
       return new InsufficientFundsError(log);
-    case '/std.UnknownRequestError':
+    case "/std.UnknownRequestError":
       return new UnknownRequestError(log);
-    case '/std.InvalidAddressError':
+    case "/std.InvalidAddressError":
       return new InvalidAddressError(log);
-    case '/std.UnknownAddressError':
+    case "/std.UnknownAddressError":
       return new UnknownAddressError(log);
-    case '/std.InvalidPubKeyError':
+    case "/std.InvalidPubKeyError":
       return new InvalidPubKeyError(log);
-    case '/std.InsufficientCoinsError':
+    case "/std.InsufficientCoinsError":
       return new InsufficientCoinsError(log);
-    case '/std.InvalidCoinsError':
+    case "/std.InvalidCoinsError":
       return new InvalidCoinsError(log);
-    case '/std.InvalidGasWantedError':
+    case "/std.InvalidGasWantedError":
       return new InvalidGasWantedError(log);
-    case '/std.OutOfGasError':
+    case "/std.OutOfGasError":
       return new OutOfGasError(log);
-    case '/std.MemoTooLargeError':
+    case "/std.MemoTooLargeError":
       return new MemoTooLargeError(log);
-    case '/std.InsufficientFeeError':
+    case "/std.InsufficientFeeError":
       return new InsufficientFeeError(log);
-    case '/std.TooManySignaturesError':
+    case "/std.TooManySignaturesError":
       return new TooManySignaturesError(log);
-    case '/std.NoSignaturesError':
+    case "/std.NoSignaturesError":
       return new NoSignaturesError(log);
-    case '/std.GasOverflowError':
+    case "/std.GasOverflowError":
       return new GasOverflowError(log);
     default:
       return new TM2Error(`unknown error: ${errorID}`, log);

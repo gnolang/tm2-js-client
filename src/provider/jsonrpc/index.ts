@@ -1,1 +1,1 @@
-export * from './jsonrpc';
+export * from "./jsonrpc.js";

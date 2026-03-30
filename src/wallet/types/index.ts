@@ -1,2 +1,2 @@
-export * from './sign';
-export * from './wallet';
+export * from "./sign.js";
+export * from "./wallet.js";

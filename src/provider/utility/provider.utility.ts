@@ -1,15 +1,28 @@
-import { sha256 } from '@cosmjs/crypto';
-import { Tx } from '../../proto';
-import { ResponseDeliverTx } from '../../proto/tm2/abci';
-import { Provider } from '../provider';
-import { ABCIAccount, ABCIErrorKey, ABCIResponse, BlockInfo } from '../types';
-import { constructRequestError } from './errors.utility';
+import {
+  sha256,
+} from "@cosmjs/crypto";
+
+import {
+  Tx,
+} from "../../proto/index.js";
+import {
+  ResponseDeliverTx,
+} from "../../proto/tm2/abci.js";
+import {
+  Provider,
+} from "../provider.js";
+import {
+  ABCIAccount, ABCIErrorKey, ABCIResponse, BlockInfo,
+} from "../types/index.js";
+import {
+  constructRequestError,
+} from "./errors.utility.js";
 import {
   base64ToUint8Array,
   parseABCI,
   parseProto,
   uint8ArrayToBase64,
-} from './requests.utility';
+} from "./requests.utility.js";
 
 /**
  * Extracts the specific balance denomination from the ABCI response
@@ -18,7 +31,7 @@ import {
  */
 export const extractBalanceFromResponse = (
   abciData: string | null,
-  denomination: string
+  denomination: string,
 ): number => {
   // Make sure the response is initialized
   if (!abciData) {
@@ -26,12 +39,12 @@ export const extractBalanceFromResponse = (
   }
 
   // Extract the balances
-  const balancesRaw = Buffer.from(abciData, 'base64')
+  const balancesRaw = Buffer.from(abciData, "base64")
     .toString()
-    .replace(/"/gi, '');
+    .replace(/"/gi, "");
 
   // Find the correct balance denomination
-  const balances: string[] = balancesRaw.split(',');
+  const balances: string[] = balancesRaw.split(",");
   if (balances.length < 1) {
     return 0;
   }
@@ -53,7 +66,7 @@ export const extractBalanceFromResponse = (
  * @param {string | null} abciData the base64-encoded ABCI data
  */
 export const extractSequenceFromResponse = (
-  abciData: string | null
+  abciData: string | null,
 ): number => {
   // Make sure the response is initialized
   if (!abciData) {
@@ -65,7 +78,8 @@ export const extractSequenceFromResponse = (
     const account: ABCIAccount = parseABCI<ABCIAccount>(abciData);
 
     return parseInt(account.BaseAccount.sequence, 10);
-  } catch (e) {
+  }
+  catch (_e) {
     // unused case
   }
 
@@ -79,11 +93,11 @@ export const extractSequenceFromResponse = (
  * @param {string | null} abciData the base64-encoded ABCI data
  */
 export const extractAccountNumberFromResponse = (
-  abciData: string | null
+  abciData: string | null,
 ): number => {
   // Make sure the response is initialized
   if (!abciData) {
-    throw new Error('account is not initialized');
+    throw new Error("account is not initialized");
   }
 
   try {
@@ -91,8 +105,11 @@ export const extractAccountNumberFromResponse = (
     const account: ABCIAccount = parseABCI<ABCIAccount>(abciData);
 
     return parseInt(account.BaseAccount.account_number, 10);
-  } catch (e) {
-    throw new Error('account is not initialized');
+  }
+  catch (e) {
+    throw new Error("account is not initialized", {
+      cause: e,
+    });
   }
 };
 
@@ -101,11 +118,11 @@ export const extractAccountNumberFromResponse = (
  * @param {string | null} abciData the base64-encoded ABCI data
  */
 export const extractAccountFromResponse = (
-  abciData: string | null
+  abciData: string | null,
 ): ABCIAccount => {
   // Make sure the response is initialized
   if (!abciData) {
-    throw new Error('account is not initialized');
+    throw new Error("account is not initialized");
   }
 
   try {
@@ -113,8 +130,11 @@ export const extractAccountFromResponse = (
     const account: ABCIAccount = parseABCI<ABCIAccount>(abciData);
 
     return account;
-  } catch (e) {
-    throw new Error('account is not initialized');
+  }
+  catch (e) {
+    throw new Error("account is not initialized", {
+      cause: e,
+    });
   }
 };
 
@@ -123,11 +143,11 @@ export const extractAccountFromResponse = (
  * @param {string | null} abciData the base64-encoded ResponseDeliverTx proto message
  */
 export const extractSimulateFromResponse = (
-  abciResponse: ABCIResponse | null
+  abciResponse: ABCIResponse | null,
 ): ResponseDeliverTx => {
   // Make sure the response is initialized
   if (!abciResponse) {
-    throw new Error('abci data is not initialized');
+    throw new Error("abci data is not initialized");
   }
 
   const error = abciResponse.response?.ResponseBase?.Error;
@@ -137,13 +157,16 @@ export const extractSimulateFromResponse = (
 
   const value = abciResponse.response.Value;
   if (!value) {
-    throw new Error('abci data is not initialized');
+    throw new Error("abci data is not initialized");
   }
 
   try {
     return parseProto(value, ResponseDeliverTx.decode);
-  } catch (e) {
-    throw new Error('unable to parse simulate response');
+  }
+  catch (e) {
+    throw new Error("unable to parse simulate response", {
+      cause: e,
+    });
   }
 };
 
@@ -160,14 +183,14 @@ export const waitForTransaction = async (
   provider: Provider,
   hash: string,
   fromHeight?: number,
-  timeout?: number
+  timeout?: number,
 ): Promise<Tx> => {
-  return new Promise(async (resolve, reject) => {
-    // Fetch the starting point
-    let currentHeight = fromHeight
-      ? fromHeight
-      : await provider.getBlockNumber();
+  // Fetch the starting point
+  let currentHeight = fromHeight
+    ? fromHeight
+    : await provider.getBlockNumber();
 
+  return new Promise((resolve, reject) => {
     const exitTimeout = timeout ? timeout : 15000;
 
     const fetchInterval = setInterval(async () => {
@@ -213,7 +236,7 @@ export const waitForTransaction = async (
       // Clear the fetch interval
       clearInterval(fetchInterval);
 
-      reject('transaction fetch timeout');
+      reject("transaction fetch timeout");
     }, exitTimeout);
   });
 };

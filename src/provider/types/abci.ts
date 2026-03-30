@@ -1,50 +1,50 @@
 export interface ABCIResponse {
   response: {
-    ResponseBase: ABCIResponseBase;
-    Key: string | null;
-    Value: string | null;
-    Proof: MerkleProof | null;
-    Height: string;
-  };
+    ResponseBase: ABCIResponseBase
+    Key: string | null
+    Value: string | null
+    Proof: MerkleProof | null
+    Height: string
+  }
 }
 
 export interface ABCIResponseBase {
   Error: {
     // ABCIErrorKey
-    [key: string]: string;
-  } | null;
-  Data: string | null;
-  Events: string | null;
-  Log: string;
-  Info: string;
+    [key: string]: string
+  } | null
+  Data: string | null
+  Events: string | null
+  Log: string
+  Info: string
 }
 
 interface MerkleProof {
   ops: {
-    type: string;
-    key: string | null;
-    data: string | null;
-  }[];
+    type: string
+    key: string | null
+    data: string | null
+  }[]
 }
 
 export interface ABCIAccount {
   BaseAccount: {
     // the associated account address
-    address: string;
+    address: string
     // the balance list
-    coins: string;
+    coins: string
     // the public key info
     public_key: {
       // type of public key
-      '@type': string;
+      "@type": string
       // public key value
-      value: string;
-    } | null;
+      value: string
+    } | null
     // the account number (state-dependent) (decimal)
-    account_number: string;
+    account_number: string
     // the account sequence / nonce (decimal)
-    sequence: string;
-  };
+    sequence: string
+  }
 }
 
-export const ABCIErrorKey = '@type';
+export const ABCIErrorKey = "@type";
