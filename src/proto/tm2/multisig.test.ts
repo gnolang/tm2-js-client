@@ -1,19 +1,49 @@
-import { describe, expect, test } from 'vitest';
-import { bytesToHex } from '@noble/hashes/utils.js';
-import { CompactBitArray } from './multisig.js';
+import {
+  bytesToHex,
+} from "@noble/hashes/utils.js";
+import {
+  describe, expect, test,
+} from "vitest";
 
-describe('TestMarshalCompactBitArrayAmino', () => {
+import {
+  CompactBitArray,
+} from "./multisig.js";
+
+describe("TestMarshalCompactBitArrayAmino", () => {
   const testCases = [
-    { marshalledBA: `null`, hexOutput: '' },
-    { marshalledBA: `null`, hexOutput: '' },
-    { marshalledBA: `"_"`, hexOutput: '0801120100' },
-    { marshalledBA: `"x"`, hexOutput: '0801120180' },
-    { marshalledBA: `"xx___"`, hexOutput: '08051201c0' },
-    { marshalledBA: `"xx______x"`, hexOutput: '08011202c080' },
-    { marshalledBA: `"xx_____________x"`, hexOutput: '1202c001' },
+    {
+      marshalledBA: "null",
+      hexOutput: "",
+    },
+    {
+      marshalledBA: "null",
+      hexOutput: "",
+    },
+    {
+      marshalledBA: "\"_\"",
+      hexOutput: "0801120100",
+    },
+    {
+      marshalledBA: "\"x\"",
+      hexOutput: "0801120180",
+    },
+    {
+      marshalledBA: "\"xx___\"",
+      hexOutput: "08051201c0",
+    },
+    {
+      marshalledBA: "\"xx______x\"",
+      hexOutput: "08011202c080",
+    },
+    {
+      marshalledBA: "\"xx_____________x\"",
+      hexOutput: "1202c001",
+    },
   ];
 
-  test.each(testCases)('$marshalledBA', async ({ marshalledBA, hexOutput }) => {
+  test.each(testCases)("$marshalledBA", async ({
+    marshalledBA, hexOutput,
+  }) => {
     // Parse JSON into CompactBitArray
     const jsonData = JSON.parse(marshalledBA);
     const bA = CompactBitArray.fromJSON(jsonData);

@@ -1,19 +1,26 @@
-import axios from 'axios';
-import { RequestParams } from './restService.types.js';
-import { RPCResponse } from '../../provider/index.js';
+import axios from "axios";
+
+import {
+  RPCResponse,
+} from "../../provider/index.js";
+import {
+  RequestParams,
+} from "./restService.types.js";
 
 export class RestService {
   static async post<TResult>(
     baseURL: string,
-    params: RequestParams
+    params: RequestParams,
   ): Promise<TResult> {
     const axiosResponse = await axios.post<RPCResponse<TResult>>(
       baseURL,
       params.request,
-      params.config
+      params.config,
     );
 
-    const { result, error } = axiosResponse.data;
+    const {
+      result, error,
+    } = axiosResponse.data;
 
     // Check for errors
     if (error) {
@@ -23,7 +30,7 @@ export class RestService {
 
     // Check for the correct result format
     if (!result) {
-      throw new Error('invalid result returned');
+      throw new Error("invalid result returned");
     }
 
     return result;

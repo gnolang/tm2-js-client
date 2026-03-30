@@ -1,41 +1,66 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { sha256 } from '@cosmjs/crypto';
+import {
+  sha256,
+} from "@cosmjs/crypto";
 import type {
   AbciQueryResponse,
-  BlockResultsResponse,
   BlockResponse,
+  BlockResultsResponse,
   BroadcastTxSyncResponse,
   ConsensusParamsResponse as RpcConsensusParamsResponse,
   NetInfoResponse as RpcNetInfoResponse,
   ResponseBase,
   StatusResponse,
-} from '@gnolang/tm2-rpc';
-import { Tx } from '../../proto/index.js';
-import { TransactionEndpoint } from '../endpoints.js';
-import { TM2Error } from '../errors/index.js';
-import { UnauthorizedErrorMessage } from '../errors/messages.js';
+} from "@gnolang/tm2-rpc";
+import {
+  WritableDeep,
+} from "type-fest";
+import {
+  afterEach, beforeEach, describe, expect, test, vi,
+} from "vitest";
+
+import {
+  Tx,
+} from "../../proto/index.js";
+import {
+  TransactionEndpoint,
+} from "../endpoints.js";
+import {
+  TM2Error,
+} from "../errors/index.js";
+import {
+  UnauthorizedErrorMessage,
+} from "../errors/messages.js";
 import {
   ABCIAccount,
   BroadcastTxSyncResult,
   ConsensusParams,
   NetworkInfo,
   Status,
-} from '../types/index.js';
-import { stringToBase64, uint8ArrayToBase64 } from '../utility/index.js';
-import { WSProvider } from './ws.js';
+} from "../types/index.js";
+import {
+  stringToBase64, uint8ArrayToBase64,
+} from "../utility/index.js";
+import {
+  WSProvider,
+} from "./ws.js";
 
 // Helper to create an empty ResponseBase
 const emptyResponseBase = (overrides?: Partial<ResponseBase>): ResponseBase => ({
-  error: { '@type': '', value: '' },
+  error: {
+    "@type": "",
+    value: "",
+  },
   data: new Uint8Array(),
   events: [],
-  log: '',
-  info: '',
+  log: "",
+  info: "",
   ...overrides,
 });
 
 // Mock Tm2Client - use vi.hoisted so it's available in the hoisted vi.mock factory
-const { mockClient } = vi.hoisted(() => {
+const {
+  mockClient,
+} = vi.hoisted(() => {
   const mockClient = {
     abciQuery: vi.fn(),
     block: vi.fn(),
@@ -48,18 +73,20 @@ const { mockClient } = vi.hoisted(() => {
     tx: vi.fn(),
     disconnect: vi.fn(),
   };
-  return { mockClient };
+  return {
+    mockClient,
+  };
 });
 
-vi.mock('@gnolang/tm2-rpc', () => ({
+vi.mock("@gnolang/tm2-rpc", () => ({
   Tm2Client: {
     connect: vi.fn().mockResolvedValue(mockClient),
   },
 }));
 
-const mockURL = 'ws://localhost:8545';
+const mockURL = "ws://localhost:8545";
 
-describe('WS Provider', () => {
+describe("WS Provider", () => {
   let wsProvider: WSProvider;
 
   beforeEach(async () => {
@@ -71,15 +98,15 @@ describe('WS Provider', () => {
     wsProvider.closeConnection();
   });
 
-  test('estimateGas', async () => {
+  test("estimateGas", async () => {
     const tx = Tx.fromJSON({
       signatures: [],
       fee: {
-        gasFee: '',
+        gasFee: "",
         gasWanted: 0n,
       },
       messages: [],
-      memo: '',
+      memo: "",
     });
     const expectedEstimation = 44900n;
 
@@ -87,8 +114,8 @@ describe('WS Provider', () => {
       responseBase: emptyResponseBase(),
       key: new Uint8Array(),
       value: Buffer.from(
-        'CiMiIW1zZzowLHN1Y2Nlc3M6dHJ1ZSxsb2c6LGV2ZW50czpbXRCAiXoYyL0F',
-        'base64'
+        "CiMiIW1zZzowLHN1Y2Nlc3M6dHJ1ZSxsb2c6LGV2ZW50czpbXRCAiXoYyL0F",
+        "base64",
       ),
       height: 0,
     };
@@ -99,7 +126,7 @@ describe('WS Provider', () => {
     expect(estimation).toEqual(expectedEstimation);
   });
 
-  test('getNetwork', async () => {
+  test("getNetwork", async () => {
     const mockRpcInfo: RpcNetInfoResponse = {
       listening: false,
       listeners: [],
@@ -111,18 +138,18 @@ describe('WS Provider', () => {
 
     const info: NetworkInfo = await wsProvider.getNetwork();
     expect(info.listening).toBe(false);
-    expect(info.n_peers).toBe('0');
+    expect(info.n_peers).toBe("0");
   });
 
-  test('getStatus', async () => {
+  test("getStatus", async () => {
     const mockRpcResponse: StatusResponse = {
       nodeInfo: {
-        listenAddr: '',
-        network: '',
-        version: '',
-        software: '',
+        listenAddr: "",
+        network: "",
+        version: "",
+        software: "",
         channels: [],
-        moniker: '',
+        moniker: "",
         other: new Map(),
         versionSet: [],
       },
@@ -142,10 +169,10 @@ describe('WS Provider', () => {
     vi.mocked(mockClient.status).mockResolvedValue(mockRpcResponse);
 
     const status: Status = await wsProvider.getStatus();
-    expect(status.validator_info.address).toBe('0102');
+    expect(status.validator_info.address).toBe("0102");
   });
 
-  test('getConsensusParams', async () => {
+  test("getConsensusParams", async () => {
     const mockRpcResponse: RpcConsensusParamsResponse = {
       blockHeight: 1,
       consensusParams: {
@@ -165,31 +192,27 @@ describe('WS Provider', () => {
     vi.mocked(mockClient.consensusParams).mockResolvedValue(mockRpcResponse);
 
     const params: ConsensusParams = await wsProvider.getConsensusParams(1);
-    expect(params.block_height).toBe('1');
+    expect(params.block_height).toBe("1");
   });
 
-  describe('getSequence', () => {
+  describe("getSequence", () => {
     const validAccount: ABCIAccount = {
       BaseAccount: {
-        address: 'random address',
-        coins: '',
+        address: "random address",
+        coins: "",
         public_key: null,
-        account_number: '0',
-        sequence: '10',
+        account_number: "0",
+        sequence: "10",
       },
     };
 
-    test.each([
-      [
-        JSON.stringify(validAccount),
-        parseInt(validAccount.BaseAccount.sequence, 10),
-      ],
-      ['null', 0],
-    ])('case %#', async (response, expected) => {
-      const dataBytes = Buffer.from(stringToBase64(response as string), 'base64');
+    test.each([[JSON.stringify(validAccount), parseInt(validAccount.BaseAccount.sequence, 10)], ["null", 0]])("case %#", async (response, expected) => {
+      const dataBytes = Buffer.from(stringToBase64(response as string), "base64");
 
       const mockRpcResponse: AbciQueryResponse = {
-        responseBase: emptyResponseBase({ data: dataBytes }),
+        responseBase: emptyResponseBase({
+          data: dataBytes,
+        }),
         key: new Uint8Array(),
         value: new Uint8Array(),
         height: 0,
@@ -197,33 +220,29 @@ describe('WS Provider', () => {
 
       vi.mocked(mockClient.abciQuery).mockResolvedValue(mockRpcResponse);
 
-      const sequence: number = await wsProvider.getAccountSequence('address');
+      const sequence: number = await wsProvider.getAccountSequence("address");
       expect(sequence).toBe(expected);
     });
   });
 
-  describe('getAccountNumber', () => {
+  describe("getAccountNumber", () => {
     const validAccount: ABCIAccount = {
       BaseAccount: {
-        address: 'random address',
-        coins: '',
+        address: "random address",
+        coins: "",
         public_key: null,
-        account_number: '10',
-        sequence: '0',
+        account_number: "10",
+        sequence: "0",
       },
     };
 
-    test.each([
-      [
-        JSON.stringify(validAccount),
-        parseInt(validAccount.BaseAccount.account_number, 10),
-      ],
-      ['null', 0],
-    ])('case %#', async (response, expected) => {
-      const dataBytes = Buffer.from(stringToBase64(response as string), 'base64');
+    test.each([[JSON.stringify(validAccount), parseInt(validAccount.BaseAccount.account_number, 10)], ["null", 0]])("case %#", async (response, expected) => {
+      const dataBytes = Buffer.from(stringToBase64(response as string), "base64");
 
       const mockRpcResponse: AbciQueryResponse = {
-        responseBase: emptyResponseBase({ data: dataBytes }),
+        responseBase: emptyResponseBase({
+          data: dataBytes,
+        }),
         key: new Uint8Array(),
         value: new Uint8Array(),
         height: 0,
@@ -232,37 +251,37 @@ describe('WS Provider', () => {
       vi.mocked(mockClient.abciQuery).mockResolvedValue(mockRpcResponse);
 
       try {
-        const accountNumber: number =
-          await wsProvider.getAccountNumber('address');
+        const accountNumber: number
+          = await wsProvider.getAccountNumber("address");
         expect(accountNumber).toBe(expected);
-      } catch (e) {
-        expect((e as Error).message).toContain('account is not initialized');
+      }
+      catch (e) {
+        expect((e as Error).message).toContain("account is not initialized");
       }
     });
   });
 
-  describe('getAccount', () => {
+  describe("getAccount", () => {
     const validAccount: ABCIAccount = {
       BaseAccount: {
-        address: 'random address',
-        coins: '',
+        address: "random address",
+        coins: "",
         public_key: null,
-        account_number: '10',
-        sequence: '0',
+        account_number: "10",
+        sequence: "0",
       },
     };
 
-    test.each([
-      [JSON.stringify(validAccount), validAccount],
-      ['null', null],
-    ])('case %#', async (response, expected) => {
+    test.each([[JSON.stringify(validAccount), validAccount], ["null", null]])("case %#", async (response, expected) => {
       const dataBytes = Buffer.from(
         stringToBase64(response as string),
-        'base64'
+        "base64",
       );
 
       const mockRpcResponse: AbciQueryResponse = {
-        responseBase: emptyResponseBase({ data: dataBytes }),
+        responseBase: emptyResponseBase({
+          data: dataBytes,
+        }),
         key: new Uint8Array(),
         value: new Uint8Array(),
         height: 0,
@@ -271,25 +290,24 @@ describe('WS Provider', () => {
       vi.mocked(mockClient.abciQuery).mockResolvedValue(mockRpcResponse);
 
       try {
-        const account: ABCIAccount = await wsProvider.getAccount('address');
+        const account: ABCIAccount = await wsProvider.getAccount("address");
         expect(account).toStrictEqual(expected);
-      } catch (e) {
-        expect((e as Error).message).toContain('account is not initialized');
+      }
+      catch (e) {
+        expect((e as Error).message).toContain("account is not initialized");
       }
     });
   });
 
-  describe('getBalance', () => {
-    const denomination = 'atom';
-    test.each([
-      ['"5gnot,100atom"', 100],
-      ['"5universe"', 0],
-      ['""', 0],
-    ])('case %#', async (existing, expected) => {
-      const dataBytes = Buffer.from(stringToBase64(existing as string), 'base64');
+  describe("getBalance", () => {
+    const denomination = "atom";
+    test.each([["\"5gnot,100atom\"", 100], ["\"5universe\"", 0], ["\"\"", 0]])("case %#", async (existing, expected) => {
+      const dataBytes = Buffer.from(stringToBase64(existing as string), "base64");
 
       const mockRpcResponse: AbciQueryResponse = {
-        responseBase: emptyResponseBase({ data: dataBytes }),
+        responseBase: emptyResponseBase({
+          data: dataBytes,
+        }),
         key: new Uint8Array(),
         value: new Uint8Array(),
         height: 0,
@@ -298,23 +316,23 @@ describe('WS Provider', () => {
       vi.mocked(mockClient.abciQuery).mockResolvedValue(mockRpcResponse);
 
       const balance: number = await wsProvider.getBalance(
-        'address',
-        denomination
+        "address",
+        denomination,
       );
       expect(balance).toBe(expected);
     });
   });
 
-  test('getBlockNumber', async () => {
+  test("getBlockNumber", async () => {
     const expectedBlockNumber = 10;
     const mockRpcResponse: StatusResponse = {
       nodeInfo: {
-        listenAddr: '',
-        network: '',
-        version: '',
-        software: '',
+        listenAddr: "",
+        network: "",
+        version: "",
+        software: "",
         channels: [],
-        moniker: '',
+        moniker: "",
         other: new Map(),
         versionSet: [],
       },
@@ -337,11 +355,11 @@ describe('WS Provider', () => {
     expect(blockNumber).toBe(expectedBlockNumber);
   });
 
-  describe('sendTransaction', () => {
-    const mockError = '/std.UnauthorizedError';
-    const mockLog = 'random error message';
+  describe("sendTransaction", () => {
+    const mockError = "/std.UnauthorizedError";
+    const mockLog = "random error message";
 
-    test('broadcastTxSync - success', async () => {
+    test("broadcastTxSync - success", async () => {
       const mockRpcResponse: BroadcastTxSyncResponse = {
         hash: new Uint8Array([0x68, 0x61, 0x73, 0x68]),
         responseBase: emptyResponseBase(),
@@ -352,18 +370,21 @@ describe('WS Provider', () => {
       vi.mocked(mockClient.broadcastTxSync).mockResolvedValue(mockRpcResponse);
 
       const result: BroadcastTxSyncResult = await wsProvider.sendTransaction(
-        'encoded tx',
-        TransactionEndpoint.BROADCAST_TX_SYNC
+        "encoded tx",
+        TransactionEndpoint.BROADCAST_TX_SYNC,
       );
 
       expect(result.error).toBeNull();
     });
 
-    test('broadcastTxSync - error', async () => {
+    test("broadcastTxSync - error", async () => {
       const mockRpcResponse: BroadcastTxSyncResponse = {
         hash: new Uint8Array(),
         responseBase: emptyResponseBase({
-          error: { '@type': mockError, value: '' },
+          error: {
+            "@type": mockError,
+            value: "",
+          },
           log: mockLog,
         }),
         gasWanted: 0n,
@@ -374,39 +395,64 @@ describe('WS Provider', () => {
 
       try {
         await wsProvider.sendTransaction(
-          'encoded tx',
-          TransactionEndpoint.BROADCAST_TX_SYNC
+          "encoded tx",
+          TransactionEndpoint.BROADCAST_TX_SYNC,
         );
-        throw new Error('expected error');
-      } catch (e) {
+        throw new Error("expected error");
+      }
+      catch (e) {
         expect((e as Error).message).toBe(UnauthorizedErrorMessage);
         expect((e as TM2Error).log).toBe(mockLog);
       }
     });
   });
 
-  test('getBlock', async () => {
+  test("getBlock", async () => {
     const makeEmptyBlock = (height: number): BlockResponse => ({
       blockMeta: {
-        blockId: { hash: new Uint8Array(), parts: { total: 0n, hash: new Uint8Array() } },
+        blockId: {
+          hash: new Uint8Array(),
+          parts: {
+            total: 0n,
+            hash: new Uint8Array(),
+          },
+        },
         header: {
-          version: '', chainId: '', height, time: new Date() as any,
-          numTxs: 0n, totalTxs: 0n, appVersion: '',
-          lastBlockId: null, lastCommitHash: new Uint8Array(),
-          dataHash: new Uint8Array(), validatorsHash: new Uint8Array(),
-          consensusHash: new Uint8Array(), appHash: new Uint8Array(),
-          lastResultsHash: new Uint8Array(), proposerAddress: '',
+          version: "",
+          chainId: "",
+          height,
+          time: new Date(),
+          numTxs: 0n,
+          totalTxs: 0n,
+          appVersion: "",
+          lastBlockId: null,
+          lastCommitHash: new Uint8Array(),
+          dataHash: new Uint8Array(),
+          validatorsHash: new Uint8Array(),
+          consensusHash: new Uint8Array(),
+          appHash: new Uint8Array(),
+          lastResultsHash: new Uint8Array(),
+          proposerAddress: "",
           nextValidatorsHash: new Uint8Array(),
         },
       },
       block: {
         header: {
-          version: '', chainId: '', height, time: new Date() as any,
-          numTxs: 0n, totalTxs: 0n, appVersion: '',
-          lastBlockId: null, lastCommitHash: new Uint8Array(),
-          dataHash: new Uint8Array(), validatorsHash: new Uint8Array(),
-          consensusHash: new Uint8Array(), appHash: new Uint8Array(),
-          lastResultsHash: new Uint8Array(), proposerAddress: '',
+          version: "",
+          chainId: "",
+          height,
+          time: new Date(),
+          numTxs: 0n,
+          totalTxs: 0n,
+          appVersion: "",
+          lastBlockId: null,
+          lastCommitHash: new Uint8Array(),
+          dataHash: new Uint8Array(),
+          validatorsHash: new Uint8Array(),
+          consensusHash: new Uint8Array(),
+          appHash: new Uint8Array(),
+          lastResultsHash: new Uint8Array(),
+          proposerAddress: "",
           nextValidatorsHash: new Uint8Array(),
         },
         txs: [],
@@ -418,15 +464,17 @@ describe('WS Provider', () => {
     vi.mocked(mockClient.block).mockResolvedValue(makeEmptyBlock(0));
 
     const result = await wsProvider.getBlock(0);
-    expect(result.block.header.height).toBe('0');
+    expect(result.block.header.height).toBe("0");
   });
 
-  test('getBlockResult', async () => {
+  test("getBlockResult", async () => {
     const mockRpcResult: BlockResultsResponse = {
       height: 1,
       results: {
         deliverTx: [],
-        beginBlock: { responseBase: emptyResponseBase() },
+        beginBlock: {
+          responseBase: emptyResponseBase(),
+        },
         endBlock: {
           responseBase: emptyResponseBase(),
           validatorUpdates: null,
@@ -439,14 +487,14 @@ describe('WS Provider', () => {
     vi.mocked(mockClient.blockResults).mockResolvedValue(mockRpcResult);
 
     const result = await wsProvider.getBlockResult(0);
-    expect(result.height).toBe('1');
+    expect(result.height).toBe("1");
   });
 
-  test('waitForTransaction', async () => {
+  test("waitForTransaction", async () => {
     const tx: Tx = {
       messages: [],
       signatures: [],
-      memo: 'tx memo',
+      memo: "tx memo",
     };
 
     const encodedTx = Tx.encode(tx).finish();
@@ -457,12 +505,12 @@ describe('WS Provider', () => {
 
     const mockStatusResponse: StatusResponse = {
       nodeInfo: {
-        listenAddr: '',
-        network: '',
-        version: '',
-        software: '',
+        listenAddr: "",
+        network: "",
+        version: "",
+        software: "",
         channels: [],
-        moniker: '',
+        moniker: "",
         other: new Map(),
         versionSet: [],
       },
@@ -481,27 +529,51 @@ describe('WS Provider', () => {
 
     vi.mocked(mockClient.status).mockResolvedValue(mockStatusResponse);
 
-    const makeEmptyBlock = (height: number): BlockResponse => ({
+    const makeEmptyBlock = (height: number): WritableDeep<BlockResponse> => ({
       blockMeta: {
-        blockId: { hash: new Uint8Array(), parts: { total: 0n, hash: new Uint8Array() } },
+        blockId: {
+          hash: new Uint8Array(),
+          parts: {
+            total: 0n,
+            hash: new Uint8Array(),
+          },
+        },
         header: {
-          version: '', chainId: '', height, time: new Date() as any,
-          numTxs: 0n, totalTxs: 0n, appVersion: '',
-          lastBlockId: null, lastCommitHash: new Uint8Array(),
-          dataHash: new Uint8Array(), validatorsHash: new Uint8Array(),
-          consensusHash: new Uint8Array(), appHash: new Uint8Array(),
-          lastResultsHash: new Uint8Array(), proposerAddress: '',
+          version: "",
+          chainId: "",
+          height,
+          time: new Date(),
+          numTxs: 0n,
+          totalTxs: 0n,
+          appVersion: "",
+          lastBlockId: null,
+          lastCommitHash: new Uint8Array(),
+          dataHash: new Uint8Array(),
+          validatorsHash: new Uint8Array(),
+          consensusHash: new Uint8Array(),
+          appHash: new Uint8Array(),
+          lastResultsHash: new Uint8Array(),
+          proposerAddress: "",
           nextValidatorsHash: new Uint8Array(),
         },
       },
       block: {
         header: {
-          version: '', chainId: '', height, time: new Date() as any,
-          numTxs: 0n, totalTxs: 0n, appVersion: '',
-          lastBlockId: null, lastCommitHash: new Uint8Array(),
-          dataHash: new Uint8Array(), validatorsHash: new Uint8Array(),
-          consensusHash: new Uint8Array(), appHash: new Uint8Array(),
-          lastResultsHash: new Uint8Array(), proposerAddress: '',
+          version: "",
+          chainId: "",
+          height,
+          time: new Date(),
+          numTxs: 0n,
+          totalTxs: 0n,
+          appVersion: "",
+          lastBlockId: null,
+          lastCommitHash: new Uint8Array(),
+          dataHash: new Uint8Array(),
+          validatorsHash: new Uint8Array(),
+          consensusHash: new Uint8Array(),
+          appHash: new Uint8Array(),
+          lastResultsHash: new Uint8Array(),
+          proposerAddress: "",
           nextValidatorsHash: new Uint8Array(),
         },
         txs: [],
@@ -511,7 +583,7 @@ describe('WS Provider', () => {
     });
 
     const filledBlock = makeEmptyBlock(latestBlock);
-    (filledBlock.block as any).txs = [encodedTx];
+    filledBlock.block.txs = [encodedTx];
 
     vi.mocked(mockClient.block).mockImplementation(async (height?: number) => {
       if (height === latestBlock) return filledBlock;
@@ -520,7 +592,7 @@ describe('WS Provider', () => {
 
     const receivedTx: Tx = await wsProvider.waitForTransaction(
       uint8ArrayToBase64(txHash),
-      startBlock
+      startBlock,
     );
     expect(receivedTx).toEqual(tx);
   });

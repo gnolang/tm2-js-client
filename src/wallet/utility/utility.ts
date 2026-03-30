@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   Bip39,
   EnglishMnemonic,
@@ -6,8 +7,8 @@ import {
   Slip10,
   Slip10Curve,
   Slip10RawIndex,
-} from '@cosmjs/crypto';
-import crypto from 'crypto';
+} from "@cosmjs/crypto";
+import crypto from "crypto";
 
 /**
  * Generates the HD path, for the specified index, in the form 'm/44'/118'/0'/0/i',
@@ -15,13 +16,7 @@ import crypto from 'crypto';
  * @param {number} [index=0] the account index
  */
 export const generateHDPath = (index?: number): HdPath => {
-  return [
-    Slip10RawIndex.hardened(44),
-    Slip10RawIndex.hardened(118),
-    Slip10RawIndex.hardened(0),
-    Slip10RawIndex.normal(0),
-    Slip10RawIndex.normal(index ? index : 0),
-  ];
+  return [Slip10RawIndex.hardened(44), Slip10RawIndex.hardened(118), Slip10RawIndex.hardened(0), Slip10RawIndex.normal(0), Slip10RawIndex.normal(index ? index : 0)];
 };
 
 /**
@@ -38,8 +33,8 @@ export const generateEntropy = (size?: number): Uint8Array => {
 };
 
 interface keyPair {
-  privateKey: Uint8Array;
-  publicKey: Uint8Array;
+  privateKey: Uint8Array
+  publicKey: Uint8Array
 }
 
 /**
@@ -50,20 +45,24 @@ interface keyPair {
  */
 export const generateKeyPair = async (
   mnemonic: string,
-  accountIndex?: number
+  accountIndex?: number,
 ): Promise<keyPair> => {
   // Generate the seed
   const seed = await Bip39.mnemonicToSeed(new EnglishMnemonic(mnemonic));
 
   // Derive the private key
-  const { privkey: privateKey } = Slip10.derivePath(
+  const {
+    privkey: privateKey,
+  } = Slip10.derivePath(
     Slip10Curve.Secp256k1,
     seed,
-    generateHDPath(accountIndex)
+    generateHDPath(accountIndex),
   );
 
   // Derive the public key
-  const { pubkey: publicKey } = await Secp256k1.makeKeypair(privateKey);
+  const {
+    pubkey: publicKey,
+  } = await Secp256k1.makeKeypair(privateKey);
 
   return {
     publicKey: publicKey,
@@ -72,7 +71,7 @@ export const generateKeyPair = async (
 };
 
 // Address prefix for TM2 networks
-export const defaultAddressPrefix = 'g';
+export const defaultAddressPrefix = "g";
 
 /**
  * Encodes a string into a Uint8Array
@@ -89,9 +88,9 @@ export const stringToUTF8 = (str: string): Uint8Array => {
  */
 export function encodeCharacterSet(data: string) {
   return data
-    .replace(/</g, '\\u003c')
-    .replace(/>/g, '\\u003e')
-    .replace(/&/g, '\\u0026');
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026");
 }
 
 function sortedObject(obj: any): any {
@@ -102,7 +101,8 @@ function sortedObject(obj: any): any {
     return obj.map(sortedObject);
   }
   const sortedKeys = Object.keys(obj).sort();
-  const result: Record<string, any> = {};
+  const result: Record<string, any> = {
+  };
   // NOTE: Use forEach instead of reduce for performance with large objects eg Wasm code
   sortedKeys.forEach((key) => {
     result[key] = sortedObject(obj[key]);
@@ -111,7 +111,7 @@ function sortedObject(obj: any): any {
 }
 
 /** Returns a JSON string with objects sorted by key */
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+
 export function sortedJsonStringify(obj: any): string {
   return JSON.stringify(sortedObject(obj));
 }

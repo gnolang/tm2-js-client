@@ -1,28 +1,39 @@
-import { describe, expect, test } from 'vitest';
-import { Bip39 } from '@cosmjs/crypto';
-import { generateEntropy, generateKeyPair, stringToUTF8 } from '../utility/index.js';
-import { KeySigner } from './key.js';
+import {
+  Bip39,
+} from "@cosmjs/crypto";
+import {
+  describe, expect, test,
+} from "vitest";
 
-describe('Private Key Signer', () => {
+import {
+  generateEntropy, generateKeyPair, stringToUTF8,
+} from "../utility/index.js";
+import {
+  KeySigner,
+} from "./key.js";
+
+describe("Private Key Signer", () => {
   const generateRandomKeySigner = async (
-    index?: number
+    index?: number,
   ): Promise<KeySigner> => {
-    const { publicKey, privateKey } = await generateKeyPair(
+    const {
+      publicKey, privateKey,
+    } = await generateKeyPair(
       Bip39.encode(generateEntropy()).toString(),
-      index ? index : 0
+      index ? index : 0,
     );
 
     return new KeySigner(privateKey, publicKey);
   };
 
-  test('getAddress', async () => {
+  test("getAddress", async () => {
     const signer: KeySigner = await generateRandomKeySigner();
     const address: string = await signer.getAddress();
 
     expect(address.length).toBe(40);
   });
 
-  test('getPublicKey', async () => {
+  test("getPublicKey", async () => {
     const signer: KeySigner = await generateRandomKeySigner();
     const publicKey: Uint8Array = await signer.getPublicKey();
 
@@ -30,7 +41,7 @@ describe('Private Key Signer', () => {
     expect(publicKey).toHaveLength(65);
   });
 
-  test('getPrivateKey', async () => {
+  test("getPrivateKey", async () => {
     const signer: KeySigner = await generateRandomKeySigner();
     const privateKey: Uint8Array = await signer.getPrivateKey();
 
@@ -38,8 +49,8 @@ describe('Private Key Signer', () => {
     expect(privateKey).toHaveLength(32);
   });
 
-  test('signData', async () => {
-    const rawData: Uint8Array = stringToUTF8('random raw data');
+  test("signData", async () => {
+    const rawData: Uint8Array = stringToUTF8("random raw data");
     const signer: KeySigner = await generateRandomKeySigner();
 
     // Sign the data

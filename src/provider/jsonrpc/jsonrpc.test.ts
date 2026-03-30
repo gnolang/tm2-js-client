@@ -1,5 +1,6 @@
-import { describe, expect, test, vi, beforeEach } from 'vitest';
-import { sha256 } from '@cosmjs/crypto';
+import {
+  sha256,
+} from "@cosmjs/crypto";
 import type {
   AbciQueryResponse,
   BlockResponse,
@@ -9,33 +10,57 @@ import type {
   NetInfoResponse as RpcNetInfoResponse,
   ResponseBase,
   StatusResponse,
-} from '@gnolang/tm2-rpc';
-import { Tx } from '../../proto/index.js';
-import { TransactionEndpoint } from '../endpoints.js';
-import { TM2Error } from '../errors/index.js';
-import { UnauthorizedErrorMessage } from '../errors/messages.js';
+} from "@gnolang/tm2-rpc";
+import {
+  WritableDeep,
+} from "type-fest";
+import {
+  beforeEach, describe, expect, test, vi,
+} from "vitest";
+
+import {
+  Tx,
+} from "../../proto/index.js";
+import {
+  TransactionEndpoint,
+} from "../endpoints.js";
+import {
+  TM2Error,
+} from "../errors/index.js";
+import {
+  UnauthorizedErrorMessage,
+} from "../errors/messages.js";
 import {
   ABCIAccount,
   BroadcastTxSyncResult,
   ConsensusParams,
   NetworkInfo,
   Status,
-} from '../types/index.js';
-import { stringToBase64, uint8ArrayToBase64 } from '../utility/index.js';
-import { JSONRPCProvider } from './jsonrpc.js';
+} from "../types/index.js";
+import {
+  stringToBase64, uint8ArrayToBase64,
+} from "../utility/index.js";
+import {
+  JSONRPCProvider,
+} from "./jsonrpc.js";
 
 // Helper to create an empty ResponseBase
 const emptyResponseBase = (overrides?: Partial<ResponseBase>): ResponseBase => ({
-  error: { '@type': '', value: '' },
+  error: {
+    "@type": "",
+    value: "",
+  },
   data: new Uint8Array(),
   events: [],
-  log: '',
-  info: '',
+  log: "",
+  info: "",
   ...overrides,
 });
 
 // Mock Tm2Client - use vi.hoisted so it's available in the hoisted vi.mock factory
-const { mockClient } = vi.hoisted(() => {
+const {
+  mockClient,
+} = vi.hoisted(() => {
   const mockClient = {
     abciQuery: vi.fn(),
     block: vi.fn(),
@@ -48,18 +73,20 @@ const { mockClient } = vi.hoisted(() => {
     tx: vi.fn(),
     disconnect: vi.fn(),
   };
-  return { mockClient };
+  return {
+    mockClient,
+  };
 });
 
-vi.mock('@gnolang/tm2-rpc', () => ({
+vi.mock("@gnolang/tm2-rpc", () => ({
   Tm2Client: {
     connect: vi.fn().mockResolvedValue(mockClient),
   },
 }));
 
-const mockURL = 'http://127.0.0.1:26657';
+const mockURL = "http://127.0.0.1:26657";
 
-describe('JSON-RPC Provider', () => {
+describe("JSON-RPC Provider", () => {
   let provider: JSONRPCProvider;
 
   beforeEach(async () => {
@@ -67,15 +94,15 @@ describe('JSON-RPC Provider', () => {
     provider = await JSONRPCProvider.create(mockURL);
   });
 
-  test('estimateGas', async () => {
+  test("estimateGas", async () => {
     const tx = Tx.fromJSON({
       signatures: [],
       fee: {
-        gasFee: '',
+        gasFee: "",
         gasWanted: 0n,
       },
       messages: [],
-      memo: '',
+      memo: "",
     });
     const expectedEstimation = 44900n;
 
@@ -83,8 +110,8 @@ describe('JSON-RPC Provider', () => {
       responseBase: emptyResponseBase(),
       key: new Uint8Array(),
       value: Buffer.from(
-        'CiMiIW1zZzowLHN1Y2Nlc3M6dHJ1ZSxsb2c6LGV2ZW50czpbXRCAiXoYyL0F',
-        'base64'
+        "CiMiIW1zZzowLHN1Y2Nlc3M6dHJ1ZSxsb2c6LGV2ZW50czpbXRCAiXoYyL0F",
+        "base64",
       ),
       height: 0,
     };
@@ -97,7 +124,7 @@ describe('JSON-RPC Provider', () => {
     expect(estimation).toEqual(expectedEstimation);
   });
 
-  test('getNetwork', async () => {
+  test("getNetwork", async () => {
     const mockRpcInfo: RpcNetInfoResponse = {
       listening: false,
       listeners: [],
@@ -111,21 +138,27 @@ describe('JSON-RPC Provider', () => {
 
     expect(mockClient.netInfo).toHaveBeenCalled();
     expect(info.listening).toBe(false);
-    expect(info.n_peers).toBe('0');
+    expect(info.n_peers).toBe("0");
   });
 
-  test('getBlock', async () => {
+  test("getBlock", async () => {
     const mockRpcBlock: BlockResponse = {
       blockMeta: {
-        blockId: { hash: new Uint8Array(), parts: { total: 0n, hash: new Uint8Array() } },
+        blockId: {
+          hash: new Uint8Array(),
+          parts: {
+            total: 0n,
+            hash: new Uint8Array(),
+          },
+        },
         header: {
-          version: '1',
-          chainId: 'test',
+          version: "1",
+          chainId: "test",
           height: 1,
-          time: new Date('2023-01-01T00:00:00Z') as any,
+          time: new Date("2023-01-01T00:00:00Z"),
           numTxs: 0n,
           totalTxs: 0n,
-          appVersion: '1',
+          appVersion: "1",
           lastBlockId: null,
           lastCommitHash: new Uint8Array(),
           dataHash: new Uint8Array(),
@@ -133,19 +166,19 @@ describe('JSON-RPC Provider', () => {
           consensusHash: new Uint8Array(),
           appHash: new Uint8Array(),
           lastResultsHash: new Uint8Array(),
-          proposerAddress: '',
+          proposerAddress: "",
           nextValidatorsHash: new Uint8Array(),
         },
       },
       block: {
         header: {
-          version: '1',
-          chainId: 'test',
+          version: "1",
+          chainId: "test",
           height: 1,
-          time: new Date('2023-01-01T00:00:00Z') as any,
+          time: new Date("2023-01-01T00:00:00Z"),
           numTxs: 0n,
           totalTxs: 0n,
-          appVersion: '1',
+          appVersion: "1",
           lastBlockId: null,
           lastCommitHash: new Uint8Array(),
           dataHash: new Uint8Array(),
@@ -153,7 +186,7 @@ describe('JSON-RPC Provider', () => {
           consensusHash: new Uint8Array(),
           appHash: new Uint8Array(),
           lastResultsHash: new Uint8Array(),
-          proposerAddress: '',
+          proposerAddress: "",
           nextValidatorsHash: new Uint8Array(),
         },
         txs: [],
@@ -167,15 +200,17 @@ describe('JSON-RPC Provider', () => {
     const info = await provider.getBlock(1);
 
     expect(mockClient.block).toHaveBeenCalledWith(1);
-    expect(info.block.header.height).toBe('1');
+    expect(info.block.header.height).toBe("1");
   });
 
-  test('getBlockResult', async () => {
+  test("getBlockResult", async () => {
     const mockRpcResult: BlockResultsResponse = {
       height: 1,
       results: {
         deliverTx: [],
-        beginBlock: { responseBase: emptyResponseBase() },
+        beginBlock: {
+          responseBase: emptyResponseBase(),
+        },
         endBlock: {
           responseBase: emptyResponseBase(),
           validatorUpdates: null,
@@ -190,14 +225,14 @@ describe('JSON-RPC Provider', () => {
     const result = await provider.getBlockResult(1);
 
     expect(mockClient.blockResults).toHaveBeenCalledWith(1);
-    expect(result.height).toBe('1');
+    expect(result.height).toBe("1");
   });
 
-  describe('sendTransaction', () => {
-    const mockError = '/std.UnauthorizedError';
-    const mockLog = 'random error message';
+  describe("sendTransaction", () => {
+    const mockError = "/std.UnauthorizedError";
+    const mockLog = "random error message";
 
-    test('broadcastTxSync - success', async () => {
+    test("broadcastTxSync - success", async () => {
       const mockRpcResponse: BroadcastTxSyncResponse = {
         hash: new Uint8Array([0x68, 0x61, 0x73, 0x68]),
         responseBase: emptyResponseBase(),
@@ -208,19 +243,22 @@ describe('JSON-RPC Provider', () => {
       vi.mocked(mockClient.broadcastTxSync).mockResolvedValue(mockRpcResponse);
 
       const result: BroadcastTxSyncResult = await provider.sendTransaction(
-        'encoded tx',
-        TransactionEndpoint.BROADCAST_TX_SYNC
+        "encoded tx",
+        TransactionEndpoint.BROADCAST_TX_SYNC,
       );
 
       expect(mockClient.broadcastTxSync).toHaveBeenCalled();
       expect(result.error).toBeNull();
     });
 
-    test('broadcastTxSync - error', async () => {
+    test("broadcastTxSync - error", async () => {
       const mockRpcResponse: BroadcastTxSyncResponse = {
         hash: new Uint8Array(),
         responseBase: emptyResponseBase({
-          error: { '@type': mockError, value: '' },
+          error: {
+            "@type": mockError,
+            value: "",
+          },
           log: mockLog,
         }),
         gasWanted: 0n,
@@ -231,22 +269,23 @@ describe('JSON-RPC Provider', () => {
 
       try {
         await provider.sendTransaction(
-          'encoded tx',
-          TransactionEndpoint.BROADCAST_TX_SYNC
+          "encoded tx",
+          TransactionEndpoint.BROADCAST_TX_SYNC,
         );
-        throw new Error('expected error');
-      } catch (e) {
+        throw new Error("expected error");
+      }
+      catch (e) {
         expect((e as Error).message).toBe(UnauthorizedErrorMessage);
         expect((e as TM2Error).log).toBe(mockLog);
       }
     });
   });
 
-  test('waitForTransaction', async () => {
+  test("waitForTransaction", async () => {
     const tx: Tx = {
       messages: [],
       signatures: [],
-      memo: 'tx memo',
+      memo: "tx memo",
     };
 
     const encodedTx = Tx.encode(tx).finish();
@@ -258,12 +297,12 @@ describe('JSON-RPC Provider', () => {
     // Mock status
     const mockStatusResponse: StatusResponse = {
       nodeInfo: {
-        listenAddr: '',
-        network: '',
-        version: '',
-        software: '',
+        listenAddr: "",
+        network: "",
+        version: "",
+        software: "",
         channels: [],
-        moniker: '',
+        moniker: "",
         other: new Map(),
         versionSet: [],
       },
@@ -283,27 +322,51 @@ describe('JSON-RPC Provider', () => {
     vi.mocked(mockClient.status).mockResolvedValue(mockStatusResponse);
 
     // Mock block responses
-    const makeEmptyBlock = (height: number): BlockResponse => ({
+    const makeEmptyBlock = (height: number): WritableDeep<BlockResponse> => ({
       blockMeta: {
-        blockId: { hash: new Uint8Array(), parts: { total: 0n, hash: new Uint8Array() } },
+        blockId: {
+          hash: new Uint8Array(),
+          parts: {
+            total: 0n,
+            hash: new Uint8Array(),
+          },
+        },
         header: {
-          version: '', chainId: '', height, time: new Date() as any,
-          numTxs: 0n, totalTxs: 0n, appVersion: '',
-          lastBlockId: null, lastCommitHash: new Uint8Array(),
-          dataHash: new Uint8Array(), validatorsHash: new Uint8Array(),
-          consensusHash: new Uint8Array(), appHash: new Uint8Array(),
-          lastResultsHash: new Uint8Array(), proposerAddress: '',
+          version: "",
+          chainId: "",
+          height,
+          time: new Date(),
+          numTxs: 0n,
+          totalTxs: 0n,
+          appVersion: "",
+          lastBlockId: null,
+          lastCommitHash: new Uint8Array(),
+          dataHash: new Uint8Array(),
+          validatorsHash: new Uint8Array(),
+          consensusHash: new Uint8Array(),
+          appHash: new Uint8Array(),
+          lastResultsHash: new Uint8Array(),
+          proposerAddress: "",
           nextValidatorsHash: new Uint8Array(),
         },
       },
       block: {
         header: {
-          version: '', chainId: '', height, time: new Date() as any,
-          numTxs: 0n, totalTxs: 0n, appVersion: '',
-          lastBlockId: null, lastCommitHash: new Uint8Array(),
-          dataHash: new Uint8Array(), validatorsHash: new Uint8Array(),
-          consensusHash: new Uint8Array(), appHash: new Uint8Array(),
-          lastResultsHash: new Uint8Array(), proposerAddress: '',
+          version: "",
+          chainId: "",
+          height,
+          time: new Date(),
+          numTxs: 0n,
+          totalTxs: 0n,
+          appVersion: "",
+          lastBlockId: null,
+          lastCommitHash: new Uint8Array(),
+          dataHash: new Uint8Array(),
+          validatorsHash: new Uint8Array(),
+          consensusHash: new Uint8Array(),
+          appHash: new Uint8Array(),
+          lastResultsHash: new Uint8Array(),
+          proposerAddress: "",
           nextValidatorsHash: new Uint8Array(),
         },
         txs: [],
@@ -314,7 +377,7 @@ describe('JSON-RPC Provider', () => {
 
     const filledBlock = makeEmptyBlock(latestBlock);
     // Override txs with the encoded tx
-    (filledBlock.block as any).txs = [encodedTx];
+    filledBlock.block.txs = [encodedTx];
 
     vi.mocked(mockClient.block).mockImplementation(async (height?: number) => {
       if (height === latestBlock) return filledBlock;
@@ -323,14 +386,14 @@ describe('JSON-RPC Provider', () => {
 
     const receivedTx = await provider.waitForTransaction(
       uint8ArrayToBase64(txHash),
-      startBlock
+      startBlock,
     );
 
     expect(mockClient.status).toHaveBeenCalled();
     expect(receivedTx).toEqual(tx);
   });
 
-  test('getConsensusParams', async () => {
+  test("getConsensusParams", async () => {
     const mockRpcResponse: RpcConsensusParamsResponse = {
       blockHeight: 1,
       consensusParams: {
@@ -352,18 +415,18 @@ describe('JSON-RPC Provider', () => {
     const params: ConsensusParams = await provider.getConsensusParams(1);
 
     expect(mockClient.consensusParams).toHaveBeenCalledWith(1);
-    expect(params.block_height).toBe('1');
+    expect(params.block_height).toBe("1");
   });
 
-  test('getStatus', async () => {
+  test("getStatus", async () => {
     const mockRpcResponse: StatusResponse = {
       nodeInfo: {
-        listenAddr: '',
-        network: '',
-        version: '',
-        software: '',
+        listenAddr: "",
+        network: "",
+        version: "",
+        software: "",
         channels: [],
-        moniker: '',
+        moniker: "",
         other: new Map(),
         versionSet: [],
       },
@@ -385,19 +448,19 @@ describe('JSON-RPC Provider', () => {
     const status: Status = await provider.getStatus();
 
     expect(mockClient.status).toHaveBeenCalled();
-    expect(status.validator_info.address).toBe('0102');
+    expect(status.validator_info.address).toBe("0102");
   });
 
-  test('getBlockNumber', async () => {
+  test("getBlockNumber", async () => {
     const expectedBlockNumber = 10;
     const mockRpcResponse: StatusResponse = {
       nodeInfo: {
-        listenAddr: '',
-        network: '',
-        version: '',
-        software: '',
+        listenAddr: "",
+        network: "",
+        version: "",
+        software: "",
         channels: [],
-        moniker: '',
+        moniker: "",
         other: new Map(),
         versionSet: [],
       },
@@ -422,17 +485,15 @@ describe('JSON-RPC Provider', () => {
     expect(blockNumber).toEqual(expectedBlockNumber);
   });
 
-  describe('getBalance', () => {
-    const denomination = 'atom';
-    test.each([
-      ['"5gnot,100atom"', 100],
-      ['"5universe"', 0],
-      ['""', 0],
-    ])('case %#', async (existing, expected) => {
-      const dataBytes = Buffer.from(stringToBase64(existing), 'base64');
+  describe("getBalance", () => {
+    const denomination = "atom";
+    test.each([["\"5gnot,100atom\"", 100], ["\"5universe\"", 0], ["\"\"", 0]])("case %#", async (existing, expected) => {
+      const dataBytes = Buffer.from(stringToBase64(existing), "base64");
 
       const mockRpcResponse: AbciQueryResponse = {
-        responseBase: emptyResponseBase({ data: dataBytes }),
+        responseBase: emptyResponseBase({
+          data: dataBytes,
+        }),
         key: new Uint8Array(),
         value: new Uint8Array(),
         height: 0,
@@ -440,35 +501,31 @@ describe('JSON-RPC Provider', () => {
 
       vi.mocked(mockClient.abciQuery).mockResolvedValue(mockRpcResponse);
 
-      const balance = await provider.getBalance('address', denomination);
+      const balance = await provider.getBalance("address", denomination);
 
       expect(mockClient.abciQuery).toHaveBeenCalled();
       expect(balance).toBe(expected);
     });
   });
 
-  describe('getSequence', () => {
+  describe("getSequence", () => {
     const validAccount: ABCIAccount = {
       BaseAccount: {
-        address: 'random address',
-        coins: '',
+        address: "random address",
+        coins: "",
         public_key: null,
-        account_number: '0',
-        sequence: '10',
+        account_number: "0",
+        sequence: "10",
       },
     };
 
-    test.each([
-      [
-        JSON.stringify(validAccount),
-        parseInt(validAccount.BaseAccount.sequence, 10),
-      ],
-      ['null', 0],
-    ])('case %#', async (response, expected) => {
-      const dataBytes = Buffer.from(stringToBase64(response), 'base64');
+    test.each([[JSON.stringify(validAccount), parseInt(validAccount.BaseAccount.sequence, 10)], ["null", 0]])("case %#", async (response, expected) => {
+      const dataBytes = Buffer.from(stringToBase64(response), "base64");
 
       const mockRpcResponse: AbciQueryResponse = {
-        responseBase: emptyResponseBase({ data: dataBytes }),
+        responseBase: emptyResponseBase({
+          data: dataBytes,
+        }),
         key: new Uint8Array(),
         value: new Uint8Array(),
         height: 0,
@@ -476,35 +533,31 @@ describe('JSON-RPC Provider', () => {
 
       vi.mocked(mockClient.abciQuery).mockResolvedValue(mockRpcResponse);
 
-      const sequence = await provider.getAccountSequence('address');
+      const sequence = await provider.getAccountSequence("address");
 
       expect(mockClient.abciQuery).toHaveBeenCalled();
       expect(sequence).toBe(expected);
     });
   });
 
-  describe('getAccountNumber', () => {
+  describe("getAccountNumber", () => {
     const validAccount: ABCIAccount = {
       BaseAccount: {
-        address: 'random address',
-        coins: '',
+        address: "random address",
+        coins: "",
         public_key: null,
-        account_number: '10',
-        sequence: '0',
+        account_number: "10",
+        sequence: "0",
       },
     };
 
-    test.each([
-      [
-        JSON.stringify(validAccount),
-        parseInt(validAccount.BaseAccount.account_number, 10),
-      ],
-      ['null', 0],
-    ])('case %#', async (response, expected) => {
-      const dataBytes = Buffer.from(stringToBase64(response), 'base64');
+    test.each([[JSON.stringify(validAccount), parseInt(validAccount.BaseAccount.account_number, 10)], ["null", 0]])("case %#", async (response, expected) => {
+      const dataBytes = Buffer.from(stringToBase64(response), "base64");
 
       const mockRpcResponse: AbciQueryResponse = {
-        responseBase: emptyResponseBase({ data: dataBytes }),
+        responseBase: emptyResponseBase({
+          data: dataBytes,
+        }),
         key: new Uint8Array(),
         value: new Uint8Array(),
         height: 0,
@@ -513,38 +566,41 @@ describe('JSON-RPC Provider', () => {
       vi.mocked(mockClient.abciQuery).mockResolvedValue(mockRpcResponse);
 
       try {
-        const accountNumber = await provider.getAccountNumber('address');
+        const accountNumber = await provider.getAccountNumber("address");
 
         expect(mockClient.abciQuery).toHaveBeenCalled();
         expect(accountNumber).toBe(expected);
-      } catch (e) {
-        expect((e as Error).message).toContain('account is not initialized');
+      }
+      catch (e) {
+        expect((e as Error).message).toContain("account is not initialized");
       }
     });
   });
 
-  describe('getAccount', () => {
+  describe("getAccount", () => {
     const validAccount: ABCIAccount = {
       BaseAccount: {
-        address: 'random address',
-        coins: '',
-        public_key: { '@type': 'pktype', value: 'pk' },
-        account_number: '10',
-        sequence: '42',
+        address: "random address",
+        coins: "",
+        public_key: {
+          "@type": "pktype",
+          value: "pk",
+        },
+        account_number: "10",
+        sequence: "42",
       },
     };
 
-    test.each([
-      [JSON.stringify(validAccount), validAccount],
-      ['null', null],
-    ])('case %#', async (response, expected) => {
+    test.each([[JSON.stringify(validAccount), validAccount], ["null", null]])("case %#", async (response, expected) => {
       const dataBytes = Buffer.from(
         stringToBase64(response as string),
-        'base64'
+        "base64",
       );
 
       const mockRpcResponse: AbciQueryResponse = {
-        responseBase: emptyResponseBase({ data: dataBytes }),
+        responseBase: emptyResponseBase({
+          data: dataBytes,
+        }),
         key: new Uint8Array(),
         value: new Uint8Array(),
         height: 0,
@@ -553,12 +609,13 @@ describe('JSON-RPC Provider', () => {
       vi.mocked(mockClient.abciQuery).mockResolvedValue(mockRpcResponse);
 
       try {
-        const account = await provider.getAccount('address');
+        const account = await provider.getAccount("address");
 
         expect(mockClient.abciQuery).toHaveBeenCalled();
         expect(account).toStrictEqual(expected);
-      } catch (e) {
-        expect((e as Error).message).toContain('account is not initialized');
+      }
+      catch (e) {
+        expect((e as Error).message).toContain("account is not initialized");
       }
     });
   });

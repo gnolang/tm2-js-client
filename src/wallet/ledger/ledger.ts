@@ -1,8 +1,19 @@
-import { Signer } from '../signer.js';
-import { LedgerConnector } from '@cosmjs/ledger-amino';
-import { defaultAddressPrefix, generateHDPath } from '../utility/index.js';
-import { HdPath, Secp256k1, Secp256k1Signature, sha256 } from '@cosmjs/crypto';
-import { encodeSecp256k1Pubkey, pubkeyToAddress } from '@cosmjs/amino';
+import {
+  encodeSecp256k1Pubkey, pubkeyToAddress,
+} from "@cosmjs/amino";
+import {
+  HdPath, Secp256k1, Secp256k1Signature, sha256,
+} from "@cosmjs/crypto";
+import {
+  LedgerConnector,
+} from "@cosmjs/ledger-amino";
+
+import {
+  Signer,
+} from "../signer.js";
+import {
+  defaultAddressPrefix, generateHDPath,
+} from "../utility/index.js";
 
 /**
  * LedgerSigner implements the logic for the Ledger device signer
@@ -21,7 +32,7 @@ export class LedgerSigner implements Signer {
   constructor(
     connector: LedgerConnector,
     accountIndex: number,
-    addressPrefix: string = defaultAddressPrefix
+    addressPrefix: string = defaultAddressPrefix,
   ) {
     this.connector = connector;
     this.hdPath = generateHDPath(accountIndex);
@@ -30,34 +41,34 @@ export class LedgerSigner implements Signer {
 
   getAddress = async (): Promise<string> => {
     if (!this.connector) {
-      throw new Error('Ledger not connected');
+      throw new Error("Ledger not connected");
     }
 
     const compressedPubKey: Uint8Array = await this.connector.getPubkey(
-      this.hdPath
+      this.hdPath,
     );
 
     return pubkeyToAddress(
       encodeSecp256k1Pubkey(compressedPubKey),
-      this.addressPrefix
+      this.addressPrefix,
     );
   };
 
   getPublicKey = async (): Promise<Uint8Array> => {
     if (!this.connector) {
-      throw new Error('Ledger not connected');
+      throw new Error("Ledger not connected");
     }
 
     return this.connector.getPubkey(this.hdPath);
   };
 
   getPrivateKey = async (): Promise<Uint8Array> => {
-    throw new Error('Ledger does not support private key exports');
+    throw new Error("Ledger does not support private key exports");
   };
 
   signData = async (data: Uint8Array): Promise<Uint8Array> => {
     if (!this.connector) {
-      throw new Error('Ledger not connected');
+      throw new Error("Ledger not connected");
     }
 
     return this.connector.sign(data, this.hdPath);
@@ -65,14 +76,14 @@ export class LedgerSigner implements Signer {
 
   verifySignature = async (
     data: Uint8Array,
-    signature: Uint8Array
+    signature: Uint8Array,
   ): Promise<boolean> => {
     const publicKey = await this.getPublicKey();
 
     return Secp256k1.verifySignature(
       Secp256k1Signature.fromFixedLength(signature),
       sha256(data),
-      publicKey
+      publicKey,
     );
   };
 }

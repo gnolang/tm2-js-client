@@ -1,311 +1,315 @@
-import { ABCIResponseBase } from './abci.js';
-import { TransactionEndpoint } from '../endpoints.js';
+import {
+  TransactionEndpoint,
+} from "../endpoints.js";
+import {
+  ABCIResponseBase,
+} from "./abci.js";
 
 export interface NetworkInfo {
   // flag indicating if networking is up
-  listening: boolean;
+  listening: boolean
   // IDs of the listening peers
-  listeners: string[];
+  listeners: string[]
   // the number of peers (decimal)
-  n_peers: string;
+  n_peers: string
   // the IDs of connected peers
-  peers: string[];
+  peers: string[]
 }
 
 export interface Status {
   // basic node information
-  node_info: NodeInfo;
+  node_info: NodeInfo
   // basic sync information
-  sync_info: SyncInfo;
+  sync_info: SyncInfo
   // basic validator information
-  validator_info: ValidatorInfo;
+  validator_info: ValidatorInfo
 }
 
 interface NodeInfo {
   // the version set of the node modules
-  version_set: VersionInfo[];
+  version_set: VersionInfo[]
   // validator address @ RPC endpoint
-  net_address: string;
+  net_address: string
   // the chain ID
-  network: string;
-  software: string;
+  network: string
+  software: string
   // version of the Tendermint node
-  version: string;
-  channels: string;
+  version: string
+  channels: string
   // user machine name
-  monkier: string;
+  monkier: string
   other: {
     // type of enabled tx indexing ("off" when disabled)
-    tx_index: string;
+    tx_index: string
     // the TCP address of the node
-    rpc_address: string;
-  };
+    rpc_address: string
+  }
 }
 
 interface VersionInfo {
   // the name of the module
-  Name: string;
+  Name: string
   // the version of the module
-  Version: string;
+  Version: string
   // flag indicating if the module is optional
-  Optional: boolean;
+  Optional: boolean
 }
 
 interface SyncInfo {
   // latest block hash
-  latest_block_hash: string;
+  latest_block_hash: string
   // latest application hash
-  latest_app_hash: string;
+  latest_app_hash: string
   // latest block height (decimal)
-  latest_block_height: string;
+  latest_block_height: string
   // latest block time in string format (ISO format)
-  latest_block_time: string;
+  latest_block_time: string
   // flag indicating if the node is syncing
-  catching_up: boolean;
+  catching_up: boolean
 }
 
 interface ValidatorInfo {
   // the address of the validator node
-  address: string;
+  address: string
   // the validator's public key info
-  pub_key: PublicKey;
+  pub_key: PublicKey
   // the validator's voting power (decimal)
-  voting_power: string;
+  voting_power: string
 }
 
 interface PublicKey {
   // type of public key
-  type: string;
+  type: string
   // public key value
-  value: string;
+  value: string
 }
 
 export interface ConsensusParams {
   // the current block height
-  block_height: string;
+  block_height: string
   // block consensus params
   consensus_params: {
     // the requested block
     Block: {
       // maximum tx size in bytes
-      MaxTxBytes: string;
+      MaxTxBytes: string
       // maximum data size in bytes
-      MaxDataBytes: string;
+      MaxDataBytes: string
       // maximum block size in bytes
-      MaxBlockBytes: string;
+      MaxBlockBytes: string
       // block gas limit
-      MaxGas: string;
+      MaxGas: string
       // block time in MS
-      TimeIotaMS: string;
-    };
+      TimeIotaMS: string
+    }
     // validator info
     Validator: {
       // public key information
-      PubKeyTypeURLs: string[];
-    };
-  };
+      PubKeyTypeURLs: string[]
+    }
+  }
 }
 
 export interface ConsensusState {
   // the current round state
   round_state: {
     // Required because of '/' in response fields (height/round/step)
-    [key: string]: string | null | object;
+    [key: string]: string | null | object
     // the start time of the block
-    start_time: string;
+    start_time: string
     // hash of the proposed block
-    proposal_block_hash: string | null;
+    proposal_block_hash: string | null
     // hash of the locked block
-    locked_block_hash: string | null;
+    locked_block_hash: string | null
     // hash of the valid block
-    valid_block_hash: string | null;
+    valid_block_hash: string | null
     // the vote set for the current height
-    height_vote_set: object;
-  };
+    height_vote_set: object
+  }
 }
 
 export interface BlockInfo {
   // block metadata information
-  block_meta: BlockMeta;
+  block_meta: BlockMeta
   // combined block info
-  block: Block;
+  block: Block
 }
 
 export interface BlockMeta {
   // the block parts
-  block_id: BlockID;
+  block_id: BlockID
   // the block header
-  header: BlockHeader;
+  header: BlockHeader
 }
 
 export interface Block {
   // the block header
-  header: BlockHeader;
+  header: BlockHeader
   // data contained in the block (txs)
   data: {
     // base64 encoded transactions
-    txs: string[] | null;
-  };
+    txs: string[] | null
+  }
   // commit information
   last_commit: {
     // the block parts
-    block_id: BlockID;
+    block_id: BlockID
     // validator precommit information
-    precommits: PrecommitInfo[] | null;
-  };
+    precommits: (PrecommitInfo | null)[] | null
+  }
 }
 
 export interface BlockHeader {
   // version of the node
-  version: string;
+  version: string
   // the chain ID
-  chain_id: string;
+  chain_id: string
   // current height (decimal)
-  height: string;
+  height: string
   // block creation time in string format (ISO format)
-  time: string;
+  time: string
   // number of transactions (decimal)
-  num_txs: string;
+  num_txs: string
   // total number of transactions in the block (decimal)
-  total_txs: string;
+  total_txs: string
   // the current app version
-  app_version: string;
+  app_version: string
   // parent block parts
-  last_block_id: BlockID;
+  last_block_id: BlockID
   // parent block commit hash
-  last_commit_hash: string | null;
+  last_commit_hash: string | null
   // data hash (txs)
-  data_hash: string | null;
+  data_hash: string | null
   // validator set hash
-  validators_hash: string;
+  validators_hash: string
   // consensus info hash
-  consensus_hash: string;
+  consensus_hash: string
   // app info hash
-  app_hash: string;
+  app_hash: string
   // last results hash
-  last_results_hash: string | null;
+  last_results_hash: string | null
   // address of the proposer
-  proposer_address: string;
+  proposer_address: string
 }
 
 export interface BlockID {
   // the hash of the ID (block)
-  hash: string | null;
+  hash: string | null
   // part information
   parts: {
     // total number of parts (decimal)
-    total: string;
+    total: string
     // the hash of the part
-    hash: string | null;
-  };
+    hash: string | null
+  }
 }
 
 export interface PrecommitInfo {
   // type of precommit
-  type: number;
+  type: number
   // the block height for the precommit
-  height: string;
+  height: string
   // the round for the precommit
-  round: string;
+  round: string
   // the block ID info
-  block_id: BlockID;
+  block_id: BlockID
   // precommit creation time (ISO format)
-  timestamp: string;
+  timestamp: string
   // the address of the validator who signed
-  validator_address: string;
+  validator_address: string
   // the index of the signer (validator)
-  validator_index: string;
+  validator_index: string
   // the base64 encoded signature of the signer (validator)
-  signature: string;
+  signature: string
 }
 
 export interface BlockResult {
   // the block height
-  height: string;
+  height: string
   // block result info
   results: {
     // transactions contained in the block
-    deliver_tx: DeliverTx[] | null;
+    deliver_tx: DeliverTx[] | null
     // end-block info
-    end_block: EndBlock;
+    end_block: EndBlock
     // begin-block info
-    begin_block: BeginBlock;
-  };
+    begin_block: BeginBlock
+  }
 }
 
 export interface TxResult {
   // the transaction hash
-  hash: string;
+  hash: string
   // tx index in the block
-  index: number;
+  index: number
   // the block height
-  height: string;
+  height: string
   // deliver tx response
-  tx_result: DeliverTx;
+  tx_result: DeliverTx
   // base64 encoded transaction
-  tx: string;
+  tx: string
 }
 
 export interface DeliverTx {
   // the transaction ABCI response
-  ResponseBase: ABCIResponseBase;
+  ResponseBase: ABCIResponseBase
   // transaction gas limit (decimal)
-  GasWanted: string;
+  GasWanted: string
   // transaction actual gas used (decimal)
-  GasUsed: string;
+  GasUsed: string
 }
 
 export interface EndBlock {
   // the block ABCI response
-  ResponseBase: ABCIResponseBase;
+  ResponseBase: ABCIResponseBase
   // validator update info
-  ValidatorUpdates: string | null;
+  ValidatorUpdates: string | null
   // consensus params
-  ConsensusParams: string | null;
+  ConsensusParams: string | null
   // block events
-  Events: string | null;
+  Events: string | null
 }
 
 export interface BeginBlock {
   // the block ABCI response
-  ResponseBase: ABCIResponseBase;
+  ResponseBase: ABCIResponseBase
 }
 
 export interface BroadcastTxSyncResult {
   error: {
     // ABCIErrorKey
-    [key: string]: string;
-  } | null;
-  data: string | null;
-  Log: string;
+    [key: string]: string
+  } | null
+  data: string | null
+  Log: string
 
-  hash: string;
+  hash: string
 }
 
 export interface BroadcastTxCommitResult {
-  check_tx: DeliverTx;
-  deliver_tx: DeliverTx;
-  hash: string;
-  height: string; // decimal number
+  check_tx: DeliverTx
+  deliver_tx: DeliverTx
+  hash: string
+  height: string // decimal number
 }
 
-export type BroadcastType =
-  | TransactionEndpoint.BROADCAST_TX_SYNC
-  | TransactionEndpoint.BROADCAST_TX_COMMIT;
+export type BroadcastType
+  = | TransactionEndpoint.BROADCAST_TX_SYNC
+    | TransactionEndpoint.BROADCAST_TX_COMMIT;
 
 export type BroadcastTransactionSync = {
-  endpoint: TransactionEndpoint.BROADCAST_TX_SYNC;
-  result: BroadcastTxSyncResult;
+  endpoint: TransactionEndpoint.BROADCAST_TX_SYNC
+  result: BroadcastTxSyncResult
 };
 
 export type BroadcastTransactionCommit = {
-  endpoint: TransactionEndpoint.BROADCAST_TX_COMMIT;
-  result: BroadcastTxCommitResult;
+  endpoint: TransactionEndpoint.BROADCAST_TX_COMMIT
+  result: BroadcastTxCommitResult
 };
 
 export type BroadcastTransactionMap = {
-  [TransactionEndpoint.BROADCAST_TX_COMMIT]: BroadcastTransactionCommit;
-  [TransactionEndpoint.BROADCAST_TX_SYNC]: BroadcastTransactionSync;
+  [TransactionEndpoint.BROADCAST_TX_COMMIT]: BroadcastTransactionCommit
+  [TransactionEndpoint.BROADCAST_TX_SYNC]: BroadcastTransactionSync
 };
 
 export type BroadcastAsGeneric<

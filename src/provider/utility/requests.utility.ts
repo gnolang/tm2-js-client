@@ -1,16 +1,23 @@
-import { BinaryReader } from '@bufbuild/protobuf/wire';
-import { v4 as uuidv4 } from 'uuid';
-import { RPCError, RPCRequest, RPCResponse } from '../types/index.js';
+import {
+  BinaryReader,
+} from "@bufbuild/protobuf/wire";
+import {
+  v4 as uuidv4,
+} from "uuid";
+
+import {
+  RPCError, RPCRequest, RPCResponse,
+} from "../types/index.js";
 
 // The version of the supported JSON-RPC protocol
-const standardVersion = '2.0';
+const standardVersion = "2.0";
 
 /**
  * Creates a new JSON-RPC 2.0 request
  * @param {string} method the requested method
- * @param {string[]} [params] the requested params, if any
+ * @param {unknown[]} [params] the requested params, if any
  */
-export const newRequest = (method: string, params?: any[]): RPCRequest => {
+export const newRequest = (method: string, params?: unknown[]): RPCRequest => {
   return {
     // the ID of the request is not that relevant for this helper method;
     // for finer ID control, instantiate the request object directly
@@ -28,7 +35,7 @@ export const newRequest = (method: string, params?: any[]): RPCRequest => {
  */
 export const newResponse = <Result>(
   result?: Result,
-  error?: RPCError
+  error?: RPCError,
 ): RPCResponse<Result> => {
   return {
     id: uuidv4(),
@@ -43,11 +50,11 @@ export const newResponse = <Result>(
  * @param {string} data the base64-encoded JSON
  */
 export const parseABCI = <Result>(data: string): Result => {
-  const jsonData: string = Buffer.from(data, 'base64').toString();
+  const jsonData: string = Buffer.from(data, "base64").toString();
   const parsedData: Result | null = JSON.parse(jsonData);
 
   if (!parsedData) {
-    throw new Error('unable to parse JSON response');
+    throw new Error("unable to parse JSON response");
   }
 
   return parsedData;
@@ -55,9 +62,9 @@ export const parseABCI = <Result>(data: string): Result => {
 
 export const parseProto = <T>(
   data: string,
-  decodeFn: (input: BinaryReader | Uint8Array, length?: number) => T
+  decodeFn: (input: BinaryReader | Uint8Array, length?: number) => T,
 ) => {
-  const protoData = decodeFn(Buffer.from(data, 'base64'));
+  const protoData = decodeFn(Buffer.from(data, "base64"));
 
   return protoData;
 };
@@ -67,9 +74,9 @@ export const parseProto = <T>(
  * @param {string} str the raw string
  */
 export const stringToBase64 = (str: string): string => {
-  const buffer = Buffer.from(str, 'utf-8');
+  const buffer = Buffer.from(str, "utf-8");
 
-  return buffer.toString('base64');
+  return buffer.toString("base64");
 };
 
 /**
@@ -77,7 +84,7 @@ export const stringToBase64 = (str: string): string => {
  * @param {string} str the base64-encoded string
  */
 export const base64ToUint8Array = (str: string): Uint8Array => {
-  const buffer = Buffer.from(str, 'base64');
+  const buffer = Buffer.from(str, "base64");
 
   return new Uint8Array(buffer);
 };
@@ -87,5 +94,5 @@ export const base64ToUint8Array = (str: string): Uint8Array => {
  * @param {Uint8Array} data the Uint8Array to be encoded
  */
 export const uint8ArrayToBase64 = (data: Uint8Array): string => {
-  return Buffer.from(data).toString('base64');
+  return Buffer.from(data).toString("base64");
 };

@@ -1,8 +1,8 @@
 export interface CreateWalletOptions {
   // the address prefix
-  addressPrefix?: string;
+  addressPrefix?: string
   // the requested account index
-  accountIndex?: number;
+  accountIndex?: number
 }
 
-export type AccountWalletOption = Pick<CreateWalletOptions, 'addressPrefix'>;
+export type AccountWalletOption = Pick<CreateWalletOptions, "addressPrefix">;

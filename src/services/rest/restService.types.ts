@@ -1,7 +1,12 @@
-import { AxiosRequestConfig } from 'axios';
-import { RPCRequest } from '../../provider/index.js';
+import {
+  AxiosRequestConfig,
+} from "axios";
+
+import {
+  RPCRequest,
+} from "../../provider/index.js";
 
 export interface RequestParams {
-  request: RPCRequest;
-  config?: AxiosRequestConfig;
+  request: RPCRequest
+  config?: AxiosRequestConfig
 }

@@ -1,4 +1,7 @@
 import {
+  Tx,
+} from "../proto/index.js";
+import {
   ABCIAccount,
   BlockInfo,
   BlockResult,
@@ -7,8 +10,7 @@ import {
   ConsensusParams,
   NetworkInfo,
   Status,
-} from './types/index.js';
-import { Tx } from '../proto/index.js';
+} from "./types/index.js";
 
 /**
  * Read-only abstraction for accessing blockchain data
@@ -27,7 +29,7 @@ export interface Provider {
     address: string,
     denomination?: string,
     height?: number
-  ): Promise<number>;
+  ): Promise<number>
 
   /**
    * Fetches the account sequence
@@ -36,7 +38,7 @@ export interface Provider {
    * If omitted, the latest height is used.
    * @deprecated use {@link getAccount} instead
    */
-  getAccountSequence(address: string, height?: number): Promise<number>;
+  getAccountSequence(address: string, height?: number): Promise<number>
 
   /**
    * Fetches the account number. Errors out if the account
@@ -46,7 +48,7 @@ export interface Provider {
    * If omitted, the latest height is used
    * @deprecated use {@link getAccount} instead
    */
-  getAccountNumber(address: string, height?: number): Promise<number>;
+  getAccountNumber(address: string, height?: number): Promise<number>
 
   /**
    * Fetches the account. Errors out if the account
@@ -55,53 +57,53 @@ export interface Provider {
    * @param {number} [height=0] the height for querying.
    * If omitted, the latest height is used
    */
-  getAccount(address: string, height?: number): Promise<ABCIAccount>;
+  getAccount(address: string, height?: number): Promise<ABCIAccount>
 
   /**
    * Fetches the block at the specific height, if any
    * @param {number} height the height for querying
    */
-  getBlock(height: number): Promise<BlockInfo>;
+  getBlock(height: number): Promise<BlockInfo>
 
   /**
    * Fetches the block at the specific height, if any
    * @param {number} height the height for querying
    */
-  getBlockResult(height: number): Promise<BlockResult>;
+  getBlockResult(height: number): Promise<BlockResult>
 
   /**
    * Fetches the latest block number from the chain
    */
-  getBlockNumber(): Promise<number>;
+  getBlockNumber(): Promise<number>
 
   // Network-specific methods //
 
   /**
    * Fetches the network information
    */
-  getNetwork(): Promise<NetworkInfo>;
+  getNetwork(): Promise<NetworkInfo>
 
   /**
    * Fetches the consensus params for the specific block height
    * @param {number} height the height for querying
    */
-  getConsensusParams(height: number): Promise<ConsensusParams>;
+  getConsensusParams(height: number): Promise<ConsensusParams>
 
   /**
    * Fetches the current node status
    */
-  getStatus(): Promise<Status>;
+  getStatus(): Promise<Status>
 
   /**
    * Fetches the current (recommended) average gas price
    */
-  getGasPrice(): Promise<number>;
+  getGasPrice(): Promise<number>
 
   /**
    * Estimates the gas limit for the transaction
    * @param {Tx} tx the transaction that needs estimating
    */
-  estimateGas(tx: Tx): Promise<bigint>;
+  estimateGas(tx: Tx): Promise<bigint>
 
   // Transaction specific methods //
 
@@ -116,7 +118,7 @@ export interface Provider {
   sendTransaction<K extends keyof BroadcastTransactionMap>(
     tx: string,
     endpoint: K
-  ): Promise<BroadcastAsGeneric<K>['result']>;
+  ): Promise<BroadcastAsGeneric<K>["result"]>
 
   /**
    * Waits for the transaction to be committed on the chain.
@@ -134,5 +136,5 @@ export interface Provider {
     hash: string,
     fromHeight?: number,
     timeout?: number
-  ): Promise<Tx>;
+  ): Promise<Tx>
 }

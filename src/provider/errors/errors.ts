@@ -17,7 +17,7 @@ import {
   UnauthorizedErrorMessage,
   UnknownAddressErrorMessage,
   UnknownRequestErrorMessage,
-} from './messages.js';
+} from "./messages.js";
 
 class TM2Error extends Error {
   public log?: string;
@@ -138,23 +138,23 @@ class GasOverflowError extends TM2Error {
 }
 
 export {
-  TM2Error,
-  InternalError,
-  TxDecodeError,
-  InvalidSequenceError,
-  UnauthorizedError,
-  InsufficientFundsError,
-  UnknownRequestError,
-  InvalidAddressError,
-  UnknownAddressError,
-  InvalidPubKeyError,
+  GasOverflowError,
   InsufficientCoinsError,
+  InsufficientFeeError,
+  InsufficientFundsError,
+  InternalError,
+  InvalidAddressError,
   InvalidCoinsError,
   InvalidGasWantedError,
-  OutOfGasError,
+  InvalidPubKeyError,
+  InvalidSequenceError,
   MemoTooLargeError,
-  InsufficientFeeError,
-  TooManySignaturesError,
   NoSignaturesError,
-  GasOverflowError,
+  OutOfGasError,
+  TM2Error,
+  TooManySignaturesError,
+  TxDecodeError,
+  UnauthorizedError,
+  UnknownAddressError,
+  UnknownRequestError,
 };

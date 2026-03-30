@@ -1,7 +1,16 @@
-import { Signer } from '../signer.js';
-import { encodeSecp256k1Pubkey, pubkeyToAddress } from '@cosmjs/amino';
-import { Secp256k1, Secp256k1Signature, sha256 } from '@cosmjs/crypto';
-import { defaultAddressPrefix } from '../utility/index.js';
+import {
+  encodeSecp256k1Pubkey, pubkeyToAddress,
+} from "@cosmjs/amino";
+import {
+  Secp256k1, Secp256k1Signature, sha256,
+} from "@cosmjs/crypto";
+
+import {
+  Signer,
+} from "../signer.js";
+import {
+  defaultAddressPrefix,
+} from "../utility/index.js";
 
 /**
  * KeySigner implements the logic for the private key signer
@@ -20,7 +29,7 @@ export class KeySigner implements Signer {
   constructor(
     privateKey: Uint8Array,
     publicKey: Uint8Array,
-    addressPrefix: string = defaultAddressPrefix
+    addressPrefix: string = defaultAddressPrefix,
   ) {
     this.privateKey = privateKey;
     this.publicKey = publicKey;
@@ -30,7 +39,7 @@ export class KeySigner implements Signer {
   getAddress = async (): Promise<string> => {
     return pubkeyToAddress(
       encodeSecp256k1Pubkey(Secp256k1.compressPubkey(this.publicKey)),
-      this.addressPrefix
+      this.addressPrefix,
     );
   };
 
@@ -45,23 +54,20 @@ export class KeySigner implements Signer {
   signData = async (data: Uint8Array): Promise<Uint8Array> => {
     const signature = await Secp256k1.createSignature(
       sha256(data),
-      this.privateKey
+      this.privateKey,
     );
 
-    return new Uint8Array([
-      ...(signature.r(32) as any),
-      ...(signature.s(32) as any),
-    ]);
+    return new Uint8Array([...signature.r(32), ...signature.s(32)]);
   };
 
   verifySignature = async (
     data: Uint8Array,
-    signature: Uint8Array
+    signature: Uint8Array,
   ): Promise<boolean> => {
     return Secp256k1.verifySignature(
       Secp256k1Signature.fromFixedLength(signature),
       sha256(data),
-      this.publicKey
+      this.publicKey,
     );
   };
 }

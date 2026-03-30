@@ -1,31 +1,46 @@
 import {
+  Bip39, Secp256k1,
+} from "@cosmjs/crypto";
+import {
+  LedgerConnector,
+} from "@cosmjs/ledger-amino";
+
+import {
+  Any, PubKeySecp256k1, Tx, TxSignature,
+} from "../proto/index.js";
+import {
   BroadcastTransactionMap,
   Provider,
   Status,
   uint8ArrayToBase64,
-} from '../provider/index.js';
-import { Signer } from './signer.js';
-import { LedgerSigner } from './ledger/index.js';
-import { KeySigner } from './key/index.js';
-import { Bip39, Secp256k1 } from '@cosmjs/crypto';
+} from "../provider/index.js";
 import {
-  encodeCharacterSet,
-  generateEntropy,
-  generateKeyPair,
-  stringToUTF8,
-} from './utility/index.js';
-import { LedgerConnector } from '@cosmjs/ledger-amino';
-import { Any, PubKeySecp256k1, Tx, TxSignature } from '../proto/index.js';
+  KeySigner,
+} from "./key/index.js";
+import {
+  LedgerSigner,
+} from "./ledger/index.js";
+import {
+  Signer,
+} from "./signer.js";
 import {
   AccountWalletOption,
   CreateWalletOptions,
   Secp256k1PubKeyType,
   TxSignPayload,
-} from './types/index.js';
-import { sortedJsonStringify } from './utility/index.js';
+} from "./types/index.js";
+import {
+  encodeCharacterSet,
+  generateEntropy,
+  generateKeyPair,
+  stringToUTF8,
+} from "./utility/index.js";
+import {
+  sortedJsonStringify,
+} from "./utility/index.js";
 export interface SignTransactionOptions {
-  accountNumber?: string;
-  sequence?: string;
+  accountNumber?: string
+  sequence?: string
 }
 
 /**
@@ -51,11 +66,13 @@ export class Wallet {
    * @param {AccountWalletOption} options the account options
    */
   static createRandom = async (
-    options?: AccountWalletOption
+    options?: AccountWalletOption,
   ): Promise<Wallet> => {
-    const { publicKey, privateKey } = await generateKeyPair(
+    const {
+      publicKey, privateKey,
+    } = await generateKeyPair(
       Bip39.encode(generateEntropy()).toString(),
-      0
+      0,
     );
 
     // Initialize the wallet
@@ -63,7 +80,7 @@ export class Wallet {
     wallet.signer = new KeySigner(
       privateKey,
       Secp256k1.compressPubkey(publicKey),
-      options?.addressPrefix
+      options?.addressPrefix,
     );
 
     return wallet;
@@ -89,11 +106,13 @@ export class Wallet {
    */
   static fromMnemonic = async (
     mnemonic: string,
-    options?: CreateWalletOptions
+    options?: CreateWalletOptions,
   ): Promise<Wallet> => {
-    const { publicKey, privateKey } = await generateKeyPair(
+    const {
+      publicKey, privateKey,
+    } = await generateKeyPair(
       mnemonic,
-      options?.accountIndex
+      options?.accountIndex,
     );
 
     // Initialize the wallet
@@ -101,7 +120,7 @@ export class Wallet {
     wallet.signer = new KeySigner(
       privateKey,
       Secp256k1.compressPubkey(publicKey),
-      options?.addressPrefix
+      options?.addressPrefix,
     );
 
     return wallet;
@@ -114,17 +133,19 @@ export class Wallet {
    */
   static fromPrivateKey = async (
     privateKey: Uint8Array,
-    options?: AccountWalletOption
+    options?: AccountWalletOption,
   ): Promise<Wallet> => {
     // Derive the public key
-    const { pubkey: publicKey } = await Secp256k1.makeKeypair(privateKey);
+    const {
+      pubkey: publicKey,
+    } = await Secp256k1.makeKeypair(privateKey);
 
     // Initialize the wallet
     const wallet: Wallet = new Wallet();
     wallet.signer = new KeySigner(
       privateKey,
       Secp256k1.compressPubkey(publicKey),
-      options?.addressPrefix
+      options?.addressPrefix,
     );
 
     return wallet;
@@ -137,14 +158,14 @@ export class Wallet {
    */
   static fromLedger = (
     connector: LedgerConnector,
-    options?: CreateWalletOptions
+    options?: CreateWalletOptions,
   ): Wallet => {
     const wallet: Wallet = new Wallet();
 
     wallet.signer = new LedgerSigner(
       connector,
       options?.accountIndex ?? 0,
-      options?.addressPrefix
+      options?.addressPrefix,
     );
 
     return wallet;
@@ -165,7 +186,7 @@ export class Wallet {
    */
   getAccountSequence = async (height?: number): Promise<number> => {
     if (!this.provider) {
-      throw new Error('provider not connected');
+      throw new Error("provider not connected");
     }
 
     // Get the address
@@ -181,7 +202,7 @@ export class Wallet {
    */
   getAccountNumber = async (height?: number): Promise<number> => {
     if (!this.provider) {
-      throw new Error('provider not connected');
+      throw new Error("provider not connected");
     }
 
     // Get the address
@@ -196,7 +217,7 @@ export class Wallet {
    */
   getBalance = async (denomination?: string): Promise<number> => {
     if (!this.provider) {
-      throw new Error('provider not connected');
+      throw new Error("provider not connected");
     }
 
     // Get the address
@@ -204,7 +225,7 @@ export class Wallet {
 
     return this.provider.getBalance(
       address,
-      denomination ? denomination : 'ugnot'
+      denomination ? denomination : "ugnot",
     );
   };
 
@@ -213,7 +234,7 @@ export class Wallet {
    */
   getGasPrice = async (): Promise<number> => {
     if (!this.provider) {
-      throw new Error('provider not connected');
+      throw new Error("provider not connected");
     }
 
     return this.provider.getGasPrice();
@@ -225,7 +246,7 @@ export class Wallet {
    */
   estimateGas = async (tx: Tx): Promise<bigint> => {
     if (!this.provider) {
-      throw new Error('provider not connected');
+      throw new Error("provider not connected");
     }
 
     return this.provider.estimateGas(tx);
@@ -248,16 +269,16 @@ export class Wallet {
    */
   signTransaction = async (
     tx: Tx,
-    decodeTxMessages: (messages: Any[]) => any[],
-    opts?: SignTransactionOptions
+    decodeTxMessages: (messages: Any[]) => unknown[],
+    opts?: SignTransactionOptions,
   ): Promise<Tx> => {
     if (!this.provider) {
-      throw new Error('provider not connected');
+      throw new Error("provider not connected");
     }
 
     // Make sure the tx fee is initialized
     if (!tx.fee) {
-      throw new Error('invalid transaction fee provided');
+      throw new Error("invalid transaction fee provided");
     }
 
     // Extract the relevant chain data
@@ -296,7 +317,7 @@ export class Wallet {
     // a sorted JSON object, so the payload needs to be sorted
     // before signing
     const signBytes: Uint8Array = stringToUTF8(
-      encodeCharacterSet(sortedJsonStringify(signPayload))
+      encodeCharacterSet(sortedJsonStringify(signPayload)),
     );
 
     // The public key needs to be encoded using protobuf for Amino
@@ -330,10 +351,10 @@ export class Wallet {
    */
   async sendTransaction<K extends keyof BroadcastTransactionMap>(
     tx: Tx,
-    endpoint: K
-  ): Promise<BroadcastTransactionMap[K]['result']> {
+    endpoint: K,
+  ): Promise<BroadcastTransactionMap[K]["result"]> {
     if (!this.provider) {
-      throw new Error('provider not connected');
+      throw new Error("provider not connected");
     }
 
     // Encode the transaction to base-64

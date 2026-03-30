@@ -1,7 +1,16 @@
-import { Tm2Client } from '@gnolang/tm2-rpc';
-import { Tx } from '../../proto/index.js';
-import { TransactionEndpoint } from '../endpoints.js';
-import { Provider } from '../provider.js';
+import {
+  Tm2Client,
+} from "@gnolang/tm2-rpc";
+
+import {
+  Tx,
+} from "../../proto/index.js";
+import {
+  TransactionEndpoint,
+} from "../endpoints.js";
+import {
+  Provider,
+} from "../provider.js";
 import {
   ABCIAccount,
   ABCIErrorKey,
@@ -15,7 +24,10 @@ import {
   NetworkInfo,
   Status,
   TxResult,
-} from '../types/index.js';
+} from "../types/index.js";
+import {
+  constructRequestError,
+} from "../utility/errors.utility.js";
 import {
   adaptAbciQueryResponse,
   adaptBlockResponse,
@@ -33,8 +45,7 @@ import {
   extractSimulateFromResponse,
   uint8ArrayToBase64,
   waitForTransaction,
-} from '../utility/index.js';
-import { constructRequestError } from '../utility/errors.utility.js';
+} from "../utility/index.js";
 
 /**
  * Provider based on JSON-RPC HTTP requests
@@ -58,7 +69,7 @@ export class JSONRPCProvider implements Provider {
   async estimateGas(tx: Tx): Promise<bigint> {
     const encodedTx = uint8ArrayToBase64(Tx.encode(tx).finish());
     const rpcResponse = await this.client.abciQuery({
-      path: `.app/simulate`,
+      path: ".app/simulate",
       data: new TextEncoder().encode(encodedTx),
       height: 0,
       prove: false,
@@ -73,12 +84,12 @@ export class JSONRPCProvider implements Provider {
   async getBalance(
     address: string,
     denomination?: string,
-    height?: number
+    height?: number,
   ): Promise<number> {
     const rpcResponse = await this.client.abciQuery({
       path: `bank/balances/${address}`,
       data: new Uint8Array(),
-      height: 0,
+      height: height ? height : 0,
       prove: false,
     });
 
@@ -86,7 +97,7 @@ export class JSONRPCProvider implements Provider {
 
     return extractBalanceFromResponse(
       abciResponse.response.ResponseBase.Data,
-      denomination ? denomination : 'ugnot'
+      denomination ? denomination : "ugnot",
     );
   }
 
@@ -111,7 +122,7 @@ export class JSONRPCProvider implements Provider {
   }
 
   getGasPrice(): Promise<number> {
-    return Promise.reject('not supported');
+    return Promise.reject("not supported");
   }
 
   async getNetwork(): Promise<NetworkInfo> {
@@ -123,7 +134,7 @@ export class JSONRPCProvider implements Provider {
     const rpcResponse = await this.client.abciQuery({
       path: `auth/accounts/${address}`,
       data: new Uint8Array(),
-      height: 0,
+      height: height ? height : 0,
       prove: false,
     });
 
@@ -135,13 +146,13 @@ export class JSONRPCProvider implements Provider {
     const rpcResponse = await this.client.abciQuery({
       path: `auth/accounts/${address}`,
       data: new Uint8Array(),
-      height: 0,
+      height: height ? height : 0,
       prove: false,
     });
 
     const abciResponse: ABCIResponse = adaptAbciQueryResponse(rpcResponse);
     return extractAccountNumberFromResponse(
-      abciResponse.response.ResponseBase.Data
+      abciResponse.response.ResponseBase.Data,
     );
   }
 
@@ -149,7 +160,7 @@ export class JSONRPCProvider implements Provider {
     const rpcResponse = await this.client.abciQuery({
       path: `auth/accounts/${address}`,
       data: new Uint8Array(),
-      height: 0,
+      height: height ? height : 0,
       prove: false,
     });
 
@@ -164,17 +175,19 @@ export class JSONRPCProvider implements Provider {
 
   async getTransaction(hash: string): Promise<TxResult> {
     const hashBytes = Uint8Array.from(
-      (hash.match(/.{1,2}/g) ?? []).map((byte) => parseInt(byte, 16))
+      (hash.match(/.{1,2}/g) ?? []).map(byte => parseInt(byte, 16)),
     );
-    const rpcResponse = await this.client.tx({ hash: hashBytes });
+    const rpcResponse = await this.client.tx({
+      hash: hashBytes,
+    });
     return adaptTxResponse(rpcResponse);
   }
 
   async sendTransaction<K extends keyof BroadcastTransactionMap>(
     tx: string,
-    endpoint: K
-  ): Promise<BroadcastTransactionMap[K]['result']> {
-    const txBytes = Uint8Array.from(Buffer.from(tx, 'base64'));
+    endpoint: K,
+  ): Promise<BroadcastTransactionMap[K]["result"]> {
+    const txBytes = Uint8Array.from(Buffer.from(tx, "base64"));
 
     switch (endpoint) {
       case TransactionEndpoint.BROADCAST_TX_COMMIT:
@@ -186,9 +199,11 @@ export class JSONRPCProvider implements Provider {
   }
 
   private async broadcastTxSync(
-    txBytes: Uint8Array
+    txBytes: Uint8Array,
   ): Promise<BroadcastTxSyncResult> {
-    const rpcResponse = await this.client.broadcastTxSync({ tx: txBytes });
+    const rpcResponse = await this.client.broadcastTxSync({
+      tx: txBytes,
+    });
     const response = adaptBroadcastTxSyncResponse(rpcResponse);
 
     if (response.error) {
@@ -202,12 +217,16 @@ export class JSONRPCProvider implements Provider {
   }
 
   private async broadcastTxCommit(
-    txBytes: Uint8Array
+    txBytes: Uint8Array,
   ): Promise<BroadcastTxCommitResult> {
-    const rpcResponse = await this.client.broadcastTxCommit({ tx: txBytes });
+    const rpcResponse = await this.client.broadcastTxCommit({
+      tx: txBytes,
+    });
     const response = adaptBroadcastTxCommitResponse(rpcResponse);
 
-    const { check_tx, deliver_tx } = response;
+    const {
+      check_tx, deliver_tx,
+    } = response;
 
     if (check_tx.ResponseBase.Error) {
       const errType: string = check_tx.ResponseBase.Error[ABCIErrorKey];
@@ -229,7 +248,7 @@ export class JSONRPCProvider implements Provider {
   async waitForTransaction(
     hash: string,
     fromHeight?: number,
-    timeout?: number
+    timeout?: number,
   ): Promise<Tx> {
     return waitForTransaction(this, hash, fromHeight, timeout);
   }

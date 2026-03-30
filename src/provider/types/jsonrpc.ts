@@ -2,30 +2,30 @@
  * The base JSON-RPC 2.0 request
  */
 export interface RPCRequest {
-  jsonrpc: string;
-  id: string | number;
-  method: string;
+  jsonrpc: string
+  id: string | number
+  method: string
 
-  params?: any[];
+  params?: unknown[]
 }
 
 /**
  * The base JSON-RPC 2.0 response
  */
 export interface RPCResponse<Result> {
-  jsonrpc: string;
-  id: string | number;
+  jsonrpc: string
+  id: string | number
 
-  result?: Result;
-  error?: RPCError;
+  result?: Result
+  error?: RPCError
 }
 
 /**
  * The base JSON-RPC 2.0 typed response error
  */
 export interface RPCError {
-  code: number;
-  message: string;
+  code: number
+  message: string
 
-  data?: any;
+  data?: unknown
 }
