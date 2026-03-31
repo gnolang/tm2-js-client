@@ -1,6 +1,6 @@
 {
   "name": "@gnolang/tm2-js-client",
-  "version": "2.0.0",
+  "version": "2.0.2",
   "description": "Tendermint2 JS / TS Client",
   "repository": {
     "type": "git",
@@ -50,7 +50,7 @@
     "@cosmjs/amino": "^0.38.1",
     "@cosmjs/crypto": "^0.38.1",
     "@cosmjs/ledger-amino": "^0.38.1",
-    "@gnolang/tm2-rpc": "^0.0.10",
+    "@gnolang/tm2-rpc": "^1.0.0",
     "@noble/hashes": "^2.0.1",
     "axios": "^1.14.0",
     "protobufjs": "^8.0.0",

@@ -90,17 +90,9 @@ export const ResponseDeliverTx: MessageFns<ResponseDeliverTx> = {
 
   fromJSON(object: any): ResponseDeliverTx {
     return {
-      response_base: isSet(object.ResponseBase)
-        ? ResponseBase.fromJSON(object.ResponseBase)
-        : isSet(object.response_base)
-        ? ResponseBase.fromJSON(object.response_base)
-        : undefined,
-      gas_wanted: isSet(object.GasWanted)
-        ? BigInt(object.GasWanted)
-        : isSet(object.gas_wanted)
-        ? BigInt(object.gas_wanted)
-        : 0n,
-      gas_used: isSet(object.GasUsed) ? BigInt(object.GasUsed) : isSet(object.gas_used) ? BigInt(object.gas_used) : 0n,
+      response_base: isSet(object.ResponseBase) ? ResponseBase.fromJSON(object.ResponseBase) : undefined,
+      gas_wanted: isSet(object.GasWanted) ? BigInt(object.GasWanted) : 0n,
+      gas_used: isSet(object.GasUsed) ? BigInt(object.GasUsed) : 0n,
     };
   },
 
@@ -214,27 +206,11 @@ export const ResponseBase: MessageFns<ResponseBase> = {
 
   fromJSON(object: any): ResponseBase {
     return {
-      error: isSet(object.Error)
-        ? Any.fromJSON(object.Error)
-        : isSet(object.error)
-        ? Any.fromJSON(object.error)
-        : undefined,
-      data: isSet(object.Data)
-        ? bytesFromBase64(object.Data)
-        : isSet(object.data)
-        ? bytesFromBase64(object.data)
-        : new Uint8Array(0),
-      events: globalThis.Array.isArray(object?.Events)
-        ? object.Events.map((e: any) => Any.fromJSON(e))
-        : globalThis.Array.isArray(object?.events)
-        ? object.events.map((e: any) => Any.fromJSON(e))
-        : [],
-      log: isSet(object.Log) ? globalThis.String(object.Log) : isSet(object.log) ? globalThis.String(object.log) : "",
-      info: isSet(object.Info)
-        ? globalThis.String(object.Info)
-        : isSet(object.info)
-        ? globalThis.String(object.info)
-        : "",
+      error: isSet(object.Error) ? Any.fromJSON(object.Error) : undefined,
+      data: isSet(object.Data) ? bytesFromBase64(object.Data) : new Uint8Array(0),
+      events: globalThis.Array.isArray(object?.Events) ? object.Events.map((e: any) => Any.fromJSON(e)) : [],
+      log: isSet(object.Log) ? globalThis.String(object.Log) : "",
+      info: isSet(object.Info) ? globalThis.String(object.Info) : "",
     };
   },
 

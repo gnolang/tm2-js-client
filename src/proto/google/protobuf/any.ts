@@ -181,11 +181,7 @@ export const Any: MessageFns<Any> = {
 
   fromJSON(object: any): Any {
     return {
-      type_url: isSet(object.typeUrl)
-        ? globalThis.String(object.typeUrl)
-        : isSet(object.type_url)
-        ? globalThis.String(object.type_url)
-        : "",
+      type_url: isSet(object.type_url) ? globalThis.String(object.type_url) : "",
       value: isSet(object.value) ? bytesFromBase64(object.value) : new Uint8Array(0),
     };
   },
@@ -193,7 +189,7 @@ export const Any: MessageFns<Any> = {
   toJSON(message: Any): unknown {
     const obj: any = {};
     if (message.type_url !== undefined) {
-      obj.typeUrl = message.type_url;
+      obj.type_url = message.type_url;
     }
     if (message.value !== undefined) {
       obj.value = base64FromBytes(message.value);
