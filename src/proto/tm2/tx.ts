@@ -205,26 +205,18 @@ export const TxFee: MessageFns<TxFee> = {
 
   fromJSON(object: any): TxFee {
     return {
-      gas_wanted: isSet(object.gasWanted)
-        ? BigInt(object.gasWanted)
-        : isSet(object.gas_wanted)
-        ? BigInt(object.gas_wanted)
-        : 0n,
-      gas_fee: isSet(object.gasFee)
-        ? globalThis.String(object.gasFee)
-        : isSet(object.gas_fee)
-        ? globalThis.String(object.gas_fee)
-        : "",
+      gas_wanted: isSet(object.gas_wanted) ? BigInt(object.gas_wanted) : 0n,
+      gas_fee: isSet(object.gas_fee) ? globalThis.String(object.gas_fee) : "",
     };
   },
 
   toJSON(message: TxFee): unknown {
     const obj: any = {};
     if (message.gas_wanted !== undefined) {
-      obj.gasWanted = message.gas_wanted.toString();
+      obj.gas_wanted = message.gas_wanted.toString();
     }
     if (message.gas_fee !== undefined) {
-      obj.gasFee = message.gas_fee;
+      obj.gas_fee = message.gas_fee;
     }
     return obj;
   },
@@ -289,11 +281,7 @@ export const TxSignature: MessageFns<TxSignature> = {
 
   fromJSON(object: any): TxSignature {
     return {
-      pub_key: isSet(object.pubKey)
-        ? Any.fromJSON(object.pubKey)
-        : isSet(object.pub_key)
-        ? Any.fromJSON(object.pub_key)
-        : undefined,
+      pub_key: isSet(object.pub_key) ? Any.fromJSON(object.pub_key) : undefined,
       signature: isSet(object.signature) ? bytesFromBase64(object.signature) : new Uint8Array(0),
     };
   },
@@ -301,7 +289,7 @@ export const TxSignature: MessageFns<TxSignature> = {
   toJSON(message: TxSignature): unknown {
     const obj: any = {};
     if (message.pub_key !== undefined) {
-      obj.pubKey = Any.toJSON(message.pub_key);
+      obj.pub_key = Any.toJSON(message.pub_key);
     }
     if (message.signature !== undefined) {
       obj.signature = base64FromBytes(message.signature);

@@ -7,7 +7,11 @@ import {
 
 import {
   CompactBitArray,
-} from "./multisig.js";
+} from "../src/proto/tm2/multisig.js";
+import {
+  compactBitArrayFromAmino,
+  compactBitArrayToAmino,
+} from "../src/utility/compact-bit-array.js";
 
 describe("TestMarshalCompactBitArrayAmino", () => {
   const testCases = [
@@ -44,15 +48,22 @@ describe("TestMarshalCompactBitArrayAmino", () => {
   test.each(testCases)("$marshalledBA", async ({
     marshalledBA, hexOutput,
   }) => {
-    // Parse JSON into CompactBitArray
-    const jsonData = JSON.parse(marshalledBA);
-    const bA = CompactBitArray.fromJSON(jsonData);
+    const aminoString: string | null = JSON.parse(marshalledBA);
+    const bA = compactBitArrayFromAmino(aminoString);
 
-    // Marshal using Amino
     const bz = CompactBitArray.encode(bA).finish();
 
-    // Convert bytes to hex and compare
     const actualHex = bytesToHex(bz);
     expect(actualHex).toBe(hexOutput);
+  });
+});
+
+describe("compactBitArrayToAmino", () => {
+  test("round-trips through amino string", () => {
+    const cases = [null, "_", "x", "xx___", "xx______x", "xx_____________x"];
+    for (const amino of cases) {
+      const cba = compactBitArrayFromAmino(amino);
+      expect(compactBitArrayToAmino(cba)).toBe(amino);
+    }
   });
 });

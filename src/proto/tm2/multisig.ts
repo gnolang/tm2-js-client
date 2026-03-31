@@ -79,12 +79,8 @@ export const PubKeyMultisig: MessageFns<PubKeyMultisig> = {
 
   fromJSON(object: any): PubKeyMultisig {
     return {
-      k: isSet(object.threshold) ? BigInt(object.threshold) : isSet(object.k) ? BigInt(object.k) : 0n,
-      pub_keys: globalThis.Array.isArray(object?.pubkeys)
-        ? object.pubkeys.map((e: any) => Any.fromJSON(e))
-        : globalThis.Array.isArray(object?.pub_keys)
-        ? object.pub_keys.map((e: any) => Any.fromJSON(e))
-        : [],
+      k: isSet(object.threshold) ? BigInt(object.threshold) : 0n,
+      pub_keys: globalThis.Array.isArray(object?.pubkeys) ? object.pubkeys.map((e: any) => Any.fromJSON(e)) : [],
     };
   },
 
@@ -159,11 +155,7 @@ export const Multisignature: MessageFns<Multisignature> = {
 
   fromJSON(object: any): Multisignature {
     return {
-      bit_array: isSet(object.bitArray)
-        ? CompactBitArray.fromJSON(object.bitArray)
-        : isSet(object.bit_array)
-        ? CompactBitArray.fromJSON(object.bit_array)
-        : undefined,
+      bit_array: isSet(object.bit_array) ? CompactBitArray.fromJSON(object.bit_array) : undefined,
       sigs: globalThis.Array.isArray(object?.sigs) ? object.sigs.map((e: any) => bytesFromBase64(e)) : [],
     };
   },
@@ -171,7 +163,7 @@ export const Multisignature: MessageFns<Multisignature> = {
   toJSON(message: Multisignature): unknown {
     const obj: any = {};
     if (message.bit_array !== undefined) {
-      obj.bitArray = CompactBitArray.toJSON(message.bit_array);
+      obj.bit_array = CompactBitArray.toJSON(message.bit_array);
     }
     if (message.sigs?.length) {
       obj.sigs = message.sigs.map((e) => base64FromBytes(e));
@@ -240,23 +232,9 @@ export const CompactBitArray: MessageFns<CompactBitArray> = {
   },
 
   fromJSON(object: any): CompactBitArray {
-    if (object === null || object === undefined) {
-      return createBaseCompactBitArray();
-    }
-    if (typeof object === 'string') {
-      return compactBitArrayFromAminoString(object);
-    }
     return {
-      extra_bits_stored: isSet(object.extra_bits)
-        ? globalThis.Number(object.extra_bits)
-        : isSet(object.extra_bits_stored)
-        ? globalThis.Number(object.extra_bits_stored)
-        : 0,
-      elems: isSet(object.bits)
-        ? bytesFromBase64(object.bits)
-        : isSet(object.elems)
-        ? bytesFromBase64(object.elems)
-        : new Uint8Array(0),
+      extra_bits_stored: isSet(object.extra_bits) ? globalThis.Number(object.extra_bits) : 0,
+      elems: isSet(object.bits) ? bytesFromBase64(object.bits) : new Uint8Array(0),
     };
   },
 
@@ -281,19 +259,6 @@ export const CompactBitArray: MessageFns<CompactBitArray> = {
     return message;
   },
 };
-
-function compactBitArrayFromAminoString(s: string): CompactBitArray {
-  const n = s.length;
-  const extra_bits_stored = n % 8;
-  const numBytes = Math.ceil(n / 8);
-  const elems = new Uint8Array(numBytes);
-  for (let i = 0; i < n; i++) {
-    if (s[i] === 'x') {
-      elems[Math.floor(i / 8)] |= 1 << (7 - (i % 8));
-    }
-  }
-  return { extra_bits_stored, elems };
-}
 
 function bytesFromBase64(b64: string): Uint8Array {
   if ((globalThis as any).Buffer) {
