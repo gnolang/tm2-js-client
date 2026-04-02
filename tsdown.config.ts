@@ -5,6 +5,7 @@ import {
 export default defineConfig([
   {
     entry: ["./src/index.ts"],
+    treeshake: false,
     unbundle: true,
     attw: true,
     platform: "node",
@@ -18,6 +19,7 @@ export default defineConfig([
   },
   {
     entry: ["./src/index.ts"],
+    treeshake: false,
     unbundle: true,
     attw: true,
     platform: "node",
