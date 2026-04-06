@@ -41,7 +41,7 @@
     "tsdown": "^0.21.7",
     "type-fest": "^5.5.0",
     "typescript": "^6.0.2",
-    "typescript-eslint": "^8.57.2",
+    "typescript-eslint": "^8.58.0",
     "vitest": "^4.1.2",
     "vitest-websocket-mock": "^0.5.0"
   },
