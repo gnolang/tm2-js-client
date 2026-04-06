@@ -34,7 +34,7 @@
     "@types/node": "^25.5.0",
     "@types/ws": "^8.18.1",
     "@vitest/coverage-istanbul": "^4.1.2",
-    "eslint": "^10.1.0",
+    "eslint": "^10.2.0",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "globals": "^17.4.0",
     "ts-proto": "^2.11.6",
