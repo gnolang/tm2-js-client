@@ -29,6 +29,7 @@
   "type": "module",
   "devDependencies": {
     "@arethetypeswrong/core": "^0.18.5",
+    "@changesets/cli": "^2.31.1",
     "@eslint/js": "^10.0.1",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@types/node": "^26.2.0",
