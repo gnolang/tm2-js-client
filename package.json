@@ -70,7 +70,7 @@
     "prepublishOnly": "pnpm lint",
     "changeset": "changeset",
     "changeset:status": "changeset status",
-    "version": "changeset version",
+    "version:packages": "changeset version",
     "release": "pnpm build && changeset publish"
   },
   "packageManager": "pnpm@11.21.0",
