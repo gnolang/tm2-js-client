@@ -10,6 +10,10 @@ import {
 } from "@cosmjs/crypto";
 import crypto from "crypto";
 
+import {
+  TxSignCoin,
+} from "../types/index.js";
+
 /**
  * Generates the HD path, for the specified index, in the form 'm/44'/118'/0'/0/i',
  * where 'i' is the account index
@@ -30,6 +34,35 @@ export const generateEntropy = (size?: number): Uint8Array => {
   crypto.randomFillSync(array);
 
   return array;
+};
+
+/**
+ * Parses a coin string in the format <amount (decimal)><denomination>
+ * into the signature payload coin shape. A zero or empty coin
+ * yields an empty list
+ * @param {string} coin the coin string, ex. 1000000ugnot
+ */
+export const parseSignCoin = (coin: string): TxSignCoin[] => {
+  const match = /^(\d+)([a-zA-Z][a-zA-Z0-9/._-]*)$/.exec(coin.trim());
+  if (!match) {
+    if (coin.trim() === "") {
+      return [];
+    }
+
+    throw new Error(`invalid coin format: ${coin}`);
+  }
+
+  const [, amount, denom] = match;
+  if (/^0+$/.test(amount)) {
+    return [];
+  }
+
+  return [
+    {
+      denom,
+      amount: amount.replace(/^0+/, ""),
+    },
+  ];
 };
 
 interface keyPair {

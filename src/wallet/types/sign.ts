@@ -11,13 +11,13 @@ export interface TxSignPayload {
   // the sequence number of the
   // account that's signing (decimal)
   sequence: string
-  // the fee of the transaction
+  // the fee of the transaction, 
+  // in the shape accepted by the Ledger Cosmos app
   fee: {
-    // gas price of the transaction
-    // in the format <amount (decimal)><denomination>
-    gas_fee: string
+    // gas fee coins of the transaction
+    amount: TxSignCoin[]
     // gas limit of the transaction (decimal)
-    gas_wanted: string
+    gas: string
   }
   // the messages associated
   // with the transaction.
@@ -29,6 +29,16 @@ export interface TxSignPayload {
   msgs: any[]
   // the transaction memo
   memo: string
+}
+
+/**
+ * A coin as it appears in the signature payload
+ */
+export interface TxSignCoin {
+  // the coin denomination
+  denom: string
+  // the coin amount (decimal)
+  amount: string
 }
 
 export const Secp256k1PubKeyType = "/tm.PubKeySecp256k1";

@@ -34,6 +34,7 @@ import {
   defaultAddressPrefix,
   generateEntropy,
   generateKeyPair,
+  parseSignCoin,
 } from "./utility/index.js";
 import {
   SignTransactionOptions, Wallet,
@@ -189,7 +190,7 @@ describe("Wallet", () => {
     const mockTx = {
       signatures: [],
       fee: {
-        gas_fee: "10",
+        gas_fee: "10ugnot",
         gas_wanted: 10n,
       },
       messages: [],
@@ -251,7 +252,7 @@ describe("Wallet", () => {
     const mockTx = {
       signatures: [],
       fee: {
-        gas_fee: "10",
+        gas_fee: "10ugnot",
         gas_wanted: 10n,
       },
       messages: [],
@@ -315,11 +316,66 @@ describe("Wallet", () => {
     expect(sig.signature).not.toBeNull();
   });
 
+  test("signTransaction payload is Ledger compatible", async () => {
+    const mockTx = {
+      signatures: [],
+      fee: {
+        gas_fee: "1000000ugnot",
+        gas_wanted: 200000n,
+      },
+      messages: [],
+      memo: "hello",
+    } as unknown as Tx;
+
+    const mockStatus = {
+      node_info: {
+        network: "dev",
+      },
+    } as unknown as Status;
+
+    const mockProvider = {
+      getStatus: vi.fn().mockResolvedValue(mockStatus),
+    } as unknown as JSONRPCProvider;
+
+    const wallet: Wallet = await Wallet.createRandom();
+    wallet.connect(mockProvider);
+
+    const signSpy = vi.spyOn(wallet.getSigner(), "signData");
+
+    const signedTx: Tx = await wallet.signTransaction(
+      mockTx,
+      () => null as unknown as unknown[],
+      {
+        accountNumber: "42",
+        sequence: "7",
+      },
+    );
+    expect(signedTx.signatures).toHaveLength(1);
+
+    // Pinned to the payload rendered by tm2 (std.GetSignaturePayload)
+    const expected
+      = "{\"account_number\":\"42\",\"chain_id\":\"dev\",\"fee\":{\"amount\":[{\"amount\":\"1000000\",\"denom\":\"ugnot\"}],\"gas\":\"200000\"},\"memo\":\"hello\",\"msgs\":null,\"sequence\":\"7\"}";
+    const signBytes = signSpy.mock.calls[0][0] as Uint8Array;
+    expect(Buffer.from(signBytes).toString("utf8")).toBe(expected);
+  });
+
+  test("parseSignCoin", () => {
+    expect(parseSignCoin("1000000ugnot")).toEqual([
+      {
+        denom: "ugnot",
+        amount: "1000000",
+      },
+    ]);
+    expect(parseSignCoin("0ugnot")).toEqual([]);
+    expect(parseSignCoin("")).toEqual([]);
+    expect(() => parseSignCoin("ugnot")).toThrow();
+  });
+
   test("sendTransaction", async () => {
     const mockTx = {
       signatures: [],
       fee: {
-        gas_fee: "10",
+        gas_fee: "10ugnot",
         gas_wanted: 10n,
       },
       messages: [],
