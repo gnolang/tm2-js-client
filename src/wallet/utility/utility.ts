@@ -36,31 +36,44 @@ export const generateEntropy = (size?: number): Uint8Array => {
   return array;
 };
 
+// Mirrors tm2/pkg/std/coin.go: reAmt, reSpc and reDnmString
+const reSignCoin = /^(\d+)\s*([a-z/][a-z0-9_.:/-]{2,})$/;
+
+// std.Coin amounts are int64
+const maxCoinAmount = 9223372036854775807n;
+
 /**
  * Parses a coin string in the format <amount (decimal)><denomination>
- * into the signature payload coin shape. A zero or empty coin
- * yields an empty list
- * @param {string} coin the coin string, ex. 1000000ugnot
+ * into the signature payload coin shape, following the same rules as
+ * std.ParseCoin on the chain. A missing, empty or zero coin yields
+ * an empty list
+ * @param {string} [coin] the coin string, ex. 1000000ugnot
  */
-export const parseSignCoin = (coin: string): TxSignCoin[] => {
-  const match = /^(\d+)([a-zA-Z][a-zA-Z0-9/._-]*)$/.exec(coin.trim());
-  if (!match) {
-    if (coin.trim() === "") {
-      return [];
-    }
+export const parseSignCoin = (coin?: string): TxSignCoin[] => {
+  const trimmed = (coin ?? "").trim();
+  if (trimmed === "") {
+    return [];
+  }
 
+  const match = reSignCoin.exec(trimmed);
+  if (!match) {
     throw new Error(`invalid coin format: ${coin}`);
   }
 
-  const [, amount, denom] = match;
-  if (/^0+$/.test(amount)) {
+  const [, rawAmount, denom] = match;
+  const amount = BigInt(rawAmount);
+  if (amount > maxCoinAmount) {
+    throw new Error(`coin amount out of range: ${coin}`);
+  }
+
+  if (amount === 0n) {
     return [];
   }
 
   return [
     {
       denom,
-      amount: amount.replace(/^0+/, ""),
+      amount: amount.toString(10),
     },
   ];
 };

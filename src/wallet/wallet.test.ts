@@ -360,15 +360,36 @@ describe("Wallet", () => {
   });
 
   test("parseSignCoin", () => {
-    expect(parseSignCoin("1000000ugnot")).toEqual([
+    const ugnot = (amount: string) => [
       {
         denom: "ugnot",
-        amount: "1000000",
+        amount,
+      },
+    ];
+
+    expect(parseSignCoin("1000000ugnot")).toEqual(ugnot("1000000"));
+    expect(parseSignCoin("0001000000ugnot")).toEqual(ugnot("1000000"));
+    expect(parseSignCoin("1000000 ugnot")).toEqual(ugnot("1000000"));
+    expect(parseSignCoin("9223372036854775807ugnot")).toEqual(
+      ugnot("9223372036854775807"),
+    );
+    expect(parseSignCoin("5/gno.land/r/demo/foo:tok")).toEqual([
+      {
+        denom: "/gno.land/r/demo/foo:tok",
+        amount: "5",
       },
     ]);
+
     expect(parseSignCoin("0ugnot")).toEqual([]);
     expect(parseSignCoin("")).toEqual([]);
-    expect(() => parseSignCoin("ugnot")).toThrow();
+    expect(parseSignCoin(undefined)).toEqual([]);
+
+    expect(() => parseSignCoin("ugnot")).toThrow("invalid coin format");
+    expect(() => parseSignCoin("1000000UGNOT")).toThrow("invalid coin format");
+    expect(() => parseSignCoin("5ab")).toThrow("invalid coin format");
+    expect(() => parseSignCoin("9223372036854775808ugnot")).toThrow(
+      "coin amount out of range",
+    );
   });
 
   test("sendTransaction", async () => {

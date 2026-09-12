@@ -11,7 +11,7 @@ export interface TxSignPayload {
   // the sequence number of the
   // account that's signing (decimal)
   sequence: string
-  // the fee of the transaction, 
+  // the fee of the transaction,
   // in the shape accepted by the Ledger Cosmos app
   fee: {
     // gas fee coins of the transaction
