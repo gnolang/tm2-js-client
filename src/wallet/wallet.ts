@@ -332,6 +332,7 @@ export class Wallet {
         value: PubKeySecp256k1.encode(wrappedKey).finish(),
       },
       signature: await this.getSigner().signData(signBytes),
+      session_addr: "",
     };
 
     // Append the signature

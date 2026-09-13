@@ -37,6 +37,8 @@ export interface TxSignature {
     | undefined;
   /** the signature */
   signature: Uint8Array;
+  /** session account address (empty for master-key signatures) */
+  session_addr: string;
 }
 
 export interface PubKeySecp256k1 {
@@ -233,7 +235,7 @@ export const TxFee: MessageFns<TxFee> = {
 };
 
 function createBaseTxSignature(): TxSignature {
-  return { pub_key: undefined, signature: new Uint8Array(0) };
+  return { pub_key: undefined, signature: new Uint8Array(0), session_addr: "" };
 }
 
 export const TxSignature: MessageFns<TxSignature> = {
@@ -243,6 +245,9 @@ export const TxSignature: MessageFns<TxSignature> = {
     }
     if (message.signature.length !== 0) {
       writer.uint32(18).bytes(message.signature);
+    }
+    if (message.session_addr !== "") {
+      writer.uint32(26).string(message.session_addr);
     }
     return writer;
   },
@@ -270,6 +275,14 @@ export const TxSignature: MessageFns<TxSignature> = {
           message.signature = reader.bytes();
           continue;
         }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.session_addr = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -283,6 +296,7 @@ export const TxSignature: MessageFns<TxSignature> = {
     return {
       pub_key: isSet(object.pub_key) ? Any.fromJSON(object.pub_key) : undefined,
       signature: isSet(object.signature) ? bytesFromBase64(object.signature) : new Uint8Array(0),
+      session_addr: isSet(object.session_addr) ? globalThis.String(object.session_addr) : "",
     };
   },
 
@@ -293,6 +307,9 @@ export const TxSignature: MessageFns<TxSignature> = {
     }
     if (message.signature !== undefined) {
       obj.signature = base64FromBytes(message.signature);
+    }
+    if (message.session_addr !== undefined) {
+      obj.session_addr = message.session_addr;
     }
     return obj;
   },
@@ -306,6 +323,7 @@ export const TxSignature: MessageFns<TxSignature> = {
       ? Any.fromPartial(object.pub_key)
       : undefined;
     message.signature = object.signature ?? new Uint8Array(0);
+    message.session_addr = object.session_addr ?? "";
     return message;
   },
 };
