@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.0
+
+### Major Changes
+
+- [#287](https://github.com/gnolang/tm2-js-client/pull/287) [`1876fb4`](https://github.com/gnolang/tm2-js-client/commit/1876fb4ffd9d16edac96ac8b7d0b21602c5cc71c) Thanks [@clockworkgr](https://github.com/clockworkgr)! - Render the signature payload fee in the shape the Ledger Cosmos app accepts (`{"amount":[{"amount","denom"}],"gas"}`), matching gnolang/gno#6173. This changes the signed bytes for every signer; nodes without gnolang/gno#6173 reject transactions signed by this version. `gas_fee` is now parsed with the same rules as `std.ParseCoin` on the chain.
+
 ## 2.1.0
 
 ### Minor Changes
