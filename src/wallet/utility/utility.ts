@@ -10,6 +10,10 @@ import {
 } from "@cosmjs/crypto";
 import crypto from "crypto";
 
+import {
+  TxSignCoin,
+} from "../types/index.js";
+
 /**
  * Generates the HD path, for the specified index, in the form 'm/44'/118'/0'/0/i',
  * where 'i' is the account index
@@ -30,6 +34,48 @@ export const generateEntropy = (size?: number): Uint8Array => {
   crypto.randomFillSync(array);
 
   return array;
+};
+
+// Mirrors tm2/pkg/std/coin.go: reAmt, reSpc and reDnmString
+const reSignCoin = /^(\d+)\s*([a-z/][a-z0-9_.:/-]{2,})$/;
+
+// std.Coin amounts are int64
+const maxCoinAmount = 9223372036854775807n;
+
+/**
+ * Parses a coin string in the format <amount (decimal)><denomination>
+ * into the signature payload coin shape, following the same rules as
+ * std.ParseCoin on the chain. A missing, empty or zero coin yields
+ * an empty list
+ * @param {string} [coin] the coin string, ex. 1000000ugnot
+ */
+export const parseSignCoin = (coin?: string): TxSignCoin[] => {
+  const trimmed = (coin ?? "").trim();
+  if (trimmed === "") {
+    return [];
+  }
+
+  const match = reSignCoin.exec(trimmed);
+  if (!match) {
+    throw new Error(`invalid coin format: ${coin}`);
+  }
+
+  const [, rawAmount, denom] = match;
+  const amount = BigInt(rawAmount);
+  if (amount > maxCoinAmount) {
+    throw new Error(`coin amount out of range: ${coin}`);
+  }
+
+  if (amount === 0n) {
+    return [];
+  }
+
+  return [
+    {
+      denom,
+      amount: amount.toString(10),
+    },
+  ];
 };
 
 interface keyPair {

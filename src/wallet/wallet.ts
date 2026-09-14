@@ -33,10 +33,9 @@ import {
   encodeCharacterSet,
   generateEntropy,
   generateKeyPair,
-  stringToUTF8,
-} from "./utility/index.js";
-import {
+  parseSignCoin,
   sortedJsonStringify,
+  stringToUTF8,
 } from "./utility/index.js";
 export interface SignTransactionOptions {
   accountNumber?: string
@@ -306,8 +305,8 @@ export class Wallet {
       account_number: accountNumber,
       sequence: accountSequence,
       fee: {
-        gas_fee: tx.fee.gas_fee,
-        gas_wanted: tx.fee.gas_wanted.toString(10),
+        amount: parseSignCoin(tx.fee.gas_fee),
+        gas: tx.fee.gas_wanted.toString(10),
       },
       msgs: decodeTxMessages(tx.messages), // unrolled message objects
       memo: tx.memo,
