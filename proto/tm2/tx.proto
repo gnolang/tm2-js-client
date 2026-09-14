@@ -27,6 +27,8 @@ message TxSignature {
   google.protobuf.Any pub_key = 1;
   // the signature
   bytes signature = 2;
+  // session account address (empty for master-key signatures)
+  string session_addr = 3;
 }
 
 message PubKeySecp256k1 {
