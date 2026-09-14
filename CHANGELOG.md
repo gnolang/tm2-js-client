@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.0
+
+### Minor Changes
+
+- [#284](https://github.com/gnolang/tm2-js-client/pull/284) [`e518a06`](https://github.com/gnolang/tm2-js-client/commit/e518a06751eeb4246772b8e6613fe34731c3f50f) Thanks [@jinoosss](https://github.com/jinoosss)! - Sync `tm2/tx.proto` with upstream `std.Signature`: add the `session_addr` field (introduced by gno account sessions) to `TxSignature`, and regenerate the protobuf bindings. Master-key signatures keep an empty `session_addr`, so the wire encoding is unchanged for existing transactions.
+
 ## 2.0.5
 
 ### Patch Changes
