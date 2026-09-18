@@ -14,3 +14,8 @@ allowBuilds:
   esbuild: true
   protobufjs: true
 minimumReleaseAge: 720
+# @gnolang/* packages are published by us, so a release that picks up one we
+# just shipped (e.g. a tm2-rpc bump) shouldn't wait out the 12h cutoff.
+# The cutoff still applies to every other package.
+minimumReleaseAgeExclude:
+  - "@gnolang/*"

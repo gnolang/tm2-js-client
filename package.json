@@ -52,7 +52,7 @@
     "@cosmjs/amino": "0.38.1",
     "@cosmjs/crypto": "0.38.1",
     "@cosmjs/ledger-amino": "0.38.1",
-    "@gnolang/tm2-rpc": "^1.0.0",
+    "@gnolang/tm2-rpc": "^2.0.1",
     "@noble/hashes": "^2.3.0",
     "axios": "^1.19.0",
     "protobufjs": "^8.7.2",

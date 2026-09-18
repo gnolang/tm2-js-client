@@ -1,4 +1,5 @@
 import type {
+  AbciError,
   AbciQueryResponse,
   BlockResponse,
   BlockResultsResponse,
@@ -40,14 +41,24 @@ export const toBase64 = (data: Uint8Array): string => {
   return Buffer.from(data).toString("base64");
 };
 
+/**
+ * Flattens an amino-JSON encoded ABCI error into the string map this package exposes.
+ * Beyond "@type", an error carries fields that depend on its concrete type, so only
+ * the string ones are kept.
+ */
+const adaptAbciError = (error: AbciError): {
+  [key: string]: string
+} => {
+  return Object.fromEntries(
+    Object.entries(error).filter(([, value]) => typeof value === "string"),
+  ) as {
+    [key: string]: string
+  };
+};
+
 const adaptResponseBase = (rb: ResponseBase): ABCIResponseBase => {
   return {
-    Error: rb.error?.["@type"]
-      ? {
-        "@type": rb.error["@type"],
-        value: rb.error.value,
-      }
-      : null,
+    Error: rb.error ? adaptAbciError(rb.error) : null,
     Data: rb.data.length > 0 ? toBase64(rb.data) : null,
     Events: rb.events.length > 0 ? JSON.stringify(rb.events) : null,
     Log: rb.log,
@@ -281,14 +292,9 @@ export const adaptBroadcastTxSyncResponse = (
   r: BroadcastTxSyncResponse,
 ): BroadcastTxSyncResult => {
   return {
-    error: r.responseBase.error?.["@type"]
-      ? {
-        "@type": r.responseBase.error["@type"],
-        value: r.responseBase.error.value,
-      }
-      : null,
-    data: r.responseBase.data.length > 0 ? toBase64(r.responseBase.data) : null,
-    Log: r.responseBase.log,
+    error: r.error ? adaptAbciError(r.error) : null,
+    data: r.data.length > 0 ? toBase64(r.data) : null,
+    Log: r.log,
     hash: toHexString(r.hash),
   };
 };

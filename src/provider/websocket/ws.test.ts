@@ -46,10 +46,7 @@ import {
 
 // Helper to create an empty ResponseBase
 const emptyResponseBase = (overrides?: Partial<ResponseBase>): ResponseBase => ({
-  error: {
-    "@type": "",
-    value: "",
-  },
+  error: null,
   data: new Uint8Array(),
   events: [],
   log: "",
@@ -362,9 +359,9 @@ describe("WS Provider", () => {
     test("broadcastTxSync - success", async () => {
       const mockRpcResponse: BroadcastTxSyncResponse = {
         hash: new Uint8Array([0x68, 0x61, 0x73, 0x68]),
-        responseBase: emptyResponseBase(),
-        gasWanted: 0n,
-        gasUsed: 0n,
+        error: null,
+        data: new Uint8Array(),
+        log: "",
       };
 
       vi.mocked(mockClient.broadcastTxSync).mockResolvedValue(mockRpcResponse);
@@ -380,15 +377,11 @@ describe("WS Provider", () => {
     test("broadcastTxSync - error", async () => {
       const mockRpcResponse: BroadcastTxSyncResponse = {
         hash: new Uint8Array(),
-        responseBase: emptyResponseBase({
-          error: {
-            "@type": mockError,
-            value: "",
-          },
-          log: mockLog,
-        }),
-        gasWanted: 0n,
-        gasUsed: 0n,
+        error: {
+          "@type": mockError,
+        },
+        data: new Uint8Array(),
+        log: mockLog,
       };
 
       vi.mocked(mockClient.broadcastTxSync).mockResolvedValue(mockRpcResponse);
