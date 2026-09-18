@@ -37,7 +37,9 @@ export const generateEntropy = (size?: number): Uint8Array => {
 };
 
 // Mirrors tm2/pkg/std/coin.go: reAmt, reSpc and reDnmString
-const reSignCoin = /^(\d+)\s*([a-z/][a-z0-9_.:/-]{2,})$/;
+const reSignCoin = /^(\d+)[ \t\n\v\f\r]*([a-z/][a-z0-9_.:/-]{2,})$/;
+// std.MaxDenomLength: '/' + 256-byte package path + ':' + 16-byte base name.
+const maxCoinDenomLength = 274;
 
 // std.Coin amounts are int64
 const maxCoinAmount = 9223372036854775807n;
@@ -50,9 +52,15 @@ const maxCoinAmount = 9223372036854775807n;
  * @param {string} [coin] the coin string, ex. 1000000ugnot
  */
 export const parseSignCoin = (coin?: string): TxSignCoin[] => {
-  const trimmed = (coin ?? "").trim();
-  if (trimmed === "") {
+  if (coin == null || coin === "") {
     return [];
+  }
+
+  // Go strings.TrimSpace uses Unicode White_Space; JS trim also accepts BOM.
+  const trimmed = coin.replace(/^\p{White_Space}+|\p{White_Space}+$/gu, "");
+  // ParseCoin caps the trimmed expression at MaxDenomLength + 20 bytes.
+  if (Buffer.byteLength(trimmed) > maxCoinDenomLength + 20) {
+    throw new Error(`invalid coin format: ${coin}`);
   }
 
   const match = reSignCoin.exec(trimmed);
@@ -64,6 +72,9 @@ export const parseSignCoin = (coin?: string): TxSignCoin[] => {
   const amount = BigInt(rawAmount);
   if (amount > maxCoinAmount) {
     throw new Error(`coin amount out of range: ${coin}`);
+  }
+  if (denom.length > maxCoinDenomLength) {
+    throw new Error(`invalid coin format: ${coin}`);
   }
 
   if (amount === 0n) {
