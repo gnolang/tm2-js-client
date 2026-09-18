@@ -50,10 +50,9 @@ export const extractBalanceFromResponse = (
   }
 
   // Find the correct denomination
-  const pattern = new RegExp(`^(\\d+)${denomination}$`);
   for (const balance of balances) {
-    const match = balance.match(pattern);
-    if (match) {
+    const match = balance.match(/^(\d+)(.*)$/);
+    if (match?.[2] === denomination) {
       return parseInt(match[1], 10);
     }
   }

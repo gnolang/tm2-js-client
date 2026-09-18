@@ -499,6 +499,19 @@ describe("JSON-RPC Provider", () => {
       expect(mockClient.abciQuery).toHaveBeenCalled();
       expect(balance).toBe(expected);
     });
+
+    test("returns the balance of the exact denomination", async () => {
+      vi.mocked(mockClient.abciQuery).mockResolvedValue({
+        responseBase: emptyResponseBase({
+          data: Buffer.from("\"7abc-def,11abc.def\""),
+        }),
+        key: new Uint8Array(),
+        value: new Uint8Array(),
+        height: 0,
+      });
+
+      expect(await provider.getBalance("address", "abc.def")).toBe(11);
+    });
   });
 
   describe("getSequence", () => {
