@@ -179,8 +179,8 @@ importers:
         specifier: 0.38.1
         version: 0.38.1
       '@gnolang/tm2-rpc':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^2.0.1
+        version: 2.0.1
       '@noble/hashes':
         specifier: ^2.3.0
         version: 2.4.0
@@ -483,8 +483,8 @@ packages:
     resolution: {integrity: sha512-IkO+/KEUvwbVpiURZg+P7zF74z5Jxe0UgJxVni+RtoHQ6IZieXaO02kmadomap/q+l6bc/jdPGGqTjhuZnuz1Q==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
 
-  '@gnolang/tm2-rpc@1.0.0':
-    resolution: {integrity: sha512-iK+3FXYAGB8FAXAHodbCWyas+Akb9gag+EoVHtUP2Ue2DGt2P49pObbQL0QGDiIjlpi5wlanHHjQvQWOGEi0VA==}
+  '@gnolang/tm2-rpc@2.0.1':
+    resolution: {integrity: sha512-92VuF0lCp7QYiMSqk/MmPZQF3R5ILjC3qDoNYLx8ESCH38VfN59n2Zcjadn7kiWuRQu4nsjBJ0iibFn/HAiaGg==}
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -2423,7 +2423,7 @@ snapshots:
       '@eslint/core': 1.2.1
       levn: 0.4.1
 
-  '@gnolang/tm2-rpc@1.0.0':
+  '@gnolang/tm2-rpc@2.0.1':
     dependencies:
       '@cosmjs/crypto': 0.38.1
       '@cosmjs/encoding': 0.38.1
