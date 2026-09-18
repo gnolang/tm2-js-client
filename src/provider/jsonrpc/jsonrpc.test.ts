@@ -499,6 +499,34 @@ describe("JSON-RPC Provider", () => {
       expect(mockClient.abciQuery).toHaveBeenCalled();
       expect(balance).toBe(expected);
     });
+
+    test("returns the balance of the exact denomination", async () => {
+      vi.mocked(mockClient.abciQuery).mockResolvedValue({
+        responseBase: emptyResponseBase({
+          data: Buffer.from("\"7abc-def,11abc.def\""),
+        }),
+        key: new Uint8Array(),
+        value: new Uint8Array(),
+        height: 0,
+      });
+
+      expect(await provider.getBalance("address", "abc.def")).toBe(11);
+    });
+
+    test("handles a large malformed balance promptly", async () => {
+      vi.mocked(mockClient.abciQuery).mockResolvedValue({
+        responseBase: emptyResponseBase({
+          data: Buffer.from(`"${"9".repeat(100_000)}\nX"`),
+        }),
+        key: new Uint8Array(),
+        value: new Uint8Array(),
+        height: 0,
+      });
+
+      const start = performance.now();
+      expect(await provider.getBalance("address", "atom")).toBe(0);
+      expect(performance.now() - start).toBeLessThan(1_000);
+    });
   });
 
   describe("getSequence", () => {
