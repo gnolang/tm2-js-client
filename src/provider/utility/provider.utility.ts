@@ -51,9 +51,9 @@ export const extractBalanceFromResponse = (
 
   // Find the correct denomination
   for (const balance of balances) {
-    const match = balance.match(/^(\d+)(.*)$/);
-    if (match?.[2] === denomination) {
-      return parseInt(match[1], 10);
+    const denominationStart = balance.search(/\D/);
+    if (denominationStart > 0 && balance.slice(denominationStart) === denomination) {
+      return parseInt(balance.slice(0, denominationStart), 10);
     }
   }
 
