@@ -370,6 +370,13 @@ describe("Wallet", () => {
     expect(parseSignCoin("1000000ugnot")).toEqual(ugnot("1000000"));
     expect(parseSignCoin("0001000000ugnot")).toEqual(ugnot("1000000"));
     expect(parseSignCoin("1000000 ugnot")).toEqual(ugnot("1000000"));
+    expect(parseSignCoin("\u00851ugnot\u0085")).toEqual(ugnot("1"));
+    expect(parseSignCoin(`1${"a".repeat(274)}`)).toEqual([
+      {
+        denom: "a".repeat(274),
+        amount: "1",
+      },
+    ]);
     expect(parseSignCoin("9223372036854775807ugnot")).toEqual(
       ugnot("9223372036854775807"),
     );
@@ -387,6 +394,11 @@ describe("Wallet", () => {
     expect(() => parseSignCoin("ugnot")).toThrow("invalid coin format");
     expect(() => parseSignCoin("1000000UGNOT")).toThrow("invalid coin format");
     expect(() => parseSignCoin("5ab")).toThrow("invalid coin format");
+    expect(() => parseSignCoin("   ")).toThrow("invalid coin format");
+    expect(() => parseSignCoin("1\u00A0ugnot")).toThrow("invalid coin format");
+    expect(() => parseSignCoin("\uFEFF1ugnot")).toThrow("invalid coin format");
+    expect(() => parseSignCoin(`1${"a".repeat(275)}`)).toThrow("invalid coin format");
+    expect(() => parseSignCoin(`${"0".repeat(290)}ugnot`)).toThrow("invalid coin format");
     expect(() => parseSignCoin("9223372036854775808ugnot")).toThrow(
       "coin amount out of range",
     );
