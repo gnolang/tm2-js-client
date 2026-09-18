@@ -1,5 +1,23 @@
 # Changelog
 
+## 3.1.0
+
+### Minor Changes
+
+- [#290](https://github.com/gnolang/tm2-js-client/pull/290) [`2b7507e`](https://github.com/gnolang/tm2-js-client/commit/2b7507eeb71b814ba166196314e118b0b21be317) Thanks [@clockworkgr](https://github.com/clockworkgr)! - Update `@gnolang/tm2-rpc` to 2.x.
+  
+  This fixes validator address decoding, which throws `RangeError: limit: expected safe integer, got Infinity` for anyone whose install resolves `@scure/base` to 2.3.0 or later — currently every fresh install. It affects `status`, `validators`, `genesis` and `dumpConsensusState`.
+  
+  It also picks up tm2-rpc 2.x's decoding fixes: `broadcastTxSync` and `broadcastTxAsync` no longer throw while decoding the node's response, and `blockResults` and `tx` no longer throw on transactions that emit events without a `pkg_path`, such as the `/bank.TransferEvent` emitted for every ugnot transfer.
+  
+  The types this package exposes are unchanged. ABCI errors are still surfaced as a string map, now including any string fields the concrete error type carries beyond `@type`.
+
+### Patch Changes
+
+- [#292](https://github.com/gnolang/tm2-js-client/pull/292) [`6478d7e`](https://github.com/gnolang/tm2-js-client/commit/6478d7e47a685689aa44c3fbea09a21ff8c5505b) Thanks [@notJoon](https://github.com/notJoon)! - Reject transaction fee coins that exceed Gno's length limits or use unsupported whitespace when signing.
+
+- [#293](https://github.com/gnolang/tm2-js-client/pull/293) [`acea29e`](https://github.com/gnolang/tm2-js-client/commit/acea29e8856d6f302b4b18a17fae830a3ea40cf8) Thanks [@notJoon](https://github.com/notJoon)! - Return balances only for the exact requested denomination, including denominations containing dots.
+
 ## 3.0.0
 
 ### Major Changes
