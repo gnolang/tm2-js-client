@@ -2,6 +2,10 @@ on:
   workflow_call:
   workflow_dispatch:
 
+# The job only reads the repository: it checks out, installs and regenerates.
+permissions:
+  contents: read
+
 jobs:
   codegen:
     runs-on: ubuntu-latest
