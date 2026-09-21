@@ -1,0 +1,49 @@
+on:
+  workflow_call:
+  workflow_dispatch:
+
+# The job only reads the repository: it checks out, installs and regenerates.
+permissions:
+  contents: read
+
+jobs:
+  codegen:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 'lts/*'
+          cache: 'pnpm'
+
+      # Pinned: protoc's version ends up in every generated file's banner, and
+      # it supplies the well-known types (google/protobuf/*), so a different
+      # protoc rewrites src/proto/ even when no proto changed. Bumping this is
+      # a deliberate change that regenerates the sources along with it.
+      - name: Install protoc
+        env:
+          PROTOC_VERSION: '33.4'
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/protoc.zip" \
+            "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip"
+          unzip -q "$RUNNER_TEMP/protoc.zip" -d "$RUNNER_TEMP/protoc"
+          echo "$RUNNER_TEMP/protoc/bin" >> "$GITHUB_PATH"
+
+      - name: Install modules
+        run: pnpm install --frozen-lockfile
+
+      - name: Regenerate
+        run: pnpm codegen
+
+      - name: Check that the committed sources match
+        run: |
+          if ! git diff --exit-code -- src/proto; then
+            echo "::error::src/proto/ does not match proto/. Run 'pnpm codegen' and commit the result."
+            exit 1
+          fi
