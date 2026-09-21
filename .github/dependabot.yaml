@@ -20,6 +20,12 @@ updates:
       # ignore all patch upgrades
       - dependency-name: '*'
         update-types: ['version-update:semver-patch']
+      # typescript-eslint does not support TypeScript 7 yet ("typescript-eslint
+      # does not support TS 7.0"), so a major TypeScript bump fails `pnpm lint`
+      # and, because these updates are grouped, blocks everything grouped with
+      # it. Drop this once typescript-eslint supports TS 7.
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
     open-pull-requests-limit: 10
     versioning-strategy: increase
     pull-request-branch-name:
