@@ -1,5 +1,29 @@
 # Changelog
 
+## 3.1.0
+
+### Minor Changes
+
+- [#294](https://github.com/gnolang/tm2-js-client/pull/294) [`affcafa`](https://github.com/gnolang/tm2-js-client/commit/affcafa1a6df9284f3d560d8d2d27f739c1eecdc) Thanks [@notJoon](https://github.com/notJoon)! - Propagate ABCI errors from balance and account queries, and preserve simulation error logs.
+
+- [#297](https://github.com/gnolang/tm2-js-client/pull/297) [`b2f97cf`](https://github.com/gnolang/tm2-js-client/commit/b2f97cf0b6cef92d74e0006b918b783ae818aac4) Thanks [@notJoon](https://github.com/notJoon)! - Implement `Provider.getGasPrice` for any valid TM2 fee denomination. It returns the `{ amount, denom, gas }` gas price (or `null` when the node has no minimum gas price configured) instead of dropping the denomination. ABCI gas price query errors and their node logs are now propagated instead of returning fallback values or parsing errors.
+
+- [#296](https://github.com/gnolang/tm2-js-client/pull/296) [`2c95652`](https://github.com/gnolang/tm2-js-client/commit/2c956523814ab13f1d13387266c5e1fc67d4a091) Thanks [@notJoon](https://github.com/notJoon)! - Declare `getTransaction` on the `Provider` interface so `Provider`-typed callers can fetch committed transactions (previously only available on `BaseTm2Provider`).
+
+- [#290](https://github.com/gnolang/tm2-js-client/pull/290) [`2b7507e`](https://github.com/gnolang/tm2-js-client/commit/2b7507eeb71b814ba166196314e118b0b21be317) Thanks [@clockworkgr](https://github.com/clockworkgr)! - Update `@gnolang/tm2-rpc` to 2.x.
+  
+  This fixes validator address decoding, which throws `RangeError: limit: expected safe integer, got Infinity` for anyone whose install resolves `@scure/base` to 2.3.0 or later — currently every fresh install. It affects `status`, `validators`, `genesis` and `dumpConsensusState`.
+  
+  It also picks up tm2-rpc 2.x's decoding fixes: `broadcastTxSync` and `broadcastTxAsync` no longer throw while decoding the node's response, and `blockResults` and `tx` no longer throw on transactions that emit events without a `pkg_path`, such as the `/bank.TransferEvent` emitted for every ugnot transfer.
+  
+  The types this package exposes are unchanged. ABCI errors are still surfaced as a string map, now including any string fields the concrete error type carries beyond `@type`.
+
+### Patch Changes
+
+- [#292](https://github.com/gnolang/tm2-js-client/pull/292) [`6478d7e`](https://github.com/gnolang/tm2-js-client/commit/6478d7e47a685689aa44c3fbea09a21ff8c5505b) Thanks [@notJoon](https://github.com/notJoon)! - Reject transaction fee coins that exceed Gno's length limits or use unsupported whitespace when signing.
+
+- [#293](https://github.com/gnolang/tm2-js-client/pull/293) [`acea29e`](https://github.com/gnolang/tm2-js-client/commit/acea29e8856d6f302b4b18a17fae830a3ea40cf8) Thanks [@notJoon](https://github.com/notJoon)! - Return balances only for the exact requested denomination, including denominations containing dots.
+
 ## 3.0.0
 
 ### Major Changes
