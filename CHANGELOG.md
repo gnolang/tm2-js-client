@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.1.1
+
+### Patch Changes
+
+- [#298](https://github.com/gnolang/tm2-js-client/pull/298) [`1d18845`](https://github.com/gnolang/tm2-js-client/commit/1d1884525d5b17454ad19dd685e3668c85bf9dff) Thanks [@clockworkgr](https://github.com/clockworkgr)! - Update dependencies: `@gnolang/tm2-rpc` 2.0.2, `@cosmjs/*` 0.39.0, `@bufbuild/protobuf` 2.15.0, `@noble/hashes` 2.4.0, axios 1.20.0, protobufjs 8.8.0 and uuid 14.0.2, along with the build and test toolchain.
+  
+  The public API is unchanged. tsdown 0.23 writes the bundled type declarations with inline `export` modifiers instead of a trailing `export { ... }` block; the exported names are identical and `attw` reports no problems.
+
+- [#300](https://github.com/gnolang/tm2-js-client/pull/300) [`5c93839`](https://github.com/gnolang/tm2-js-client/commit/5c938397bf8403629c9934f0e4c408139c696e73) Thanks [@clockworkgr](https://github.com/clockworkgr)! - Regenerate the protobuf sources with ts-proto 2.12.4, the version the lockfile already resolved; they had been generated with 2.11.6.
+  
+  Every generated `decode()` now guards its recursion depth, throwing `protobuf decode recursion limit exceeded` once a message nests more than 100 levels instead of recursing until the stack overflows. The message types, and encoding and decoding of any realistic payload, are unchanged.
+
 ## 3.1.0
 
 ### Minor Changes
