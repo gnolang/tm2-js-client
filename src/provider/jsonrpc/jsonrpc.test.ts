@@ -25,7 +25,7 @@ import {
   TransactionEndpoint,
 } from "../endpoints.js";
 import {
-  TM2Error,
+  InvalidAddressError, TM2Error,
 } from "../errors/index.js";
 import {
   UnauthorizedErrorMessage,
@@ -52,6 +52,18 @@ const emptyResponseBase = (overrides?: Partial<ResponseBase>): ResponseBase => (
   log: "",
   info: "",
   ...overrides,
+});
+
+const abciErrorResponse = (type: string, log: string): AbciQueryResponse => ({
+  responseBase: emptyResponseBase({
+    error: {
+      "@type": type,
+    },
+    log,
+  }),
+  key: new Uint8Array(),
+  value: new Uint8Array(),
+  height: 0,
 });
 
 // Mock Tm2Client - use vi.hoisted so it's available in the hoisted vi.mock factory
@@ -119,6 +131,19 @@ describe("JSON-RPC Provider", () => {
 
     expect(mockClient.abciQuery).toHaveBeenCalled();
     expect(estimation).toEqual(expectedEstimation);
+  });
+
+  test("estimateGas preserves the ABCI error log", async () => {
+    const tx = Tx.create();
+
+    vi.mocked(mockClient.abciQuery).mockResolvedValue(
+      abciErrorResponse("/std.InternalError", "simulation failed"),
+    );
+
+    await expect(provider.estimateGas(tx)).rejects.toMatchObject({
+      message: "internal error encountered",
+      log: "simulation failed",
+    });
   });
 
   test("getNetwork", async () => {
@@ -480,6 +505,19 @@ describe("JSON-RPC Provider", () => {
 
   describe("getBalance", () => {
     const denomination = "atom";
+    test("rejects an ABCI invalid-address error", async () => {
+      vi.mocked(mockClient.abciQuery).mockResolvedValue(
+        abciErrorResponse("/std.InvalidAddressError", "invalid query address invalid"),
+      );
+
+      const error = await provider
+        .getBalance("invalid", denomination)
+        .catch(e => e);
+
+      expect(error).toBeInstanceOf(InvalidAddressError);
+      expect((error as TM2Error).log).toBe("invalid query address invalid");
+    });
+
     test.each([["\"5gnot,100atom\"", 100], ["\"5universe\"", 0], ["\"\"", 0]])("case %#", async (existing, expected) => {
       const dataBytes = Buffer.from(stringToBase64(existing), "base64");
 
@@ -527,6 +565,32 @@ describe("JSON-RPC Provider", () => {
       expect(await provider.getBalance("address", "atom")).toBe(0);
       expect(performance.now() - start).toBeLessThan(1_000);
     });
+  });
+
+  test.each([
+    {
+      name: "getAccountSequence",
+      query: () => provider.getAccountSequence("invalid"),
+    },
+    {
+      name: "getAccountNumber",
+      query: () => provider.getAccountNumber("invalid"),
+    },
+    {
+      name: "getAccount",
+      query: () => provider.getAccount("invalid"),
+    },
+  ])("$name propagates ABCI query errors", async ({
+    query,
+  }) => {
+    vi.mocked(mockClient.abciQuery).mockResolvedValue(
+      abciErrorResponse("/std.InvalidAddressError", "invalid query address invalid"),
+    );
+
+    const error = await query().catch(e => e);
+
+    expect(error).toBeInstanceOf(InvalidAddressError);
+    expect((error as TM2Error).log).toBe("invalid query address invalid");
   });
 
   describe("getSequence", () => {
