@@ -25,7 +25,7 @@ import {
   TransactionEndpoint,
 } from "../endpoints.js";
 import {
-  TM2Error,
+  TM2Error, UnknownRequestError,
 } from "../errors/index.js";
 import {
   UnauthorizedErrorMessage,
@@ -57,6 +57,18 @@ const emptyResponseBase = (overrides?: Partial<ResponseBase>): ResponseBase => (
 const gasPriceResponse = (data: string): AbciQueryResponse => ({
   responseBase: emptyResponseBase({
     data: Buffer.from(data),
+  }),
+  key: new Uint8Array(),
+  value: new Uint8Array(),
+  height: 0,
+});
+
+const abciErrorResponse = (type: string, log: string): AbciQueryResponse => ({
+  responseBase: emptyResponseBase({
+    error: {
+      "@type": type,
+    },
+    log,
   }),
   key: new Uint8Array(),
   value: new Uint8Array(),
@@ -670,5 +682,52 @@ describe("JSON-RPC Provider", () => {
         expect((e as Error).message).toContain("account is not initialized");
       }
     });
+  });
+});
+
+describe("ABCI query errors", () => {
+  let provider: JSONRPCProvider;
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    provider = await JSONRPCProvider.create(mockURL);
+  });
+
+  test.each([
+    {
+      name: "estimateGas",
+      query: () => provider.estimateGas(Tx.create()),
+    },
+    {
+      name: "getBalance",
+      query: () => provider.getBalance("address"),
+    },
+    {
+      name: "getGasPrice",
+      query: () => provider.getGasPrice(),
+    },
+    {
+      name: "getAccountSequence",
+      query: () => provider.getAccountSequence("address"),
+    },
+    {
+      name: "getAccountNumber",
+      query: () => provider.getAccountNumber("address"),
+    },
+    {
+      name: "getAccount",
+      query: () => provider.getAccount("address"),
+    },
+  ])("$name propagates ABCI errors", async ({
+    query,
+  }) => {
+    const log = "query unavailable";
+    vi.mocked(mockClient.abciQuery).mockResolvedValue(
+      abciErrorResponse("/std.UnknownRequestError", log),
+    );
+
+    const error = await query().catch(error => error);
+    expect(error).toBeInstanceOf(UnknownRequestError);
+    expect((error as TM2Error).log).toBe(log);
   });
 });

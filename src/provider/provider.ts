@@ -174,6 +174,17 @@ export interface Provider {
   ): Promise<Tx>
 }
 
+const requireSuccessfulAbciQuery = (response: ABCIResponse): ABCIResponse => {
+  const responseBase = response.response.ResponseBase;
+  if (responseBase.Error) {
+    throw constructRequestError(
+      responseBase.Error[ABCIErrorKey],
+      responseBase.Log,
+    );
+  }
+  return response;
+};
+
 /**
  * Base provider implementation backed by a Tm2Client.
  * Subclasses only need to provide a static `create()` factory.
@@ -194,7 +205,9 @@ export abstract class BaseTm2Provider implements Provider {
       prove: false,
     });
 
-    const abciResponse: ABCIResponse = adaptAbciQueryResponse(rpcResponse);
+    const abciResponse = requireSuccessfulAbciQuery(
+      adaptAbciQueryResponse(rpcResponse),
+    );
     const simulateResult = extractSimulateFromResponse(abciResponse);
 
     const resultErrorKey = simulateResult.response_base?.error?.type_url;
@@ -217,7 +230,9 @@ export abstract class BaseTm2Provider implements Provider {
       prove: false,
     });
 
-    const abciResponse: ABCIResponse = adaptAbciQueryResponse(rpcResponse);
+    const abciResponse = requireSuccessfulAbciQuery(
+      adaptAbciQueryResponse(rpcResponse),
+    );
 
     return extractBalanceFromResponse(
       abciResponse.response.ResponseBase.Data,
@@ -252,7 +267,10 @@ export abstract class BaseTm2Provider implements Provider {
       height: 0,
       prove: false,
     });
-    const data = adaptAbciQueryResponse(rpcResponse).response.ResponseBase.Data;
+    const abciResponse = requireSuccessfulAbciQuery(
+      adaptAbciQueryResponse(rpcResponse),
+    );
+    const data = abciResponse.response.ResponseBase.Data;
     if (!data) {
       throw new Error("gas price is not initialized");
     }
@@ -284,7 +302,9 @@ export abstract class BaseTm2Provider implements Provider {
       prove: false,
     });
 
-    const abciResponse: ABCIResponse = adaptAbciQueryResponse(rpcResponse);
+    const abciResponse = requireSuccessfulAbciQuery(
+      adaptAbciQueryResponse(rpcResponse),
+    );
     return extractSequenceFromResponse(abciResponse.response.ResponseBase.Data);
   }
 
@@ -296,7 +316,9 @@ export abstract class BaseTm2Provider implements Provider {
       prove: false,
     });
 
-    const abciResponse: ABCIResponse = adaptAbciQueryResponse(rpcResponse);
+    const abciResponse = requireSuccessfulAbciQuery(
+      adaptAbciQueryResponse(rpcResponse),
+    );
     return extractAccountNumberFromResponse(
       abciResponse.response.ResponseBase.Data,
     );
@@ -310,7 +332,9 @@ export abstract class BaseTm2Provider implements Provider {
       prove: false,
     });
 
-    const abciResponse: ABCIResponse = adaptAbciQueryResponse(rpcResponse);
+    const abciResponse = requireSuccessfulAbciQuery(
+      adaptAbciQueryResponse(rpcResponse),
+    );
     return extractAccountFromResponse(abciResponse.response.ResponseBase.Data);
   }
 
