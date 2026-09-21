@@ -141,6 +141,12 @@ export interface Provider {
   // Transaction specific methods //
 
   /**
+   * Fetches the committed transaction result for the given hash
+   * @param {string} hash the hex-encoded transaction hash
+   */
+  getTransaction(hash: string): Promise<TxResult>
+
+  /**
    * Sends the transaction to the node. If the type of endpoint
    * is a broadcast commit, waits for the transaction to be committed to the chain.
    * The transaction needs to be signed beforehand.
@@ -396,3 +402,9 @@ export abstract class BaseTm2Provider implements Provider {
     return waitForTransaction(this, hash, fromHeight, timeout);
   }
 }
+
+// Every public method on BaseTm2Provider must also be declared on Provider.
+type AssertNever<T extends never> = T;
+type _ProviderSurfaceIsComplete = AssertNever<
+  Exclude<keyof BaseTm2Provider, keyof Provider>
+>;
