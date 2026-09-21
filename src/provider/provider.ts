@@ -402,3 +402,8 @@ export abstract class BaseTm2Provider implements Provider {
     return waitForTransaction(this, hash, fromHeight, timeout);
   }
 }
+
+type AssertNever<T extends never> = T;
+type _ProviderSurfaceIsComplete = AssertNever<
+  Exclude<keyof BaseTm2Provider, keyof Provider>
+>;
