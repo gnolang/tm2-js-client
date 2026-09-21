@@ -141,6 +141,12 @@ export interface Provider {
   // Transaction specific methods //
 
   /**
+   * Fetches the committed transaction result for the given hash
+   * @param {string} hash the hex-encoded transaction hash
+   */
+  getTransaction(hash: string): Promise<TxResult>
+
+  /**
    * Sends the transaction to the node. If the type of endpoint
    * is a broadcast commit, waits for the transaction to be committed to the chain.
    * The transaction needs to be signed beforehand.
