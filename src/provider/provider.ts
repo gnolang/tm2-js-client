@@ -282,7 +282,7 @@ export abstract class BaseTm2Provider implements Provider {
     const price = /^(\d+)[a-z/][a-z0-9_.:/-]{2,}$/.exec(gasPrice.price);
     const amount = Number(price?.[1]);
     const gas = Number(gasPrice.gas);
-    if (!price || !Number.isFinite(amount) || !Number.isSafeInteger(gas) || gas <= 0) {
+    if (!price || !Number.isSafeInteger(amount) || !Number.isSafeInteger(gas) || gas <= 0) {
       throw new Error("invalid gas price response");
     }
 

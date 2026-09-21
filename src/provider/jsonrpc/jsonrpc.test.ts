@@ -142,7 +142,7 @@ describe("JSON-RPC Provider", () => {
     expect(estimation).toEqual(expectedEstimation);
   });
 
-  test.each(["ugnot", "atom"])("getGasPrice with %s denomination", async (denomination) => {
+  test.each(["ugnot", "atom", "/gno.land/r/demo/foo:tok"])("getGasPrice with %s denomination", async (denomination) => {
     vi.mocked(mockClient.abciQuery).mockResolvedValue(
       gasPriceResponse(`{"gas":"1000","price":"100${denomination}"}`),
     );
@@ -156,7 +156,7 @@ describe("JSON-RPC Provider", () => {
     });
   });
 
-  test.each(["{\"gas\":\"0\",\"price\":\"100ugnot\"}", "{\"gas\":\"1000\",\"price\":\"100ATOM\"}"])("getGasPrice rejects an invalid response", async (data) => {
+  test.each(["{\"gas\":\"0\",\"price\":\"100ugnot\"}", "{\"gas\":\"1000\",\"price\":\"100ATOM\"}", "{\"gas\":\"1000\",\"price\":\"9007199254740992atom\"}"])("getGasPrice rejects an invalid response", async (data) => {
     vi.mocked(mockClient.abciQuery).mockResolvedValue(gasPriceResponse(data));
 
     await expect(provider.getGasPrice()).rejects.toThrow(
