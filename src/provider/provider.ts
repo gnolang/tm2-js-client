@@ -210,7 +210,7 @@ export abstract class BaseTm2Provider implements Provider {
 
     const resultErrorKey = simulateResult.response_base?.error?.type_url;
     if (resultErrorKey) {
-      throw constructRequestError(resultErrorKey);
+      throw constructRequestError(resultErrorKey, simulateResult.response_base?.log);
     }
 
     return simulateResult.gas_used;

@@ -152,7 +152,10 @@ export const extractSimulateFromResponse = (
 
   const error = abciResponse.response?.ResponseBase?.Error;
   if (error && error[ABCIErrorKey]) {
-    throw constructRequestError(error[ABCIErrorKey]);
+    throw constructRequestError(
+      error[ABCIErrorKey],
+      abciResponse.response?.ResponseBase?.Log,
+    );
   }
 
   const value = abciResponse.response.Value;
