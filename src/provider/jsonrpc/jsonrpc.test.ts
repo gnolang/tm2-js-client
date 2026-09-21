@@ -510,8 +510,12 @@ describe("JSON-RPC Provider", () => {
         abciErrorResponse("/std.InvalidAddressError", "invalid query address invalid"),
       );
 
-      await expect(provider.getBalance("invalid", denomination))
-        .rejects.toBeInstanceOf(InvalidAddressError);
+      const error = await provider
+        .getBalance("invalid", denomination)
+        .catch(e => e);
+
+      expect(error).toBeInstanceOf(InvalidAddressError);
+      expect((error as TM2Error).log).toBe("invalid query address invalid");
     });
 
     test.each([["\"5gnot,100atom\"", 100], ["\"5universe\"", 0], ["\"\"", 0]])("case %#", async (existing, expected) => {
@@ -555,7 +559,10 @@ describe("JSON-RPC Provider", () => {
       abciErrorResponse("/std.InvalidAddressError", "invalid query address invalid"),
     );
 
-    await expect(query()).rejects.toBeInstanceOf(InvalidAddressError);
+    const error = await query().catch(e => e);
+
+    expect(error).toBeInstanceOf(InvalidAddressError);
+    expect((error as TM2Error).log).toBe("invalid query address invalid");
   });
 
   describe("getSequence", () => {
