@@ -282,6 +282,10 @@ export abstract class BaseTm2Provider implements Provider {
       gas: number | string
       price: string
     }>(data);
+    if (!gasPrice.price) {
+      return null;
+    }
+
     const price = /^(\d+)([a-z/][a-z0-9_.:/-]{2,})$/.exec(gasPrice.price);
     const amount = Number(price?.[1]);
     const gas = Number(gasPrice.gas);

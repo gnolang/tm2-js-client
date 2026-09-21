@@ -160,7 +160,7 @@ describe("JSON-RPC Provider", () => {
     });
   });
 
-  test.each(["{\"gas\":\"0\",\"price\":\"100ugnot\"}", "{\"gas\":\"1000\",\"price\":\"0ugnot\"}"])("getGasPrice returns null when no minimum gas price is configured", async (data) => {
+  test.each(["{\"gas\":\"0\",\"price\":\"100ugnot\"}", "{\"gas\":\"1000\",\"price\":\"0ugnot\"}", "{\"gas\":\"0\",\"price\":\"\"}"])("getGasPrice returns null when no minimum gas price is configured", async (data) => {
     vi.mocked(mockClient.abciQuery).mockResolvedValue(gasPriceResponse(data));
 
     await expect(provider.getGasPrice()).resolves.toBeNull();
