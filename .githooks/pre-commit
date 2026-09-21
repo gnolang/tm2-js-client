@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+#
+# Keeps src/proto/ in step with proto/: when a commit touches the codegen
+# inputs, regenerate and stage the result, so a commit can never carry
+# generated TypeScript that describes protos from an earlier one.
+#
+# `pnpm install` points core.hooksPath here (see scripts/install-hooks.mjs).
+# Bypass it for a single commit with `git commit --no-verify`.
+
+set -euo pipefail
+
+# Everything generated under src/proto/ comes from these, and nothing else
+# does, so every other commit skips the protoc run.
+if ! git diff --cached --name-only --diff-filter=ACMR \
+  | grep -qE '^(proto/|scripts/generate\.sh$)'; then
+  exit 0
+fi
+
+for tool in protoc pnpm; do
+  if ! command -v "${tool}" >/dev/null 2>&1; then
+    echo "pre-commit: this commit changes the codegen inputs, but ${tool} is not on PATH." >&2
+    echo "            See CONTRIBUTING.md (\"Regenerating the protos\"), or commit with" >&2
+    echo "            --no-verify and regenerate before opening a pull request." >&2
+    exit 1
+  fi
+done
+
+# codegen reads the working tree rather than the index, so a partially staged
+# proto is generated as it currently exists on disk.
+unstaged=$(git diff --name-only -- proto scripts/generate.sh)
+if [ -n "${unstaged}" ]; then
+  echo "pre-commit: unstaged changes to codegen inputs are part of the generated output:" >&2
+  # shellcheck disable=SC2086 # one path per line is the point
+  printf '            %s\n' ${unstaged} >&2
+fi
+
+echo "pre-commit: regenerating src/proto/ from proto/ ..."
+pnpm codegen >/dev/null
+
+# Picks up removals too, so a deleted proto drops its generated file.
+git add src/proto
+
+regenerated=$(git diff --cached --name-only -- src/proto)
+if [ -n "${regenerated}" ]; then
+  echo "pre-commit: src/proto/ regenerated and staged:"
+  # shellcheck disable=SC2086
+  printf '            %s\n' ${regenerated}
+fi

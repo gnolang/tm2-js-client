@@ -11,6 +11,20 @@ pnpm test
 pnpm lint
 ```
 
+## Regenerating the protos
+
+The TypeScript under `src/proto/` is generated from the `.proto` files under `proto/` with [`ts-proto`](https://github.com/stephenh/ts-proto). Do not edit those files by hand; `src/proto/index.ts` next to them is hand-written and is left alone.
+
+```bash
+pnpm codegen
+```
+
+This requires `protoc` on your `PATH`, at the version pinned in `.github/workflows/codegen.yaml` (currently 33.4). protoc's version is written into every generated file's banner and it supplies the well-known types under `google/protobuf/`, so a different protoc rewrites `src/proto/` even when no proto changed. Upgrading it is a deliberate change that regenerates the sources along with it.
+
+You rarely need to run this by hand: `pnpm install` points `core.hooksPath` at `.githooks/` (see `scripts/install-hooks.mjs`), and the `pre-commit` hook regenerates `src/proto/` and stages the result whenever a commit touches `proto/` or `scripts/generate.sh`. Commits that touch neither skip it. Use `git commit --no-verify` to bypass it for one commit — but regenerate before opening a pull request, because CI checks it.
+
+The `Codegen` job in `.github/workflows/main.yaml` regenerates with the pinned protoc and fails if the result differs from what is committed, so the generated code cannot drift from the protos it came from even if the hook was never installed.
+
 ## Releasing: Changesets
 
 Versioning, changelog generation, git tagging, and npm publishing are all driven by [Changesets](https://github.com/changesets/changesets). You should not edit `CHANGELOG.md`, bump the version in `package.json`, or run `npm publish` by hand.

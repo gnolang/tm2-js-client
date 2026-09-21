@@ -12,3 +12,7 @@ jobs:
   test:
     name: Tests
     uses: ./.github/workflows/test.yaml
+
+  codegen:
+    name: Codegen
+    uses: ./.github/workflows/codegen.yaml
