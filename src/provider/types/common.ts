@@ -84,6 +84,15 @@ interface PublicKey {
   value: string
 }
 
+export interface GasPrice {
+  // the fee amount charged per `gas` units of gas
+  amount: number
+  // the fee denomination (e.g. "ugnot")
+  denom: string
+  // the gas units the `amount` applies to
+  gas: number
+}
+
 export interface ConsensusParams {
   // the current block height
   block_height: string

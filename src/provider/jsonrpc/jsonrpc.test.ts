@@ -25,7 +25,7 @@ import {
   TransactionEndpoint,
 } from "../endpoints.js";
 import {
-  InvalidAddressError, TM2Error,
+  InvalidAddressError, TM2Error, UnknownRequestError,
 } from "../errors/index.js";
 import {
   UnauthorizedErrorMessage,
@@ -52,6 +52,15 @@ const emptyResponseBase = (overrides?: Partial<ResponseBase>): ResponseBase => (
   log: "",
   info: "",
   ...overrides,
+});
+
+const gasPriceResponse = (data: string): AbciQueryResponse => ({
+  responseBase: emptyResponseBase({
+    data: Buffer.from(data),
+  }),
+  key: new Uint8Array(),
+  value: new Uint8Array(),
+  height: 0,
 });
 
 const abciErrorResponse = (type: string, log: string): AbciQueryResponse => ({
@@ -131,6 +140,38 @@ describe("JSON-RPC Provider", () => {
 
     expect(mockClient.abciQuery).toHaveBeenCalled();
     expect(estimation).toEqual(expectedEstimation);
+  });
+
+  test.each(["ugnot", "atom", "/gno.land/r/demo/foo:tok"])("getGasPrice with %s denomination", async (denomination) => {
+    vi.mocked(mockClient.abciQuery).mockResolvedValue(
+      gasPriceResponse(`{"gas":"1000","price":"100${denomination}"}`),
+    );
+
+    await expect(provider.getGasPrice()).resolves.toEqual({
+      amount: 100,
+      denom: denomination,
+      gas: 1000,
+    });
+    expect(mockClient.abciQuery).toHaveBeenCalledWith({
+      path: "auth/gasprice",
+      data: new Uint8Array(),
+      height: 0,
+      prove: false,
+    });
+  });
+
+  test.each(["{\"gas\":\"0\",\"price\":\"100ugnot\"}", "{\"gas\":\"1000\",\"price\":\"0ugnot\"}", "{\"gas\":\"0\",\"price\":\"\"}"])("getGasPrice returns null when no minimum gas price is configured", async (data) => {
+    vi.mocked(mockClient.abciQuery).mockResolvedValue(gasPriceResponse(data));
+
+    await expect(provider.getGasPrice()).resolves.toBeNull();
+  });
+
+  test.each(["{\"gas\":\"1000\",\"price\":\"100ATOM\"}", "{\"gas\":\"1000\",\"price\":\"9007199254740992atom\"}"])("getGasPrice rejects an invalid response", async (data) => {
+    vi.mocked(mockClient.abciQuery).mockResolvedValue(gasPriceResponse(data));
+
+    await expect(provider.getGasPrice()).rejects.toThrow(
+      "invalid gas price response",
+    );
   });
 
   test("estimateGas preserves the ABCI error log", async () => {
@@ -567,32 +608,6 @@ describe("JSON-RPC Provider", () => {
     });
   });
 
-  test.each([
-    {
-      name: "getAccountSequence",
-      query: () => provider.getAccountSequence("invalid"),
-    },
-    {
-      name: "getAccountNumber",
-      query: () => provider.getAccountNumber("invalid"),
-    },
-    {
-      name: "getAccount",
-      query: () => provider.getAccount("invalid"),
-    },
-  ])("$name propagates ABCI query errors", async ({
-    query,
-  }) => {
-    vi.mocked(mockClient.abciQuery).mockResolvedValue(
-      abciErrorResponse("/std.InvalidAddressError", "invalid query address invalid"),
-    );
-
-    const error = await query().catch(e => e);
-
-    expect(error).toBeInstanceOf(InvalidAddressError);
-    expect((error as TM2Error).log).toBe("invalid query address invalid");
-  });
-
   describe("getSequence", () => {
     const validAccount: ABCIAccount = {
       BaseAccount: {
@@ -703,5 +718,52 @@ describe("JSON-RPC Provider", () => {
         expect((e as Error).message).toContain("account is not initialized");
       }
     });
+  });
+});
+
+describe("ABCI query errors", () => {
+  let provider: JSONRPCProvider;
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    provider = await JSONRPCProvider.create(mockURL);
+  });
+
+  test.each([
+    {
+      name: "estimateGas",
+      query: () => provider.estimateGas(Tx.create()),
+    },
+    {
+      name: "getBalance",
+      query: () => provider.getBalance("address"),
+    },
+    {
+      name: "getGasPrice",
+      query: () => provider.getGasPrice(),
+    },
+    {
+      name: "getAccountSequence",
+      query: () => provider.getAccountSequence("address"),
+    },
+    {
+      name: "getAccountNumber",
+      query: () => provider.getAccountNumber("address"),
+    },
+    {
+      name: "getAccount",
+      query: () => provider.getAccount("address"),
+    },
+  ])("$name propagates ABCI errors", async ({
+    query,
+  }) => {
+    const log = "query unavailable";
+    vi.mocked(mockClient.abciQuery).mockResolvedValue(
+      abciErrorResponse("/std.UnknownRequestError", log),
+    );
+
+    const error = await query().catch(error => error);
+    expect(error).toBeInstanceOf(UnknownRequestError);
+    expect((error as TM2Error).log).toBe(log);
   });
 });

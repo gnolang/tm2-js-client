@@ -19,6 +19,7 @@ import {
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
   ConsensusParams,
+  GasPrice,
   NetworkInfo,
   Status,
   TxResult,
@@ -41,6 +42,7 @@ import {
   extractBalanceFromResponse,
   extractSequenceFromResponse,
   extractSimulateFromResponse,
+  parseABCI,
   uint8ArrayToBase64,
   waitForTransaction,
 } from "./utility/index.js";
@@ -128,9 +130,11 @@ export interface Provider {
   getStatus(): Promise<Status>
 
   /**
-   * Fetches the current (recommended) average gas price
+   * Fetches the current minimum gas price, or null when the node has none configured.
+   * Divide `amount` by `gas` for the floating-point price per gas unit, and round up
+   * when using it to calculate a fee.
    */
-  getGasPrice(): Promise<number>
+  getGasPrice(): Promise<GasPrice | null>
 
   /**
    * Estimates the gas limit for the transaction
@@ -264,8 +268,47 @@ export abstract class BaseTm2Provider implements Provider {
     return adaptConsensusParamsResponse(rpcResponse);
   }
 
-  getGasPrice(): Promise<number> {
-    return Promise.reject("not supported");
+  async getGasPrice(): Promise<GasPrice | null> {
+    const rpcResponse = await this.client.abciQuery({
+      path: "auth/gasprice",
+      data: new Uint8Array(),
+      height: 0,
+      prove: false,
+    });
+    const abciResponse = requireSuccessfulAbciQuery(
+      adaptAbciQueryResponse(rpcResponse),
+    );
+    const data = abciResponse.response.ResponseBase.Data;
+    if (!data) {
+      // No minimum gas price configured on the node.
+      return null;
+    }
+
+    const gasPrice = parseABCI<{
+      gas: number | string
+      price: string
+    }>(data);
+    if (!gasPrice.price) {
+      return null;
+    }
+
+    const price = /^(\d+)([a-z/][a-z0-9_.:/-]{2,})$/.exec(gasPrice.price);
+    const amount = Number(price?.[1]);
+    const gas = Number(gasPrice.gas);
+    if (!price || !Number.isSafeInteger(amount) || !Number.isSafeInteger(gas) || gas < 0) {
+      throw new Error("invalid gas price response");
+    }
+
+    // A zero price or zero gas means the node charges no minimum fee.
+    if (amount === 0 || gas === 0) {
+      return null;
+    }
+
+    return {
+      amount,
+      denom: price[2],
+      gas,
+    };
   }
 
   async getNetwork(): Promise<NetworkInfo> {

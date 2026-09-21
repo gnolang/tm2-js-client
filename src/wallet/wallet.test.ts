@@ -155,7 +155,11 @@ describe("Wallet", () => {
   });
 
   test("getGasPrice", async () => {
-    const mockGasPrice = 1000;
+    const mockGasPrice = {
+      amount: 100,
+      denom: "ugnot",
+      gas: 1000,
+    };
     const mockProvider = {
       getGasPrice: vi.fn().mockResolvedValue(mockGasPrice),
     } as unknown as JSONRPCProvider;
@@ -163,10 +167,10 @@ describe("Wallet", () => {
     const wallet: Wallet = await Wallet.createRandom();
     wallet.connect(mockProvider);
 
-    const gasPrice: number = await wallet.getGasPrice();
+    const gasPrice = await wallet.getGasPrice();
 
     expect(mockProvider.getGasPrice).toHaveBeenCalled();
-    expect(gasPrice).toBe(mockGasPrice);
+    expect(gasPrice).toEqual(mockGasPrice);
   });
 
   test("estimateGas", async () => {
