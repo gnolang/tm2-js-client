@@ -54,6 +54,15 @@ const emptyResponseBase = (overrides?: Partial<ResponseBase>): ResponseBase => (
   ...overrides,
 });
 
+const gasPriceResponse = (data: string): AbciQueryResponse => ({
+  responseBase: emptyResponseBase({
+    data: Buffer.from(data),
+  }),
+  key: new Uint8Array(),
+  value: new Uint8Array(),
+  height: 0,
+});
+
 // Mock Tm2Client - use vi.hoisted so it's available in the hoisted vi.mock factory
 const {
   mockClient,
@@ -119,6 +128,28 @@ describe("JSON-RPC Provider", () => {
 
     expect(mockClient.abciQuery).toHaveBeenCalled();
     expect(estimation).toEqual(expectedEstimation);
+  });
+
+  test("getGasPrice", async () => {
+    vi.mocked(mockClient.abciQuery).mockResolvedValue(
+      gasPriceResponse("{\"gas\":\"1000\",\"price\":\"100ugnot\"}"),
+    );
+
+    await expect(provider.getGasPrice()).resolves.toBe(0.1);
+    expect(mockClient.abciQuery).toHaveBeenCalledWith({
+      path: "auth/gasprice",
+      data: new Uint8Array(),
+      height: 0,
+      prove: false,
+    });
+  });
+
+  test.each(["{\"gas\":\"0\",\"price\":\"100ugnot\"}", "{\"gas\":\"1000\",\"price\":\"100atom\"}"])("getGasPrice rejects an invalid response", async (data) => {
+    vi.mocked(mockClient.abciQuery).mockResolvedValue(gasPriceResponse(data));
+
+    await expect(provider.getGasPrice()).rejects.toThrow(
+      "invalid gas price response",
+    );
   });
 
   test("getNetwork", async () => {

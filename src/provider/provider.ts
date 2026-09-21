@@ -41,6 +41,7 @@ import {
   extractBalanceFromResponse,
   extractSequenceFromResponse,
   extractSimulateFromResponse,
+  parseABCI,
   uint8ArrayToBase64,
   waitForTransaction,
 } from "./utility/index.js";
@@ -243,8 +244,29 @@ export abstract class BaseTm2Provider implements Provider {
     return adaptConsensusParamsResponse(rpcResponse);
   }
 
-  getGasPrice(): Promise<number> {
-    return Promise.reject("not supported");
+  async getGasPrice(): Promise<number> {
+    const rpcResponse = await this.client.abciQuery({
+      path: "auth/gasprice",
+      data: new Uint8Array(),
+      height: 0,
+      prove: false,
+    });
+    const data = adaptAbciQueryResponse(rpcResponse).response.ResponseBase.Data;
+    if (!data) {
+      throw new Error("gas price is not initialized");
+    }
+
+    const gasPrice = parseABCI<{
+      gas: number | string
+      price: string
+    }>(data);
+    const amount = /^(\d+)ugnot$/.exec(gasPrice.price)?.[1];
+    const gas = Number(gasPrice.gas);
+    if (!amount || !Number.isSafeInteger(gas) || gas <= 0) {
+      throw new Error("invalid gas price response");
+    }
+
+    return Number(amount) / gas;
   }
 
   async getNetwork(): Promise<NetworkInfo> {
