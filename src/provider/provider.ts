@@ -129,7 +129,8 @@ export interface Provider {
   getStatus(): Promise<Status>
 
   /**
-   * Fetches the current (recommended) average gas price
+   * Fetches the current minimum gas price per gas unit.
+   * Round up when using this floating-point result to calculate a fee.
    */
   getGasPrice(): Promise<number>
 
@@ -260,13 +261,14 @@ export abstract class BaseTm2Provider implements Provider {
       gas: number | string
       price: string
     }>(data);
-    const amount = /^(\d+)ugnot$/.exec(gasPrice.price)?.[1];
+    const price = /^(\d+)[a-z/][a-z0-9_.:/-]{2,}$/.exec(gasPrice.price);
+    const amount = Number(price?.[1]);
     const gas = Number(gasPrice.gas);
-    if (!amount || !Number.isSafeInteger(gas) || gas <= 0) {
+    if (!price || !Number.isFinite(amount) || !Number.isSafeInteger(gas) || gas <= 0) {
       throw new Error("invalid gas price response");
     }
 
-    return Number(amount) / gas;
+    return amount / gas;
   }
 
   async getNetwork(): Promise<NetworkInfo> {

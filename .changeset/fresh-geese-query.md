@@ -2,4 +2,4 @@
 "@gnolang/tm2-js-client": patch
 ---
 
-Implement `Provider.getGasPrice` using Gno's current network gas price query.
+Implement `Provider.getGasPrice` for any valid TM2 fee denomination and document its floating-point result.

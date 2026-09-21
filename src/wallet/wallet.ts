@@ -229,7 +229,8 @@ export class Wallet {
   };
 
   /**
-   * Fetches the current (recommended) average gas price
+   * Fetches the current minimum gas price per gas unit.
+   * Round up when using this floating-point result to calculate a fee.
    */
   getGasPrice = async (): Promise<number> => {
     if (!this.provider) {
