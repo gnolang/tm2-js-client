@@ -403,6 +403,7 @@ export abstract class BaseTm2Provider implements Provider {
   }
 }
 
+// Every public method on BaseTm2Provider must also be declared on Provider.
 type AssertNever<T extends never> = T;
 type _ProviderSurfaceIsComplete = AssertNever<
   Exclude<keyof BaseTm2Provider, keyof Provider>
