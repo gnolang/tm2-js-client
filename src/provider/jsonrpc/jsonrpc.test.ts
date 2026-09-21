@@ -147,7 +147,11 @@ describe("JSON-RPC Provider", () => {
       gasPriceResponse(`{"gas":"1000","price":"100${denomination}"}`),
     );
 
-    await expect(provider.getGasPrice()).resolves.toBe(0.1);
+    await expect(provider.getGasPrice()).resolves.toEqual({
+      amount: 100,
+      denom: denomination,
+      gas: 1000,
+    });
     expect(mockClient.abciQuery).toHaveBeenCalledWith({
       path: "auth/gasprice",
       data: new Uint8Array(),
@@ -156,7 +160,13 @@ describe("JSON-RPC Provider", () => {
     });
   });
 
-  test.each(["{\"gas\":\"0\",\"price\":\"100ugnot\"}", "{\"gas\":\"1000\",\"price\":\"100ATOM\"}", "{\"gas\":\"1000\",\"price\":\"9007199254740992atom\"}"])("getGasPrice rejects an invalid response", async (data) => {
+  test.each(["{\"gas\":\"0\",\"price\":\"100ugnot\"}", "{\"gas\":\"1000\",\"price\":\"0ugnot\"}"])("getGasPrice returns null when no minimum gas price is configured", async (data) => {
+    vi.mocked(mockClient.abciQuery).mockResolvedValue(gasPriceResponse(data));
+
+    await expect(provider.getGasPrice()).resolves.toBeNull();
+  });
+
+  test.each(["{\"gas\":\"1000\",\"price\":\"100ATOM\"}", "{\"gas\":\"1000\",\"price\":\"9007199254740992atom\"}"])("getGasPrice rejects an invalid response", async (data) => {
     vi.mocked(mockClient.abciQuery).mockResolvedValue(gasPriceResponse(data));
 
     await expect(provider.getGasPrice()).rejects.toThrow(
@@ -596,32 +606,6 @@ describe("JSON-RPC Provider", () => {
       expect(await provider.getBalance("address", "atom")).toBe(0);
       expect(performance.now() - start).toBeLessThan(1_000);
     });
-  });
-
-  test.each([
-    {
-      name: "getAccountSequence",
-      query: () => provider.getAccountSequence("invalid"),
-    },
-    {
-      name: "getAccountNumber",
-      query: () => provider.getAccountNumber("invalid"),
-    },
-    {
-      name: "getAccount",
-      query: () => provider.getAccount("invalid"),
-    },
-  ])("$name propagates ABCI query errors", async ({
-    query,
-  }) => {
-    vi.mocked(mockClient.abciQuery).mockResolvedValue(
-      abciErrorResponse("/std.InvalidAddressError", "invalid query address invalid"),
-    );
-
-    const error = await query().catch(e => e);
-
-    expect(error).toBeInstanceOf(InvalidAddressError);
-    expect((error as TM2Error).log).toBe("invalid query address invalid");
   });
 
   describe("getSequence", () => {

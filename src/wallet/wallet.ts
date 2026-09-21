@@ -10,6 +10,7 @@ import {
 } from "../proto/index.js";
 import {
   BroadcastTransactionMap,
+  GasPrice,
   Provider,
   Status,
   uint8ArrayToBase64,
@@ -229,10 +230,11 @@ export class Wallet {
   };
 
   /**
-   * Fetches the current minimum gas price per gas unit.
-   * Round up when using this floating-point result to calculate a fee.
+   * Fetches the current minimum gas price, or null when the node has none configured.
+   * Divide `amount` by `gas` for the floating-point price per gas unit, and round up
+   * when using it to calculate a fee.
    */
-  getGasPrice = async (): Promise<number> => {
+  getGasPrice = async (): Promise<GasPrice | null> => {
     if (!this.provider) {
       throw new Error("provider not connected");
     }
