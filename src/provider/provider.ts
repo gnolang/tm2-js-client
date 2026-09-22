@@ -6,6 +6,9 @@ import {
 export type {
   AbciQueryParams,
 } from "@gnolang/tm2-rpc";
+export {
+  Tm2Client,
+} from "@gnolang/tm2-rpc";
 
 import {
   Tx,
