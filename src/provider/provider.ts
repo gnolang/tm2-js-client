@@ -55,6 +55,8 @@ export interface Provider {
   /**
    * Performs an arbitrary ABCI query against the application.
    * @param {AbciQueryParams} params the application-specific query parameters
+   * @returns {Promise<ABCIResponse>} the adapted ABCI query response
+   * @throws the mapped TM2 error when the ABCI response reports an error
    */
   abciQuery(params: AbciQueryParams): Promise<ABCIResponse>
 
