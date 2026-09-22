@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.2.0
+
+### Minor Changes
+
+- [#302](https://github.com/gnolang/tm2-js-client/pull/302) [`7849db5`](https://github.com/gnolang/tm2-js-client/commit/7849db5bfce5f529a4b2c0f4e910bec34d82eb06) Thanks [@notJoon](https://github.com/notJoon)! - Expose `Provider.abciQuery` so callers can issue arbitrary application queries through JSON-RPC and WebSocket providers. Successful responses retain their data and metadata, while ABCI errors continue to reject with the mapped error type and node log.
+
 ## 3.1.1
 
 ### Patch Changes
