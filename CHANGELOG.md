@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.3.0
+
+### Minor Changes
+
+- [#304](https://github.com/gnolang/tm2-js-client/pull/304) [`aa81eb6`](https://github.com/gnolang/tm2-js-client/commit/aa81eb67e2387451948455d07f3edfd97f0a7e26) Thanks [@clockworkgr](https://github.com/clockworkgr)! - Export `constructRequestError` from the provider entrypoint so downstream packages can map Tendermint2 ABCI error IDs to the typed `TM2Error` classes.
+
 ## 3.2.0
 
 ### Minor Changes
