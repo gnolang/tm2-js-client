@@ -1,4 +1,12 @@
 import {
+  type AbciQueryParams,
+  Tm2Client,
+} from "@gnolang/tm2-rpc";
+
+export type {
+  AbciQueryParams,
+} from "@gnolang/tm2-rpc";
+export {
   Tm2Client,
 } from "@gnolang/tm2-rpc";
 
@@ -51,6 +59,14 @@ import {
  * Read-only abstraction for accessing blockchain data
  */
 export interface Provider {
+  /**
+   * Performs an arbitrary ABCI query against the application.
+   * @param {AbciQueryParams} params the application-specific query parameters
+   * @returns {Promise<ABCIResponse>} the adapted ABCI query response
+   * @throws the mapped TM2 error when the ABCI response reports an error
+   */
+  abciQuery(params: AbciQueryParams): Promise<ABCIResponse>
+
   // Account-specific methods //
 
   /**
@@ -204,18 +220,19 @@ export abstract class BaseTm2Provider implements Provider {
     this.client = client;
   }
 
+  async abciQuery(params: AbciQueryParams): Promise<ABCIResponse> {
+    const rpcResponse = await this.client.abciQuery(params);
+    return requireSuccessfulAbciQuery(adaptAbciQueryResponse(rpcResponse));
+  }
+
   async estimateGas(tx: Tx): Promise<bigint> {
     const encodedTx = uint8ArrayToBase64(Tx.encode(tx).finish());
-    const rpcResponse = await this.client.abciQuery({
+    const abciResponse = await this.abciQuery({
       path: ".app/simulate",
       data: new TextEncoder().encode(encodedTx),
       height: 0,
       prove: false,
     });
-
-    const abciResponse = requireSuccessfulAbciQuery(
-      adaptAbciQueryResponse(rpcResponse),
-    );
     const simulateResult = extractSimulateFromResponse(abciResponse);
 
     const resultErrorKey = simulateResult.response_base?.error?.type_url;
@@ -231,16 +248,12 @@ export abstract class BaseTm2Provider implements Provider {
     denomination?: string,
     height?: number,
   ): Promise<number> {
-    const rpcResponse = await this.client.abciQuery({
+    const abciResponse = await this.abciQuery({
       path: `bank/balances/${address}`,
       data: new Uint8Array(),
       height: height ? height : 0,
       prove: false,
     });
-
-    const abciResponse = requireSuccessfulAbciQuery(
-      adaptAbciQueryResponse(rpcResponse),
-    );
 
     return extractBalanceFromResponse(
       abciResponse.response.ResponseBase.Data,
@@ -269,15 +282,12 @@ export abstract class BaseTm2Provider implements Provider {
   }
 
   async getGasPrice(): Promise<GasPrice | null> {
-    const rpcResponse = await this.client.abciQuery({
+    const abciResponse = await this.abciQuery({
       path: "auth/gasprice",
       data: new Uint8Array(),
       height: 0,
       prove: false,
     });
-    const abciResponse = requireSuccessfulAbciQuery(
-      adaptAbciQueryResponse(rpcResponse),
-    );
     const data = abciResponse.response.ResponseBase.Data;
     if (!data) {
       // No minimum gas price configured on the node.
@@ -317,46 +327,34 @@ export abstract class BaseTm2Provider implements Provider {
   }
 
   async getAccountSequence(address: string, height?: number): Promise<number> {
-    const rpcResponse = await this.client.abciQuery({
+    const abciResponse = await this.abciQuery({
       path: `auth/accounts/${address}`,
       data: new Uint8Array(),
       height: height ? height : 0,
       prove: false,
     });
-
-    const abciResponse = requireSuccessfulAbciQuery(
-      adaptAbciQueryResponse(rpcResponse),
-    );
     return extractSequenceFromResponse(abciResponse.response.ResponseBase.Data);
   }
 
   async getAccountNumber(address: string, height?: number): Promise<number> {
-    const rpcResponse = await this.client.abciQuery({
+    const abciResponse = await this.abciQuery({
       path: `auth/accounts/${address}`,
       data: new Uint8Array(),
       height: height ? height : 0,
       prove: false,
     });
-
-    const abciResponse = requireSuccessfulAbciQuery(
-      adaptAbciQueryResponse(rpcResponse),
-    );
     return extractAccountNumberFromResponse(
       abciResponse.response.ResponseBase.Data,
     );
   }
 
   async getAccount(address: string, height?: number): Promise<ABCIAccount> {
-    const rpcResponse = await this.client.abciQuery({
+    const abciResponse = await this.abciQuery({
       path: `auth/accounts/${address}`,
       data: new Uint8Array(),
       height: height ? height : 0,
       prove: false,
     });
-
-    const abciResponse = requireSuccessfulAbciQuery(
-      adaptAbciQueryResponse(rpcResponse),
-    );
     return extractAccountFromResponse(abciResponse.response.ResponseBase.Data);
   }
 
