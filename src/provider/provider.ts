@@ -3,6 +3,10 @@ import {
   Tm2Client,
 } from "@gnolang/tm2-rpc";
 
+export type {
+  AbciQueryParams,
+} from "@gnolang/tm2-rpc";
+
 import {
   Tx,
 } from "../proto/index.js";
