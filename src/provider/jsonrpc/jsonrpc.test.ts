@@ -142,6 +142,35 @@ describe("JSON-RPC Provider", () => {
     expect(estimation).toEqual(expectedEstimation);
   });
 
+  test("abciQuery", async () => {
+    const params = {
+      path: "vm/qfile",
+      data: new TextEncoder().encode("gno.land/r/demo/demo.gno"),
+      height: 42,
+      prove: true,
+    };
+    vi.mocked(mockClient.abciQuery).mockResolvedValue({
+      responseBase: emptyResponseBase({
+        data: Buffer.from("package demo"),
+      }),
+      key: Buffer.from("key"),
+      value: Buffer.from("value"),
+      height: 42,
+    });
+
+    await expect(provider.abciQuery(params)).resolves.toMatchObject({
+      response: {
+        ResponseBase: {
+          Data: Buffer.from("package demo").toString("base64"),
+        },
+        Key: Buffer.from("key").toString("base64"),
+        Value: Buffer.from("value").toString("base64"),
+        Height: "42",
+      },
+    });
+    expect(mockClient.abciQuery).toHaveBeenCalledWith(params);
+  });
+
   test.each(["ugnot", "atom", "/gno.land/r/demo/foo:tok"])("getGasPrice with %s denomination", async (denomination) => {
     vi.mocked(mockClient.abciQuery).mockResolvedValue(
       gasPriceResponse(`{"gas":"1000","price":"100${denomination}"}`),
@@ -730,6 +759,13 @@ describe("ABCI query errors", () => {
   });
 
   test.each([
+    {
+      name: "abciQuery",
+      query: () => provider.abciQuery({
+        path: "vm/qfile",
+        data: new Uint8Array(),
+      }),
+    },
     {
       name: "estimateGas",
       query: () => provider.estimateGas(Tx.create()),
