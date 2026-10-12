@@ -71,12 +71,27 @@ describe("pubKeyToAminoJSON", () => {
       });
   });
 
-  test("keeps the raw value of an unknown type", () => {
+  test("unwraps an ed25519 key", () => {
+    // Ed25519 keys share the secp256k1 wire layout: field 1, length prefixed bytes.
+    const key = new Uint8Array(32).fill(7);
+
     expect(pubKeyToAminoJSON({
       type_url: "/tm.PubKeyEd25519",
-      value: new Uint8Array([1, 2, 3]),
+      value: PubKeySecp256k1.encode({
+        key,
+      }).finish(),
     })).toEqual({
       "@type": "/tm.PubKeyEd25519",
+      value: btoa(String.fromCharCode(...key)),
+    });
+  });
+
+  test("keeps the raw value of an unknown type", () => {
+    expect(pubKeyToAminoJSON({
+      type_url: "/tm.PubKeyUnknown",
+      value: new Uint8Array([1, 2, 3]),
+    })).toEqual({
+      "@type": "/tm.PubKeyUnknown",
       value: "AQID",
     });
   });

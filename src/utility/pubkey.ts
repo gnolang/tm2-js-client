@@ -31,7 +31,9 @@ export function pubKeyToAminoJSON(pubKey: Any): AminoPubKey {
   const type = pubKey.type_url;
 
   switch (type) {
+    // Ed25519 keys use the same wire layout as secp256k1 keys.
     case "/tm.PubKeySecp256k1":
+    case "/tm.PubKeyEd25519":
       return {
         "@type": type,
         value: toBase64(PubKeySecp256k1.decode(pubKey.value).key),
