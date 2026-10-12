@@ -26,6 +26,11 @@ const toBase64 = (bytes: Uint8Array): string =>
 /**
  * Converts a protobuf wrapped public key into the Amino JSON form
  * printed by the chain and gnokey. Unknown key types keep their raw value.
+ *
+ * @example
+ * pubKeyToAminoJSON(sig.pub_key)
+ * // { "@type": "/tm.PubKeySecp256k1", value: "A49ayk7StbRgV5Z8we7JV/M1dPJW37ie4FBEDS8DRLip" }
+ * // multisig: { "@type": "/tm.PubKeyMultisig", threshold: "2", pubkeys: [...] }
  */
 export function pubKeyToAminoJSON(pubKey: Any): AminoPubKey {
   const type = pubKey.type_url;
