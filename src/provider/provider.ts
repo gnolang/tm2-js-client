@@ -54,6 +54,9 @@ import {
   uint8ArrayToBase64,
   waitForTransaction,
 } from "./utility/index.js";
+import {
+  convertRPCError,
+} from "./utility/rpc-errors.utility.js";
 
 /**
  * Read-only abstraction for accessing blockchain data
@@ -64,6 +67,7 @@ export interface Provider {
    * @param {AbciQueryParams} params the application-specific query parameters
    * @returns {Promise<ABCIResponse>} the adapted ABCI query response
    * @throws the mapped TM2 error when the ABCI response reports an error
+   * @throws {CodeExecutionRefusedError} on nodes with rpc.allow_code_execution = false
    */
   abciQuery(params: AbciQueryParams): Promise<ABCIResponse>
 
@@ -155,6 +159,7 @@ export interface Provider {
   /**
    * Estimates the gas limit for the transaction
    * @param {Tx} tx the transaction that needs estimating
+   * @throws {CodeExecutionRefusedError} on nodes with rpc.allow_code_execution = false
    */
   estimateGas(tx: Tx): Promise<bigint>
 
@@ -217,7 +222,25 @@ export abstract class BaseTm2Provider implements Provider {
   protected readonly client: Tm2Client;
 
   protected constructor(client: Tm2Client) {
-    this.client = client;
+    // Wrap the client once so every call, including ones added later,
+    // rejects with a typed RPC error instead of tm2-rpc's JSON-string Error
+    this.client = new Proxy(client, {
+      get(target, prop) {
+        const value = Reflect.get(target, prop);
+        if (typeof value !== "function") {
+          return value;
+        }
+
+        return (...args: unknown[]) => {
+          const result = value.apply(target, args);
+          return result instanceof Promise
+            ? result.catch((error: unknown) => {
+              throw convertRPCError(error);
+            })
+            : result;
+        };
+      },
+    });
   }
 
   async abciQuery(params: AbciQueryParams): Promise<ABCIResponse> {

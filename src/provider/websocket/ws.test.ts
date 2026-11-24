@@ -26,10 +26,8 @@ import {
 } from "../endpoints.js";
 import {
   TM2Error,
+  UnauthorizedError,
 } from "../errors/index.js";
-import {
-  UnauthorizedErrorMessage,
-} from "../errors/messages.js";
 import {
   ABCIAccount,
   BroadcastTxSyncResult,
@@ -394,7 +392,7 @@ describe("WS Provider", () => {
         throw new Error("expected error");
       }
       catch (e) {
-        expect((e as Error).message).toBe(UnauthorizedErrorMessage);
+        expect(e).toBeInstanceOf(UnauthorizedError);
         expect((e as TM2Error).log).toBe(mockLog);
       }
     });

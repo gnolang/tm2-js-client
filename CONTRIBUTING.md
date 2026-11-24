@@ -25,6 +25,12 @@ You rarely need to run this by hand: `pnpm install` points `core.hooksPath` at `
 
 The `Codegen` job in `.github/workflows/main.yaml` regenerates with the pinned protoc and fails if the result differs from what is committed, so the generated code cannot drift from the protos it came from even if the hook was never installed.
 
+### Regenerating std ABCI errors
+
+`src/provider/errors/std.ts` is generated from upstream gno sources copied under `scripts/upstream/`: `errors.go` gives the classes and their messages (the upstream `Error()` strings), and `package.go` gives the amino registrations that define the error IDs. To pick up upstream changes, run `pnpm upstream:sync [ref]` (default `master`). It copies both files pinned to that commit and regenerates `std.ts`. Then review the diff. To regenerate from the existing copies without protoc, run `pnpm codegen:errors`.
+
+The pre-commit hook does not regenerate std errors; CI checks that the committed output matches the vendored source and generator.
+
 ## Releasing: Changesets
 
 Versioning, changelog generation, git tagging, and npm publishing are all driven by [Changesets](https://github.com/changesets/changesets). You should not edit `CHANGELOG.md`, bump the version in `package.json`, or run `npm publish` by hand.
