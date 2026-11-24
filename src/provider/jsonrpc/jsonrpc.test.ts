@@ -138,7 +138,12 @@ describe("JSON-RPC Provider", () => {
 
     const estimation = await provider.estimateGas(tx);
 
-    expect(mockClient.abciQuery).toHaveBeenCalled();
+    expect(mockClient.abciQuery).toHaveBeenCalledWith({
+      path: ".app/simulate",
+      data: Tx.encode(tx).finish(),
+      height: 0,
+      prove: false,
+    });
     expect(estimation).toEqual(expectedEstimation);
   });
 
@@ -369,7 +374,7 @@ describe("JSON-RPC Provider", () => {
     });
   });
 
-  test("waitForTransaction", async () => {
+  test.each(["uppercase hex", "lowercase hex", "base64"])("waitForTransaction accepts %s hashes", async (encoding) => {
     const tx: Tx = {
       messages: [],
       signatures: [],
@@ -472,13 +477,26 @@ describe("JSON-RPC Provider", () => {
       return makeEmptyBlock(height ?? 0);
     });
 
-    const receivedTx = await provider.waitForTransaction(
-      uint8ArrayToBase64(txHash),
-      startBlock,
-    );
+    const hash = encoding === "base64"
+      ? uint8ArrayToBase64(txHash)
+      : Buffer.from(txHash).toString("hex");
 
-    expect(mockClient.status).toHaveBeenCalled();
-    expect(receivedTx).toEqual(tx);
+    vi.useFakeTimers();
+    try {
+      await Promise.all([
+        expect(provider.waitForTransaction(
+          encoding === "uppercase hex" ? hash.toUpperCase() : hash,
+          startBlock,
+          1500,
+        )).resolves.toEqual(tx),
+        vi.advanceTimersByTimeAsync(1500),
+      ]);
+      expect(mockClient.status).toHaveBeenCalled();
+    }
+    finally {
+      vi.clearAllTimers();
+      vi.useRealTimers();
+    }
   });
 
   test("getConsensusParams", async () => {

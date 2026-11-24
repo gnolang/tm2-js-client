@@ -283,6 +283,11 @@ export class Wallet {
       throw new Error("invalid transaction fee provided");
     }
 
+    const feeCoins = parseSignCoin(tx.fee.gas_fee);
+    if (feeCoins.length === 0) {
+      throw new Error("transaction fee must be a positive amount");
+    }
+
     // Extract the relevant chain data
     const status: Status = await this.provider.getStatus();
     const chainID: string = status.node_info.network;
@@ -308,7 +313,7 @@ export class Wallet {
       account_number: accountNumber,
       sequence: accountSequence,
       fee: {
-        amount: parseSignCoin(tx.fee.gas_fee),
+        amount: feeCoins,
         gas: tx.fee.gas_wanted.toString(10),
       },
       msgs: decodeTxMessages(tx.messages), // unrolled message objects
@@ -340,6 +345,10 @@ export class Wallet {
     // Append the signature
     return {
       ...tx,
+      fee: {
+        ...tx.fee,
+        gas_fee: `${feeCoins[0].amount}${feeCoins[0].denom}`,
+      },
       signatures: [...tx.signatures, txSignature],
     };
   };
@@ -348,7 +357,7 @@ export class Wallet {
    * Encodes and sends the transaction. If the type of endpoint
    * is a broadcast commit, waits for the transaction to be committed to the chain.
    * The transaction needs to be signed beforehand.
-   * Returns the transaction hash (base-64)
+   * Returns the broadcast result for the chosen endpoint, with an uppercase hexadecimal hash field.
    * @param {Tx} tx the signed transaction
    * @param {BroadcastType} endpoint the transaction broadcast type (sync / commit)
    */

@@ -320,11 +320,11 @@ describe("Wallet", () => {
     expect(sig.signature).not.toBeNull();
   });
 
-  test("signTransaction payload is Ledger compatible", async () => {
+  test.each(["1000000ugnot", "1000000 ugnot", " 1000000ugnot ", "01000000ugnot"])("signTransaction canonicalizes %s with a Ledger compatible payload", async (gasFee) => {
     const mockTx = {
       signatures: [],
       fee: {
-        gas_fee: "1000000ugnot",
+        gas_fee: gasFee,
         gas_wanted: 200000n,
       },
       messages: [],
@@ -356,11 +356,42 @@ describe("Wallet", () => {
     );
     expect(signedTx.signatures).toHaveLength(1);
 
+    expect(signedTx.fee).toEqual({
+      gas_fee: "1000000ugnot",
+      gas_wanted: 200000n,
+    });
+
     // Pinned to the payload rendered by tm2 (std.GetSignaturePayload)
     const expected
       = "{\"account_number\":\"42\",\"chain_id\":\"dev\",\"fee\":{\"amount\":[{\"amount\":\"1000000\",\"denom\":\"ugnot\"}],\"gas\":\"200000\"},\"memo\":\"hello\",\"msgs\":null,\"sequence\":\"7\"}";
     const signBytes = signSpy.mock.calls[0][0] as Uint8Array;
     expect(Buffer.from(signBytes).toString("utf8")).toBe(expected);
+  });
+
+  test.each(["0ugnot", "", undefined])("signTransaction rejects a non-positive fee before network calls: %s", async (gasFee) => {
+    const wallet = await Wallet.createRandom();
+    const getStatus = vi.fn().mockResolvedValue({
+      node_info: {
+        network: "dev",
+      },
+    });
+    wallet.connect({
+      getStatus,
+    } as unknown as JSONRPCProvider);
+    const tx = Tx.create({
+      fee: {
+        gas_wanted: 200000n,
+      },
+    });
+    tx.fee!.gas_fee = gasFee as unknown as string;
+
+    const signSpy = vi.spyOn(wallet.getSigner(), "signData");
+    await expect(wallet.signTransaction(tx, () => [], {
+      accountNumber: "42",
+      sequence: "7",
+    })).rejects.toThrow("transaction fee must be a positive amount");
+    expect(getStatus).not.toHaveBeenCalled();
+    expect(signSpy).not.toHaveBeenCalled();
   });
 
   test("parseSignCoin", () => {

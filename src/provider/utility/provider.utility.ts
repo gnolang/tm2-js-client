@@ -15,6 +15,9 @@ import {
   ABCIAccount, ABCIErrorKey, ABCIResponse, BlockInfo,
 } from "../types/index.js";
 import {
+  toHexString,
+} from "./adapters.js";
+import {
   constructRequestError,
 } from "./errors.utility.js";
 import {
@@ -177,7 +180,7 @@ export const extractSimulateFromResponse = (
  * of the specified provider. This helper does a search for incoming blocks
  * and checks if a transaction
  * @param {Provider} provider the provider instance
- * @param {string} hash the base64-encoded hash of the transaction
+ * @param {string} hash the transaction hash in hexadecimal (case-insensitive) or legacy base64
  * @param {number} [fromHeight=latest] the starting height for the search. If omitted, it is the latest block in the chain
  * @param {number} [timeout=15000] the timeout in MS for the search
  */
@@ -221,7 +224,7 @@ export const waitForTransaction = async (
           // Calculate the transaction hash
           const txHash = sha256(txRaw);
 
-          if (uint8ArrayToBase64(txHash) == hash) {
+          if (toHexString(txHash) === hash.toUpperCase() || uint8ArrayToBase64(txHash) === hash) {
             // Clear the interval
             clearInterval(fetchInterval);
 
