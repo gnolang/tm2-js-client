@@ -138,7 +138,9 @@ describe("JSON-RPC Provider", () => {
 
     const estimation = await provider.estimateGas(tx);
 
-    expect(mockClient.abciQuery).toHaveBeenCalled();
+    // the tx's own bytes, not their base64 text: the client encodes them once
+    const [params] = vi.mocked(mockClient.abciQuery).mock.calls[0];
+    expect(params.data).toEqual(Tx.encode(tx).finish());
     expect(estimation).toEqual(expectedEstimation);
   });
 
