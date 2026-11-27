@@ -11,6 +11,7 @@ export {
 } from "@gnolang/tm2-rpc";
 
 import {
+  ResponseDeliverTx,
   Tx,
 } from "../proto/index.js";
 import {
@@ -162,6 +163,15 @@ export interface Provider {
    */
   estimateGas(tx: Tx): Promise<bigint>
 
+  /**
+   * Simulates the transaction and returns the node's ResponseDeliverTx,
+   * including gas usage and emitted events
+   * @param {Tx} tx the transaction to simulate
+   * @throws {TM2Error} when the simulated transaction fails
+   * @throws {CodeExecutionRefusedError} on nodes with rpc.allow_code_execution = false
+   */
+  simulateTx(tx: Tx): Promise<ResponseDeliverTx>
+
   // Transaction specific methods //
 
   /**
@@ -248,6 +258,10 @@ export abstract class BaseTm2Provider implements Provider {
   }
 
   async estimateGas(tx: Tx): Promise<bigint> {
+    return (await this.simulateTx(tx)).gas_used;
+  }
+
+  async simulateTx(tx: Tx): Promise<ResponseDeliverTx> {
     const abciResponse = await this.abciQuery({
       path: ".app/simulate",
       data: Tx.encode(tx).finish(),
@@ -261,7 +275,7 @@ export abstract class BaseTm2Provider implements Provider {
       throw constructRequestError(resultErrorKey, simulateResult.response_base?.log);
     }
 
-    return simulateResult.gas_used;
+    return simulateResult;
   }
 
   async getBalance(

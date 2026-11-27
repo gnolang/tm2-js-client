@@ -25,7 +25,11 @@ import {
   TransactionEndpoint,
 } from "../endpoints.js";
 import {
-  InvalidAddressError, TM2Error, UnauthorizedError, UnknownRequestError,
+  InsufficientCoinsError,
+  InvalidAddressError,
+  TM2Error,
+  UnauthorizedError,
+  UnknownRequestError,
 } from "../errors/index.js";
 import {
   ABCIAccount,
@@ -109,7 +113,8 @@ describe("JSON-RPC Provider", () => {
     provider = await JSONRPCProvider.create(mockURL);
   });
 
-  test("estimateGas", async () => {
+  describe("simulation", () => {
+    // The simulateTx fixtures are real .app/simulate responses from gnodev for a MsgCall to a realm that appends to a slice
     const tx = Tx.fromJSON({
       signatures: [],
       fee: {
@@ -119,29 +124,48 @@ describe("JSON-RPC Provider", () => {
       messages: [],
       memo: "",
     });
-    const expectedEstimation = 44900n;
-
-    const mockAbciResponse: AbciQueryResponse = {
+    const simulateResponse = (value: string): AbciQueryResponse => ({
       responseBase: emptyResponseBase(),
       key: new Uint8Array(),
-      value: Buffer.from(
-        "CiMiIW1zZzowLHN1Y2Nlc3M6dHJ1ZSxsb2c6LGV2ZW50czpbXRCAiXoYyL0F",
-        "base64",
-      ),
+      value: Buffer.from(value, "base64"),
       height: 0,
-    };
-
-    vi.mocked(mockClient.abciQuery).mockResolvedValue(mockAbciResponse);
-
-    const estimation = await provider.estimateGas(tx);
-
-    expect(mockClient.abciQuery).toHaveBeenCalledWith({
-      path: ".app/simulate",
-      data: Tx.encode(tx).finish(),
-      height: 0,
-      prove: false,
     });
-    expect(estimation).toEqual(expectedEstimation);
+
+    test("estimateGas", async () => {
+      vi.mocked(mockClient.abciQuery).mockResolvedValue(simulateResponse(
+        "CiMiIW1zZzowLHN1Y2Nlc3M6dHJ1ZSxsb2c6LGV2ZW50czpbXRCAiXoYyL0F",
+      ));
+
+      expect(await provider.estimateGas(tx)).toBe(44900n);
+    });
+
+    test("simulateTx returns gas and events", async () => {
+      vi.mocked(mockClient.abciQuery).mockResolvedValue(simulateResponse(
+        "CmkSAgoKGkAKFy90bS5TdG9yYWdlRGVwb3NpdEV2ZW50EiUIgAYSCjM4NDAwdWdub3QaFGduby5sYW5kL3IvZGV2L3N0b3JlIiFtc2c6MCxzdWNjZXNzOnRydWUsbG9nOixldmVudHM6W10QgNrECRj4y9AB",
+      ));
+
+      const result = await provider.simulateTx(tx);
+
+      expect(mockClient.abciQuery).toHaveBeenCalledWith({
+        path: ".app/simulate",
+        data: Tx.encode(tx).finish(),
+        height: 0,
+        prove: false,
+      });
+      expect(result.gas_wanted).toBe(10_000_000n);
+      expect(result.gas_used).toBe(1_708_796n);
+      expect(result.response_base?.events).toHaveLength(1);
+      expect(result.response_base?.events[0].type_url).toBe("/tm.StorageDepositEvent");
+      expect(Buffer.from(result.response_base!.events[0].value).toString()).toContain("38400ugnot");
+    });
+
+    test("simulateTx throws the typed error of a failed simulation", async () => {
+      vi.mocked(mockClient.abciQuery).mockResolvedValue(simulateResponse(
+        "CowGCh0KGy9zdGQuSW5zdWZmaWNpZW50Q29pbnNFcnJvciLWBW1zZzowLHN1Y2Nlc3M6ZmFsc2UsbG9nOi0tPSBFcnJvciA9LS0KRGF0YTogc3RkLkluc3VmZmljaWVudENvaW5zRXJyb3J7YWJjaUVycm9yOnN0ZC5hYmNpRXJyb3J7fX0KTXNnIFRyYWNlczoKICAgIDAgIGduby90bTIvcGtnL3N0ZC9lcnJvcnMuZ286MTEwIC0gaW5zdWZmaWNpZW50IGFjY291bnQgZnVuZHM7IDk5OTk5OTc3MjQ1MDB1Z25vdCA8IDk5OTk5OTk5OTk5OTk5OTk5OXVnbm90ClN0YWNrIFRyYWNlOgogICAgMCAgZ25vL3RtMi9wa2cvZXJyb3JzL2Vycm9ycy5nbzo5MwogICAgMSAgZ25vL3RtMi9wa2cvc3RkL2Vycm9ycy5nbzoxMTAKICAgIDIgIGduby90bTIvcGtnL3Nkay9iYW5rL2tlZXBlci5nbzozOTMKICAgIDMgIGduby90bTIvcGtnL3Nkay9iYW5rL2tlZXBlci5nbzozMDYKICAgIDQgIGduby90bTIvcGtnL3Nkay9iYW5rL2tlZXBlci5nbzoxOTEKICAgIDUgIGduby90bTIvcGtnL3Nkay9iYW5rL2tlZXBlci5nbzoxNTgKICAgIDYgIGduby9nbm8ubGFuZC9wa2cvc2RrL3ZtL2tlZXBlci5nbzoxNDIxCiAgICA3ICBnbm8vZ25vLmxhbmQvcGtnL3Nkay92bS9oYW5kbGVyLmdvOjU2CiAgICA4ICBnbm8vZ25vLmxhbmQvcGtnL3Nkay92bS9oYW5kbGVyLmdvOjMyCiAgICA5ICBnbm8vdG0yL3BrZy9zZGsvYmFzZWFwcC5nbzo4MzMKICAgMTAgIGduby90bTIvcGtnL3Nkay9iYXNlYXBwLmdvOjExMDQKLi4uIDIzIG1vcmUgbGluZXMgZWxpZGVkLGV2ZW50czpbXSoSdm0udmVyc2lvbj1kZXZlbG9wEIDaxAkY6OVs",
+      ));
+
+      await expect(provider.simulateTx(tx)).rejects.toBeInstanceOf(InsufficientCoinsError);
+    });
   });
 
   test("abciQuery", async () => {
