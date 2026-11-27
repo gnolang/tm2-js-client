@@ -139,15 +139,12 @@ export const stringToUTF8 = (str: string): Uint8Array => {
 };
 
 /**
- * Escapes <,>,& in string.
- * Golang's json marshaller escapes <,>,& by default.
+ * Escapes <, >, &, U+2028 and U+2029 in string.
+ * Golang's json marshaller escapes these by default.
  * https://cs.opensource.google/go/go/+/refs/tags/go1.20.6:src/encoding/json/encode.go;l=46-53
  */
 export function encodeCharacterSet(data: string) {
-  return data
-    .replace(/</g, "\\u003c")
-    .replace(/>/g, "\\u003e")
-    .replace(/&/g, "\\u0026");
+  return data.replace(/[<>&\u2028\u2029]/g, c => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0"));
 }
 
 function sortedObject(obj: any): any {

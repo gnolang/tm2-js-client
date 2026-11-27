@@ -38,6 +38,20 @@ import {
   sortedJsonStringify,
   stringToUTF8,
 } from "./utility/index.js";
+/**
+ * Reports whether any string or key in the value contains a lone UTF-16 surrogate
+ * @param {unknown} value the value to inspect
+ */
+const hasLoneSurrogate = (value: unknown): boolean => {
+  if (typeof value === "string") {
+    return /[\uD800-\uDFFF]/u.test(value);
+  }
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  return Object.entries(value).some(([key, v]) => hasLoneSurrogate(key) || hasLoneSurrogate(v));
+};
+
 export interface SignTransactionOptions {
   accountNumber?: string
   sequence?: string
@@ -319,6 +333,12 @@ export class Wallet {
       msgs: decodeTxMessages(tx.messages), // unrolled message objects
       memo: tx.memo,
     };
+
+    // Protobuf encoding replaces lone surrogates with U+FFFD,
+    // so the node would verify different bytes than the ones signed
+    if (hasLoneSurrogate(signPayload)) {
+      throw new Error("invalid sign payload: string contains a lone surrogate");
+    }
 
     // The TM2 node does signature verification using
     // a sorted JSON object, so the payload needs to be sorted

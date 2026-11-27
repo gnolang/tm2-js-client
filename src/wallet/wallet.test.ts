@@ -32,6 +32,7 @@ import {
 } from "./types/index.js";
 import {
   defaultAddressPrefix,
+  encodeCharacterSet,
   generateEntropy,
   generateKeyPair,
   parseSignCoin,
@@ -367,6 +368,80 @@ describe("Wallet", () => {
     const signBytes = signSpy.mock.calls[0][0] as Uint8Array;
     expect(Buffer.from(signBytes).toString("utf8")).toBe(expected);
   });
+
+  test("encodeCharacterSet matches Go JSON escaping", () => {
+    expect(encodeCharacterSet("<>&\u2028\u2029😀")).toBe("\\u003c\\u003e\\u0026\\u2028\\u2029😀");
+  });
+
+  const signWithText = async (field: "memo" | "message", text: string) => {
+    const wallet = await Wallet.createRandom();
+    wallet.connect({
+      getStatus: vi.fn().mockResolvedValue({
+        node_info: {
+          network: "dev",
+        },
+      }),
+    } as unknown as JSONRPCProvider);
+    const signSpy = vi.spyOn(wallet.getSigner(), "signData");
+    const tx = Tx.create({
+      fee: {
+        gas_fee: "10ugnot",
+        gas_wanted: 10n,
+      },
+      memo: field === "memo" ? text : "",
+    });
+    const msgs = [
+      {
+        value: {
+          text: field === "message" ? text : "",
+        },
+      },
+    ];
+    const signing = wallet.signTransaction(tx, () => msgs, {
+      accountNumber: "42",
+      sequence: "7",
+    });
+
+    return {
+      signing,
+      signSpy,
+      tx,
+      msgs,
+    };
+  };
+
+  test.each(["a\ud800b", "a\udc00b", "😀\ud800"].flatMap(text => [["memo", text], ["message", text]] as const))(
+    "signTransaction rejects a lone surrogate in %s: %s",
+    async (field, text) => {
+      const {
+        signing,
+        signSpy,
+      } = await signWithText(field, text);
+
+      await expect(signing).rejects.toThrow("invalid sign payload: string contains a lone surrogate");
+      expect(signSpy).not.toHaveBeenCalled();
+    },
+  );
+
+  test.each(["😀", "\u2028\u2029", "\\ud800"].flatMap(text => [["memo", text], ["message", text]] as const))(
+    "signTransaction signs well-formed Unicode in %s: %s",
+    async (field, text) => {
+      const {
+        signing,
+        signSpy,
+        tx,
+        msgs,
+      } = await signWithText(field, text);
+
+      expect((await signing).signatures).toHaveLength(1);
+      const signJson = Buffer.from(signSpy.mock.calls[0][0]).toString("utf8");
+      expect(JSON.parse(signJson)).toMatchObject({
+        memo: tx.memo,
+        msgs,
+      });
+      expect(signJson).not.toMatch(/[\u2028\u2029]/u);
+    },
+  );
 
   test.each(["0ugnot", "", undefined])("signTransaction rejects a non-positive fee before network calls: %s", async (gasFee) => {
     const wallet = await Wallet.createRandom();
