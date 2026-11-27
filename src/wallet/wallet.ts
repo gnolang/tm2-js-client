@@ -6,7 +6,11 @@ import {
 } from "@cosmjs/ledger-amino";
 
 import {
-  Any, PubKeySecp256k1, Tx, TxSignature,
+  Any,
+  PubKeySecp256k1,
+  ResponseDeliverTx,
+  Tx,
+  TxSignature,
 } from "../proto/index.js";
 import {
   BroadcastTransactionMap,
@@ -266,6 +270,18 @@ export class Wallet {
     }
 
     return this.provider.estimateGas(tx);
+  };
+
+  /**
+   * Simulates the transaction and returns the node's ResponseDeliverTx
+   * @param {Tx} tx the transaction to simulate
+   */
+  simulateTx = async (tx: Tx): Promise<ResponseDeliverTx> => {
+    if (!this.provider) {
+      throw new Error("provider not connected");
+    }
+
+    return this.provider.simulateTx(tx);
   };
 
   /**

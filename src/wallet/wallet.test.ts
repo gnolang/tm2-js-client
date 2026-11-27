@@ -191,6 +191,25 @@ describe("Wallet", () => {
     expect(estimation).toBe(mockTxEstimation);
   });
 
+  test("simulateTx", async () => {
+    const mockSimulation = {
+      gas_used: 1000n,
+    };
+    const mockTx = {
+    } as Tx;
+    const mockProvider = {
+      simulateTx: vi.fn().mockResolvedValue(mockSimulation),
+    } as unknown as JSONRPCProvider;
+
+    const wallet: Wallet = await Wallet.createRandom();
+    wallet.connect(mockProvider);
+
+    const simulation = await wallet.simulateTx(mockTx);
+
+    expect(mockProvider.simulateTx).toHaveBeenCalledWith(mockTx);
+    expect(simulation).toBe(mockSimulation);
+  });
+
   test("signTransaction", async () => {
     const mockTx = {
       signatures: [],
