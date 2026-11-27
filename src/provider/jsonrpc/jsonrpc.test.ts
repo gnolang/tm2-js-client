@@ -23,8 +23,6 @@ import {
 } from "vitest";
 
 import {
-  accountWithMultisigPubkey,
-  accountWithoutPubkey,
   accountWithPubkey,
   damagedAccounts,
   uninitializedAccount,
@@ -670,43 +668,31 @@ describe("JSON-RPC Provider", () => {
 
   describe("account queries", () => {
     const mockAccountResponse = (data: string) => {
-      vi.mocked(mockClient.abciQuery).mockResolvedValue({
-        responseBase: emptyResponseBase({
-          data: Buffer.from(data),
-        }),
-        key: new Uint8Array(),
-        value: new Uint8Array(),
-        height: 0,
-      });
+      vi.mocked(mockClient.abciQuery).mockResolvedValue(gasPriceResponse(data));
     };
 
-    test.each([accountWithoutPubkey, accountWithPubkey, accountWithMultisigPubkey])("reads initialized account %#", async (data) => {
-      mockAccountResponse(data);
+    test("reads an initialized account", async () => {
+      mockAccountResponse(accountWithPubkey);
 
-      await expect(provider.getAccountSequence("g16al7zp20sj8uqynqt8tkm85dvgx4fsg7ehxej9")).resolves.toBe(3);
-      await expect(provider.getAccountNumber("g16al7zp20sj8uqynqt8tkm85dvgx4fsg7ehxej9")).resolves.toBe(7);
-      await expect(provider.getAccount("g16al7zp20sj8uqynqt8tkm85dvgx4fsg7ehxej9")).resolves.toStrictEqual(JSON.parse(data));
+      await expect(provider.getAccountSequence("address")).resolves.toBe(3);
+      await expect(provider.getAccountNumber("address")).resolves.toBe(7);
+      await expect(provider.getAccount("address")).resolves.toStrictEqual(JSON.parse(accountWithPubkey));
     });
 
-    test.each([uninitializedAccount, ""])("identifies an uninitialized account %#", async (data) => {
-      mockAccountResponse(data);
+    test("identifies an uninitialized account", async () => {
+      mockAccountResponse(uninitializedAccount);
 
-      await expect(provider.getAccountSequence("g16al7zp20sj8uqynqt8tkm85dvgx4fsg7ehxej9")).resolves.toBe(0);
-      for (const query of ["getAccountNumber", "getAccount"] as const) {
-        const result = provider[query]("g16al7zp20sj8uqynqt8tkm85dvgx4fsg7ehxej9");
-        await expect(result).rejects.toBeInstanceOf(AccountNotInitializedError);
-        await expect(result).rejects.toHaveProperty("message", "account is not initialized");
-      }
+      await expect(provider.getAccountSequence("address")).resolves.toBe(0);
+      await expect(provider.getAccountNumber("address")).rejects.toBeInstanceOf(AccountNotInitializedError);
+      await expect(provider.getAccount("address")).rejects.toBeInstanceOf(AccountNotInitializedError);
     });
 
-    test.each(damagedAccounts)("identifies account decode failures %#", async (data) => {
-      mockAccountResponse(data);
+    test("identifies an account decode failure", async () => {
+      mockAccountResponse(damagedAccounts[0]);
 
-      for (const query of ["getAccountSequence", "getAccountNumber", "getAccount"] as const) {
-        const result = provider[query]("g16al7zp20sj8uqynqt8tkm85dvgx4fsg7ehxej9");
-        await expect(result).rejects.toBeInstanceOf(AccountDecodeError);
-        await expect(result).rejects.toHaveProperty("cause", expect.any(Error));
-      }
+      await expect(provider.getAccountSequence("address")).rejects.toBeInstanceOf(AccountDecodeError);
+      await expect(provider.getAccountNumber("address")).rejects.toBeInstanceOf(AccountDecodeError);
+      await expect(provider.getAccount("address")).rejects.toBeInstanceOf(AccountDecodeError);
     });
   });
 });

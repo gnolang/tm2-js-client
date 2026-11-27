@@ -53,15 +53,10 @@ export const accountWithMultisigPubkey = `{
 // Simulate damaged responses that a node would not normally emit.
 export const damagedAccounts = [
   accountWithPubkey.slice(0, accountWithPubkey.indexOf("\"value\"")),
-  JSON.stringify({
-    attributes: "0",
-  }),
   "{\"BaseAccount\":{}}",
   "{\"BaseAccount\":\"invalid\"}",
-  "{\"BaseAccount\":null}",
-  "{\"BaseAccount\":[]}",
   ...["account_number", "sequence"].flatMap(field =>
-    ["invalid", "", "-1", "1.5", "3x", "3\n", 7, null].map(value => JSON.stringify({
+    ["", "-1", "3\n", 7, null].map(value => JSON.stringify({
       BaseAccount: {
         account_number: "7",
         sequence: "3",

@@ -28,7 +28,6 @@ interface MerkleProof {
 }
 
 export interface ABCIAccount {
-  attributes?: string
   BaseAccount: {
     // the associated account address
     address: string
