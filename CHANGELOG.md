@@ -1,5 +1,25 @@
 # Changelog
 
+## 4.0.0
+
+### Major Changes
+
+- [#315](https://github.com/gnolang/tm2-js-client/pull/315) [`4407141`](https://github.com/gnolang/tm2-js-client/commit/4407141454f1de1fecb1dcbb341ff16a53094f27) Thanks [@notJoon](https://github.com/notJoon)! - Generate std ABCI error classes from upstream. Breaking changes:
+  
+  - Std messages now follow upstream `Error()` strings: "unable to decode tx" → "tx decode error", "insufficient funds" → "insufficient funds error", and "signature is unauthorized" → "unauthorized error".
+  - Eight newly mapped std errors (restricted transfer, query timeout, four session errors, and two vesting errors) now return dedicated classes instead of the generic `TM2Error` fallback.
+  - JSON-RPC failures now reject with `RPCRequestError` or `CodeExecutionRefusedError`, instead of a plain `Error`. They extend `Error`, not `TM2Error`, and keep the original message.
+
+### Minor Changes
+
+- [#314](https://github.com/gnolang/tm2-js-client/pull/314) [`8deca75`](https://github.com/gnolang/tm2-js-client/commit/8deca7501a5f053809e3bc30200230a4381e6c20) Thanks [@notJoon](https://github.com/notJoon)! - Fix gas simulation transaction encoding, canonicalize positive signed transaction fees and reject zero, empty, or missing fees before signing, and accept hexadecimal transaction hashes when waiting for confirmation.
+
+- [#324](https://github.com/gnolang/tm2-js-client/pull/324) [`a429472`](https://github.com/gnolang/tm2-js-client/commit/a429472707f6a4483bc60dd6b3e7798885fc067b) Thanks [@notJoon](https://github.com/notJoon)! - Add `simulateTx` to `Provider` and `Wallet`, returning the full simulated `ResponseDeliverTx` (gas and emitted events). `estimateGas` now wraps it. Custom `Provider` implementations must add the method; `BaseTm2Provider` subclasses inherit it.
+
+### Patch Changes
+
+- [#321](https://github.com/gnolang/tm2-js-client/pull/321) [`d28be8e`](https://github.com/gnolang/tm2-js-client/commit/d28be8e308cbe3daa3d0e099128f0962a1e9eb8c) Thanks [@notJoon](https://github.com/notJoon)! - Fix transaction signatures containing U+2028 or U+2029 and reject lone surrogates in signing payloads before signing.
+
 ## 3.3.0
 
 ### Minor Changes
