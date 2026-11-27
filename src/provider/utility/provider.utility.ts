@@ -69,6 +69,46 @@ export const extractBalanceFromResponse = (
   return 0;
 };
 
+// Amino encodes uint64 values as decimal strings in JSON.
+// This does not validate the numeric range of uint64.
+const isUint64String = (value: unknown): boolean =>
+  typeof value === "string" && /^[0-9]+$/.test(value);
+
+const hasValidBaseAccount = ({
+  BaseAccount: base,
+}: ABCIAccount): boolean =>
+  base != null
+  && isUint64String(base.account_number)
+  && isUint64String(base.sequence);
+
+const parseAccountJSON = (abciData: string): ABCIAccount | null => {
+  try {
+    return JSON.parse(Buffer.from(abciData, "base64").toString());
+  }
+  catch (e) {
+    throw new AccountDecodeError(e);
+  }
+};
+
+/**
+ * Decodes a Base64-encoded ABCI account response.
+ *
+ * @returns The decoded account, or null if it does not exist.
+ * @throws {@link AccountDecodeError} If the response is malformed.
+ */
+const decodeAccount = (abciData: string | null): ABCIAccount | null => {
+  if (!abciData) {
+    return null;
+  }
+
+  const account = parseAccountJSON(abciData);
+  if (account !== null && !hasValidBaseAccount(account)) {
+    throw new AccountDecodeError(new Error("invalid BaseAccount in account response"));
+  }
+
+  return account;
+};
+
 /**
  * Extracts the account sequence from the ABCI response
  * Returns 0 for an uninitialized account; throws AccountDecodeError for malformed data.
@@ -77,18 +117,9 @@ export const extractBalanceFromResponse = (
 export const extractSequenceFromResponse = (
   abciData: string | null,
 ): number => {
-  try {
-    const account = extractAccountFromResponse(abciData);
+  const account = decodeAccount(abciData);
 
-    return parseInt(account.BaseAccount.sequence, 10);
-  }
-  catch (e) {
-    if (e instanceof AccountNotInitializedError) {
-      return 0;
-    }
-
-    throw e;
-  }
+  return account ? parseInt(account.BaseAccount.sequence, 10) : 0;
 };
 
 /**
@@ -103,10 +134,6 @@ export const extractAccountNumberFromResponse = (
   return parseInt(account.BaseAccount.account_number, 10);
 };
 
-// amino encodes uint64 as a JSON string of decimal digits
-const isUint64String = (value: unknown): boolean =>
-  typeof value === "string" && /^[0-9]+$/.test(value);
-
 /**
  * Extracts the account from the ABCI response
  * @param {string | null} abciData the base64-encoded ABCI data
@@ -114,24 +141,9 @@ const isUint64String = (value: unknown): boolean =>
 export const extractAccountFromResponse = (
   abciData: string | null,
 ): ABCIAccount => {
-  if (!abciData) {
+  const account = decodeAccount(abciData);
+  if (!account) {
     throw new AccountNotInitializedError();
-  }
-
-  let account: ABCIAccount | null;
-  try {
-    account = JSON.parse(Buffer.from(abciData, "base64").toString());
-  }
-  catch (e) {
-    throw new AccountDecodeError(e);
-  }
-
-  if (account === null) {
-    throw new AccountNotInitializedError();
-  }
-
-  if (!isUint64String(account.BaseAccount?.account_number) || !isUint64String(account.BaseAccount?.sequence)) {
-    throw new AccountDecodeError(new Error("invalid BaseAccount in account response"));
   }
 
   return account;
