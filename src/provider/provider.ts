@@ -86,7 +86,8 @@ export interface Provider {
   ): Promise<number>
 
   /**
-   * Fetches the account sequence
+   * Fetches the account sequence. Returns 0 if the account is not initialized.
+   * Rejects with AccountDecodeError if the account response is malformed.
    * @param {string} address the bech32 address of the account
    * @param {number} [height=0] the height for querying.
    * If omitted, the latest height is used.

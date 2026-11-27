@@ -181,7 +181,8 @@ export class Wallet {
   };
 
   /**
-   * Fetches the account sequence for the wallet
+   * Fetches the account sequence for the wallet. Returns 0 if the account is not initialized.
+   * Rejects with AccountDecodeError if the account response is malformed.
    * @param {number} [height=latest] the block height
    */
   getAccountSequence = async (height?: number): Promise<number> => {

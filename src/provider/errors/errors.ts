@@ -8,6 +8,20 @@ class TM2Error extends Error {
   }
 }
 
+class AccountNotInitializedError extends Error {
+  constructor() {
+    super("account is not initialized");
+  }
+}
+
+class AccountDecodeError extends Error {
+  constructor(cause: unknown) {
+    super("unable to decode account response", {
+      cause,
+    });
+  }
+}
+
 class RPCRequestError extends Error {
   public readonly code: number;
   public readonly rpcMessage: string;
@@ -25,6 +39,8 @@ class RPCRequestError extends Error {
 class CodeExecutionRefusedError extends RPCRequestError {}
 
 export {
+  AccountDecodeError,
+  AccountNotInitializedError,
   CodeExecutionRefusedError,
   RPCRequestError,
   TM2Error,

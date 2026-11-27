@@ -15,9 +15,21 @@ import {
   WritableDeep,
 } from "type-fest";
 import {
-  afterEach, beforeEach, describe, expect, test, vi,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  test,
+  vi,
 } from "vitest";
 
+import {
+  accountWithMultisigPubkey,
+  accountWithoutPubkey,
+  accountWithPubkey,
+  damagedAccounts,
+  uninitializedAccount,
+} from "../../../tests/fixtures/accounts.js";
 import {
   Tx,
 } from "../../proto/index.js";
@@ -25,18 +37,20 @@ import {
   TransactionEndpoint,
 } from "../endpoints.js";
 import {
+  AccountDecodeError,
+  AccountNotInitializedError,
   TM2Error,
   UnauthorizedError,
 } from "../errors/index.js";
 import {
-  ABCIAccount,
   BroadcastTxSyncResult,
   ConsensusParams,
   NetworkInfo,
   Status,
 } from "../types/index.js";
 import {
-  stringToBase64, uint8ArrayToBase64,
+  stringToBase64,
+  uint8ArrayToBase64,
 } from "../utility/index.js";
 import {
   WSProvider,
@@ -196,110 +210,47 @@ describe("WS Provider", () => {
     expect(params.block_height).toBe("1");
   });
 
-  describe("getSequence", () => {
-    const validAccount: ABCIAccount = {
-      BaseAccount: {
-        address: "random address",
-        coins: "",
-        public_key: null,
-        account_number: "0",
-        sequence: "10",
-      },
-    };
-
-    test.each([[JSON.stringify(validAccount), parseInt(validAccount.BaseAccount.sequence, 10)], ["null", 0]])("case %#", async (response, expected) => {
-      const dataBytes = Buffer.from(stringToBase64(response as string), "base64");
-
-      const mockRpcResponse: AbciQueryResponse = {
+  describe("account queries", () => {
+    const mockAccountResponse = (data: string) => {
+      vi.mocked(mockClient.abciQuery).mockResolvedValue({
         responseBase: emptyResponseBase({
-          data: dataBytes,
+          data: Buffer.from(data),
         }),
         key: new Uint8Array(),
         value: new Uint8Array(),
         height: 0,
-      };
-
-      vi.mocked(mockClient.abciQuery).mockResolvedValue(mockRpcResponse);
-
-      const sequence: number = await wsProvider.getAccountSequence("address");
-      expect(sequence).toBe(expected);
-    });
-  });
-
-  describe("getAccountNumber", () => {
-    const validAccount: ABCIAccount = {
-      BaseAccount: {
-        address: "random address",
-        coins: "",
-        public_key: null,
-        account_number: "10",
-        sequence: "0",
-      },
+      });
     };
 
-    test.each([[JSON.stringify(validAccount), parseInt(validAccount.BaseAccount.account_number, 10)], ["null", 0]])("case %#", async (response, expected) => {
-      const dataBytes = Buffer.from(stringToBase64(response as string), "base64");
+    test.each([accountWithoutPubkey, accountWithPubkey, accountWithMultisigPubkey])("reads initialized account %#", async (data) => {
+      mockAccountResponse(data);
 
-      const mockRpcResponse: AbciQueryResponse = {
-        responseBase: emptyResponseBase({
-          data: dataBytes,
-        }),
-        key: new Uint8Array(),
-        value: new Uint8Array(),
-        height: 0,
-      };
+      await expect(wsProvider.getAccountSequence("g16al7zp20sj8uqynqt8tkm85dvgx4fsg7ehxej9")).resolves.toBe(3);
+      await expect(wsProvider.getAccountNumber("g16al7zp20sj8uqynqt8tkm85dvgx4fsg7ehxej9")).resolves.toBe(7);
+      await expect(wsProvider.getAccount("g16al7zp20sj8uqynqt8tkm85dvgx4fsg7ehxej9")).resolves.toStrictEqual(JSON.parse(data));
+    });
 
-      vi.mocked(mockClient.abciQuery).mockResolvedValue(mockRpcResponse);
+    test.each([uninitializedAccount, ""])("identifies an uninitialized account %#", async (data) => {
+      mockAccountResponse(data);
 
-      try {
-        const accountNumber: number
-          = await wsProvider.getAccountNumber("address");
-        expect(accountNumber).toBe(expected);
+      await expect(wsProvider.getAccountSequence("g16al7zp20sj8uqynqt8tkm85dvgx4fsg7ehxej9")).resolves.toBe(0);
+      for (const query of ["getAccountNumber", "getAccount"] as const) {
+        const result = wsProvider[query]("g16al7zp20sj8uqynqt8tkm85dvgx4fsg7ehxej9");
+        await expect(result).rejects.toBeInstanceOf(AccountNotInitializedError);
+        await expect(result).rejects.toHaveProperty("message", "account is not initialized");
       }
-      catch (e) {
-        expect((e as Error).message).toContain("account is not initialized");
+    });
+
+    test.each(damagedAccounts)("identifies account decode failures %#", async (data) => {
+      mockAccountResponse(data);
+
+      for (const query of ["getAccountSequence", "getAccountNumber", "getAccount"] as const) {
+        const result = wsProvider[query]("g16al7zp20sj8uqynqt8tkm85dvgx4fsg7ehxej9");
+        await expect(result).rejects.toBeInstanceOf(AccountDecodeError);
+        await expect(result).rejects.toHaveProperty("cause", expect.any(Error));
       }
     });
   });
-
-  describe("getAccount", () => {
-    const validAccount: ABCIAccount = {
-      BaseAccount: {
-        address: "random address",
-        coins: "",
-        public_key: null,
-        account_number: "10",
-        sequence: "0",
-      },
-    };
-
-    test.each([[JSON.stringify(validAccount), validAccount], ["null", null]])("case %#", async (response, expected) => {
-      const dataBytes = Buffer.from(
-        stringToBase64(response as string),
-        "base64",
-      );
-
-      const mockRpcResponse: AbciQueryResponse = {
-        responseBase: emptyResponseBase({
-          data: dataBytes,
-        }),
-        key: new Uint8Array(),
-        value: new Uint8Array(),
-        height: 0,
-      };
-
-      vi.mocked(mockClient.abciQuery).mockResolvedValue(mockRpcResponse);
-
-      try {
-        const account: ABCIAccount = await wsProvider.getAccount("address");
-        expect(account).toStrictEqual(expected);
-      }
-      catch (e) {
-        expect((e as Error).message).toContain("account is not initialized");
-      }
-    });
-  });
-
   describe("getBalance", () => {
     const denomination = "atom";
     test.each([["\"5gnot,100atom\"", 100], ["\"5universe\"", 0], ["\"\"", 0]])("case %#", async (existing, expected) => {

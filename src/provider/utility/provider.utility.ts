@@ -9,10 +9,17 @@ import {
   ResponseDeliverTx,
 } from "../../proto/tm2/abci.js";
 import {
+  AccountDecodeError,
+  AccountNotInitializedError,
+} from "../errors/index.js";
+import {
   Provider,
 } from "../provider.js";
 import {
-  ABCIAccount, ABCIErrorKey, ABCIResponse, BlockInfo,
+  ABCIAccount,
+  ABCIErrorKey,
+  ABCIResponse,
+  BlockInfo,
 } from "../types/index.js";
 import {
   toHexString,
@@ -22,7 +29,6 @@ import {
 } from "./errors.utility.js";
 import {
   base64ToUint8Array,
-  parseABCI,
   parseProto,
   uint8ArrayToBase64,
 } from "./requests.utility.js";
@@ -65,29 +71,24 @@ export const extractBalanceFromResponse = (
 
 /**
  * Extracts the account sequence from the ABCI response
+ * Returns 0 for an uninitialized account; throws AccountDecodeError for malformed data.
  * @param {string | null} abciData the base64-encoded ABCI data
  */
 export const extractSequenceFromResponse = (
   abciData: string | null,
 ): number => {
-  // Make sure the response is initialized
-  if (!abciData) {
-    return 0;
-  }
-
   try {
-    // Parse the account
-    const account: ABCIAccount = parseABCI<ABCIAccount>(abciData);
+    const account = extractAccountFromResponse(abciData);
 
     return parseInt(account.BaseAccount.sequence, 10);
   }
-  catch (_e) {
-    // unused case
-  }
+  catch (e) {
+    if (e instanceof AccountNotInitializedError) {
+      return 0;
+    }
 
-  // Account not initialized,
-  // return default value (0)
-  return 0;
+    throw e;
+  }
 };
 
 /**
@@ -97,22 +98,9 @@ export const extractSequenceFromResponse = (
 export const extractAccountNumberFromResponse = (
   abciData: string | null,
 ): number => {
-  // Make sure the response is initialized
-  if (!abciData) {
-    throw new Error("account is not initialized");
-  }
+  const account = extractAccountFromResponse(abciData);
 
-  try {
-    // Parse the account
-    const account: ABCIAccount = parseABCI<ABCIAccount>(abciData);
-
-    return parseInt(account.BaseAccount.account_number, 10);
-  }
-  catch (e) {
-    throw new Error("account is not initialized", {
-      cause: e,
-    });
-  }
+  return parseInt(account.BaseAccount.account_number, 10);
 };
 
 /**
@@ -122,22 +110,31 @@ export const extractAccountNumberFromResponse = (
 export const extractAccountFromResponse = (
   abciData: string | null,
 ): ABCIAccount => {
-  // Make sure the response is initialized
   if (!abciData) {
-    throw new Error("account is not initialized");
+    throw new AccountNotInitializedError();
   }
 
+  let account: ABCIAccount | null;
   try {
-    // Parse the account
-    const account: ABCIAccount = parseABCI<ABCIAccount>(abciData);
-
-    return account;
+    account = JSON.parse(Buffer.from(abciData, "base64").toString());
+    if (account !== null) {
+      const baseAccount = account.BaseAccount;
+      if (!baseAccount || typeof baseAccount !== "object" || Array.isArray(baseAccount)
+        || typeof baseAccount.account_number !== "string" || !/^[0-9]+$/.test(baseAccount.account_number)
+        || typeof baseAccount.sequence !== "string" || !/^[0-9]+$/.test(baseAccount.sequence)) {
+        throw new Error("invalid BaseAccount in account response");
+      }
+    }
   }
   catch (e) {
-    throw new Error("account is not initialized", {
-      cause: e,
-    });
+    throw new AccountDecodeError(e);
   }
+
+  if (account === null) {
+    throw new AccountNotInitializedError();
+  }
+
+  return account;
 };
 
 /**
