@@ -9,10 +9,17 @@ import {
   ResponseDeliverTx,
 } from "../../proto/tm2/abci.js";
 import {
+  AccountDecodeError,
+  AccountNotInitializedError,
+} from "../errors/index.js";
+import {
   Provider,
 } from "../provider.js";
 import {
-  ABCIAccount, ABCIErrorKey, ABCIResponse, BlockInfo,
+  ABCIAccount,
+  ABCIErrorKey,
+  ABCIResponse,
+  BlockInfo,
 } from "../types/index.js";
 import {
   toHexString,
@@ -22,7 +29,6 @@ import {
 } from "./errors.utility.js";
 import {
   base64ToUint8Array,
-  parseABCI,
   parseProto,
   uint8ArrayToBase64,
 } from "./requests.utility.js";
@@ -63,31 +69,57 @@ export const extractBalanceFromResponse = (
   return 0;
 };
 
+// Amino encodes uint64 values as decimal strings in JSON.
+// This does not validate the numeric range of uint64.
+const isUint64String = (value: unknown): boolean =>
+  typeof value === "string" && /^[0-9]+$/.test(value);
+
+const hasValidBaseAccount = ({
+  BaseAccount: base,
+}: ABCIAccount): boolean =>
+  base != null
+  && isUint64String(base.account_number)
+  && isUint64String(base.sequence);
+
+const parseAccountJSON = (abciData: string): ABCIAccount | null => {
+  try {
+    return JSON.parse(Buffer.from(abciData, "base64").toString());
+  }
+  catch (e) {
+    throw new AccountDecodeError(e);
+  }
+};
+
+/**
+ * Decodes a Base64-encoded ABCI account response.
+ *
+ * @returns The decoded account, or null if it does not exist.
+ * @throws {@link AccountDecodeError} If the response is malformed.
+ */
+const decodeAccount = (abciData: string | null): ABCIAccount | null => {
+  if (!abciData) {
+    return null;
+  }
+
+  const account = parseAccountJSON(abciData);
+  if (account !== null && !hasValidBaseAccount(account)) {
+    throw new AccountDecodeError(new Error("invalid BaseAccount in account response"));
+  }
+
+  return account;
+};
+
 /**
  * Extracts the account sequence from the ABCI response
+ * Returns 0 for an uninitialized account; throws AccountDecodeError for malformed data.
  * @param {string | null} abciData the base64-encoded ABCI data
  */
 export const extractSequenceFromResponse = (
   abciData: string | null,
 ): number => {
-  // Make sure the response is initialized
-  if (!abciData) {
-    return 0;
-  }
+  const account = decodeAccount(abciData);
 
-  try {
-    // Parse the account
-    const account: ABCIAccount = parseABCI<ABCIAccount>(abciData);
-
-    return parseInt(account.BaseAccount.sequence, 10);
-  }
-  catch (_e) {
-    // unused case
-  }
-
-  // Account not initialized,
-  // return default value (0)
-  return 0;
+  return account ? parseInt(account.BaseAccount.sequence, 10) : 0;
 };
 
 /**
@@ -97,22 +129,9 @@ export const extractSequenceFromResponse = (
 export const extractAccountNumberFromResponse = (
   abciData: string | null,
 ): number => {
-  // Make sure the response is initialized
-  if (!abciData) {
-    throw new Error("account is not initialized");
-  }
+  const account = extractAccountFromResponse(abciData);
 
-  try {
-    // Parse the account
-    const account: ABCIAccount = parseABCI<ABCIAccount>(abciData);
-
-    return parseInt(account.BaseAccount.account_number, 10);
-  }
-  catch (e) {
-    throw new Error("account is not initialized", {
-      cause: e,
-    });
-  }
+  return parseInt(account.BaseAccount.account_number, 10);
 };
 
 /**
@@ -122,22 +141,12 @@ export const extractAccountNumberFromResponse = (
 export const extractAccountFromResponse = (
   abciData: string | null,
 ): ABCIAccount => {
-  // Make sure the response is initialized
-  if (!abciData) {
-    throw new Error("account is not initialized");
+  const account = decodeAccount(abciData);
+  if (!account) {
+    throw new AccountNotInitializedError();
   }
 
-  try {
-    // Parse the account
-    const account: ABCIAccount = parseABCI<ABCIAccount>(abciData);
-
-    return account;
-  }
-  catch (e) {
-    throw new Error("account is not initialized", {
-      cause: e,
-    });
-  }
+  return account;
 };
 
 /**

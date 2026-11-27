@@ -15,9 +15,18 @@ import {
   WritableDeep,
 } from "type-fest";
 import {
-  beforeEach, describe, expect, test, vi,
+  beforeEach,
+  describe,
+  expect,
+  test,
+  vi,
 } from "vitest";
 
+import {
+  accountWithPubkey,
+  damagedAccounts,
+  uninitializedAccount,
+} from "../../../tests/fixtures/accounts.js";
 import {
   Tx,
 } from "../../proto/index.js";
@@ -25,17 +34,22 @@ import {
   TransactionEndpoint,
 } from "../endpoints.js";
 import {
-  InvalidAddressError, TM2Error, UnauthorizedError, UnknownRequestError,
+  AccountDecodeError,
+  AccountNotInitializedError,
+  InvalidAddressError,
+  TM2Error,
+  UnauthorizedError,
+  UnknownRequestError,
 } from "../errors/index.js";
 import {
-  ABCIAccount,
   BroadcastTxSyncResult,
   ConsensusParams,
   NetworkInfo,
   Status,
 } from "../types/index.js";
 import {
-  stringToBase64, uint8ArrayToBase64,
+  stringToBase64,
+  uint8ArrayToBase64,
 } from "../utility/index.js";
 import {
   JSONRPCProvider,
@@ -652,115 +666,33 @@ describe("JSON-RPC Provider", () => {
     });
   });
 
-  describe("getSequence", () => {
-    const validAccount: ABCIAccount = {
-      BaseAccount: {
-        address: "random address",
-        coins: "",
-        public_key: null,
-        account_number: "0",
-        sequence: "10",
-      },
+  describe("account queries", () => {
+    const mockAccountResponse = (data: string) => {
+      vi.mocked(mockClient.abciQuery).mockResolvedValue(gasPriceResponse(data));
     };
 
-    test.each([[JSON.stringify(validAccount), parseInt(validAccount.BaseAccount.sequence, 10)], ["null", 0]])("case %#", async (response, expected) => {
-      const dataBytes = Buffer.from(stringToBase64(response), "base64");
+    test("reads an initialized account", async () => {
+      mockAccountResponse(accountWithPubkey);
 
-      const mockRpcResponse: AbciQueryResponse = {
-        responseBase: emptyResponseBase({
-          data: dataBytes,
-        }),
-        key: new Uint8Array(),
-        value: new Uint8Array(),
-        height: 0,
-      };
-
-      vi.mocked(mockClient.abciQuery).mockResolvedValue(mockRpcResponse);
-
-      const sequence = await provider.getAccountSequence("address");
-
-      expect(mockClient.abciQuery).toHaveBeenCalled();
-      expect(sequence).toBe(expected);
+      await expect(provider.getAccountSequence("address")).resolves.toBe(3);
+      await expect(provider.getAccountNumber("address")).resolves.toBe(7);
+      await expect(provider.getAccount("address")).resolves.toStrictEqual(JSON.parse(accountWithPubkey));
     });
-  });
 
-  describe("getAccountNumber", () => {
-    const validAccount: ABCIAccount = {
-      BaseAccount: {
-        address: "random address",
-        coins: "",
-        public_key: null,
-        account_number: "10",
-        sequence: "0",
-      },
-    };
+    test("identifies an uninitialized account", async () => {
+      mockAccountResponse(uninitializedAccount);
 
-    test.each([[JSON.stringify(validAccount), parseInt(validAccount.BaseAccount.account_number, 10)], ["null", 0]])("case %#", async (response, expected) => {
-      const dataBytes = Buffer.from(stringToBase64(response), "base64");
-
-      const mockRpcResponse: AbciQueryResponse = {
-        responseBase: emptyResponseBase({
-          data: dataBytes,
-        }),
-        key: new Uint8Array(),
-        value: new Uint8Array(),
-        height: 0,
-      };
-
-      vi.mocked(mockClient.abciQuery).mockResolvedValue(mockRpcResponse);
-
-      try {
-        const accountNumber = await provider.getAccountNumber("address");
-
-        expect(mockClient.abciQuery).toHaveBeenCalled();
-        expect(accountNumber).toBe(expected);
-      }
-      catch (e) {
-        expect((e as Error).message).toContain("account is not initialized");
-      }
+      await expect(provider.getAccountSequence("address")).resolves.toBe(0);
+      await expect(provider.getAccountNumber("address")).rejects.toBeInstanceOf(AccountNotInitializedError);
+      await expect(provider.getAccount("address")).rejects.toBeInstanceOf(AccountNotInitializedError);
     });
-  });
 
-  describe("getAccount", () => {
-    const validAccount: ABCIAccount = {
-      BaseAccount: {
-        address: "random address",
-        coins: "",
-        public_key: {
-          "@type": "pktype",
-          value: "pk",
-        },
-        account_number: "10",
-        sequence: "42",
-      },
-    };
+    test("identifies an account decode failure", async () => {
+      mockAccountResponse(damagedAccounts[0]);
 
-    test.each([[JSON.stringify(validAccount), validAccount], ["null", null]])("case %#", async (response, expected) => {
-      const dataBytes = Buffer.from(
-        stringToBase64(response as string),
-        "base64",
-      );
-
-      const mockRpcResponse: AbciQueryResponse = {
-        responseBase: emptyResponseBase({
-          data: dataBytes,
-        }),
-        key: new Uint8Array(),
-        value: new Uint8Array(),
-        height: 0,
-      };
-
-      vi.mocked(mockClient.abciQuery).mockResolvedValue(mockRpcResponse);
-
-      try {
-        const account = await provider.getAccount("address");
-
-        expect(mockClient.abciQuery).toHaveBeenCalled();
-        expect(account).toStrictEqual(expected);
-      }
-      catch (e) {
-        expect((e as Error).message).toContain("account is not initialized");
-      }
+      await expect(provider.getAccountSequence("address")).rejects.toBeInstanceOf(AccountDecodeError);
+      await expect(provider.getAccountNumber("address")).rejects.toBeInstanceOf(AccountDecodeError);
+      await expect(provider.getAccount("address")).rejects.toBeInstanceOf(AccountDecodeError);
     });
   });
 });
