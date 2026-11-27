@@ -51,7 +51,6 @@ import {
   extractSequenceFromResponse,
   extractSimulateFromResponse,
   parseABCI,
-  uint8ArrayToBase64,
   waitForTransaction,
 } from "./utility/index.js";
 
@@ -187,7 +186,7 @@ export interface Provider {
    * before starting to wait for it; Until then, this method should be used
    * in the sequence:
    * get latest block -> send transaction -> waitForTransaction(block before send)
-   * @param {string} hash The transaction hash
+   * @param {string} hash The transaction hash in hexadecimal (case-insensitive) or legacy base64
    * @param {number} [fromHeight=latest] The block height used to begin the search
    * @param {number} [timeout=15000] Optional wait timeout in MS
    */
@@ -226,10 +225,9 @@ export abstract class BaseTm2Provider implements Provider {
   }
 
   async estimateGas(tx: Tx): Promise<bigint> {
-    const encodedTx = uint8ArrayToBase64(Tx.encode(tx).finish());
     const abciResponse = await this.abciQuery({
       path: ".app/simulate",
-      data: new TextEncoder().encode(encodedTx),
+      data: Tx.encode(tx).finish(),
       height: 0,
       prove: false,
     });

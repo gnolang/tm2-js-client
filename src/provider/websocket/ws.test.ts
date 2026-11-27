@@ -120,6 +120,12 @@ describe("WS Provider", () => {
     vi.mocked(mockClient.abciQuery).mockResolvedValue(mockAbciResponse);
 
     const estimation = await wsProvider.estimateGas(tx);
+    expect(mockClient.abciQuery).toHaveBeenCalledWith({
+      path: ".app/simulate",
+      data: Tx.encode(tx).finish(),
+      height: 0,
+      prove: false,
+    });
     expect(estimation).toEqual(expectedEstimation);
   });
 
