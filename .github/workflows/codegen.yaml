@@ -43,7 +43,7 @@ jobs:
 
       - name: Check that the committed sources match
         run: |
-          if ! git diff --exit-code -- src/proto; then
-            echo "::error::src/proto/ does not match proto/. Run 'pnpm codegen' and commit the result."
+          if ! git diff --exit-code -- src/proto src/provider/errors/std.ts; then
+            echo "::error::Generated sources do not match proto/, scripts/upstream/, or scripts/generate-errors.mjs. Run 'pnpm codegen' and commit the result."
             exit 1
           fi

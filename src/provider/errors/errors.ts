@@ -1,24 +1,3 @@
-import {
-  GasOverflowErrorMessage,
-  InsufficientCoinsErrorMessage,
-  InsufficientFeeErrorMessage,
-  InsufficientFundsErrorMessage,
-  InternalErrorMessage,
-  InvalidAddressErrorMessage,
-  InvalidCoinsErrorMessage,
-  InvalidGasWantedErrorMessage,
-  InvalidPubKeyErrorMessage,
-  InvalidSequenceErrorMessage,
-  MemoTooLargeErrorMessage,
-  NoSignaturesErrorMessage,
-  OutOfGasErrorMessage,
-  TooManySignaturesErrorMessage,
-  TxDecodeErrorMessage,
-  UnauthorizedErrorMessage,
-  UnknownAddressErrorMessage,
-  UnknownRequestErrorMessage,
-} from "./messages.js";
-
 class TM2Error extends Error {
   public log?: string;
 
@@ -29,132 +8,24 @@ class TM2Error extends Error {
   }
 }
 
-class InternalError extends TM2Error {
-  constructor(log?: string) {
-    super(InternalErrorMessage, log);
+class RPCRequestError extends Error {
+  public readonly code: number;
+  public readonly rpcMessage: string;
+  public readonly data?: string;
+
+  constructor(message: string, code: number, rpcMessage: string, data?: string) {
+    super(message);
+
+    this.code = code;
+    this.rpcMessage = rpcMessage;
+    this.data = data;
   }
 }
 
-class TxDecodeError extends TM2Error {
-  constructor(log?: string) {
-    super(TxDecodeErrorMessage, log);
-  }
-}
-
-class InvalidSequenceError extends TM2Error {
-  constructor(log?: string) {
-    super(InvalidSequenceErrorMessage, log);
-  }
-}
-
-class UnauthorizedError extends TM2Error {
-  constructor(log?: string) {
-    super(UnauthorizedErrorMessage, log);
-  }
-}
-
-class InsufficientFundsError extends TM2Error {
-  constructor(log?: string) {
-    super(InsufficientFundsErrorMessage, log);
-  }
-}
-
-class UnknownRequestError extends TM2Error {
-  constructor(log?: string) {
-    super(UnknownRequestErrorMessage, log);
-  }
-}
-
-class InvalidAddressError extends TM2Error {
-  constructor(log?: string) {
-    super(InvalidAddressErrorMessage, log);
-  }
-}
-
-class UnknownAddressError extends TM2Error {
-  constructor(log?: string) {
-    super(UnknownAddressErrorMessage, log);
-  }
-}
-
-class InvalidPubKeyError extends TM2Error {
-  constructor(log?: string) {
-    super(InvalidPubKeyErrorMessage, log);
-  }
-}
-
-class InsufficientCoinsError extends TM2Error {
-  constructor(log?: string) {
-    super(InsufficientCoinsErrorMessage, log);
-  }
-}
-
-class InvalidCoinsError extends TM2Error {
-  constructor(log?: string) {
-    super(InvalidCoinsErrorMessage, log);
-  }
-}
-
-class InvalidGasWantedError extends TM2Error {
-  constructor(log?: string) {
-    super(InvalidGasWantedErrorMessage, log);
-  }
-}
-
-class OutOfGasError extends TM2Error {
-  constructor(log?: string) {
-    super(OutOfGasErrorMessage, log);
-  }
-}
-
-class MemoTooLargeError extends TM2Error {
-  constructor(log?: string) {
-    super(MemoTooLargeErrorMessage, log);
-  }
-}
-
-class InsufficientFeeError extends TM2Error {
-  constructor(log?: string) {
-    super(InsufficientFeeErrorMessage, log);
-  }
-}
-
-class TooManySignaturesError extends TM2Error {
-  constructor(log?: string) {
-    super(TooManySignaturesErrorMessage, log);
-  }
-}
-
-class NoSignaturesError extends TM2Error {
-  constructor(log?: string) {
-    super(NoSignaturesErrorMessage, log);
-  }
-}
-
-class GasOverflowError extends TM2Error {
-  constructor(log?: string) {
-    super(GasOverflowErrorMessage, log);
-  }
-}
+class CodeExecutionRefusedError extends RPCRequestError {}
 
 export {
-  GasOverflowError,
-  InsufficientCoinsError,
-  InsufficientFeeError,
-  InsufficientFundsError,
-  InternalError,
-  InvalidAddressError,
-  InvalidCoinsError,
-  InvalidGasWantedError,
-  InvalidPubKeyError,
-  InvalidSequenceError,
-  MemoTooLargeError,
-  NoSignaturesError,
-  OutOfGasError,
+  CodeExecutionRefusedError,
+  RPCRequestError,
   TM2Error,
-  TooManySignaturesError,
-  TxDecodeError,
-  UnauthorizedError,
-  UnknownAddressError,
-  UnknownRequestError,
 };
